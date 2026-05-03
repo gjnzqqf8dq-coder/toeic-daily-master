@@ -191,83 +191,87 @@ input[type=range]::-webkit-slider-runnable-track {
   </div>
 
   <!-- ===== GAME SCREEN ===== -->
-  <div id="game-screen" class="hidden flex-grow flex flex-col w-full h-full relative p-4 md:p-6">
+  <div id="game-screen" class="hidden flex-grow flex flex-col w-full h-full relative px-3 md:px-6 pt-2 pb-3">
 
-    <!-- Quit -->
-    <button id="quit-btn" class="fixed top-4 left-4 p-2 text-gray-400 hover:text-white transition z-[9000] rounded-full bg-black/60 backdrop-blur-md border border-gray-700 active:scale-95" title="ホーム">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-    </button>
+    <!-- Top HUD: HOME / SCORE / DAILY -->
+    <div class="flex items-start justify-between gap-2 w-full max-w-3xl mx-auto shrink-0 mb-1">
+      <button id="quit-btn" class="p-2 text-gray-400 hover:text-white transition rounded-full bg-black/60 backdrop-blur-md border border-gray-700 active:scale-95 shrink-0" title="ホーム">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+      </button>
 
-    <!-- Daily Session Indicator (top-right small) -->
-    <div id="daily-indicator" class="fixed top-4 right-4 bg-black/70 backdrop-blur-md border border-yellow-600/40 rounded-xl px-3 py-2 z-[9000] text-right shadow-lg">
-      <div class="text-[9px] font-bold text-yellow-500 tracking-widest leading-none">DAILY</div>
-      <div class="flex items-baseline gap-1 justify-end mt-0.5">
-        <span id="daily-remaining" class="text-base font-mono font-bold text-yellow-200 leading-none">15:00</span>
+      <div class="text-center">
+        <div class="text-yellow-600 text-[10px] font-bold tracking-widest leading-none">SCORE</div>
+        <div id="current-score" class="text-3xl md:text-4xl font-mono font-bold leading-none text-white mt-0.5">0</div>
+        <div id="combo-container" class="opacity-0 transition-opacity duration-300 mt-1">
+          <span id="combo-count" class="text-lg font-black text-yellow-400 italic">0</span>
+          <span class="text-[10px] font-bold text-yellow-600 tracking-widest">COMBO</span>
+          <span class="text-[9px] text-yellow-200 font-bold ml-1" id="multiplier-display">x1.0</span>
+        </div>
       </div>
-      <div class="text-[9px] text-gray-400 leading-tight mt-0.5">
-        <span id="daily-position">#1</span> / <span id="daily-total-words">1543</span>
-      </div>
-      <div class="w-full h-1 bg-gray-800 rounded-full mt-1 overflow-hidden">
-        <div id="daily-bar" class="h-full bg-gradient-to-r from-yellow-600 to-yellow-300 transition-all duration-200" style="width:0%"></div>
+
+      <div class="text-right shrink-0">
+        <div class="text-yellow-500 text-[10px] font-bold tracking-widest leading-none">DAILY</div>
+        <div id="daily-remaining" class="text-3xl md:text-4xl font-mono font-bold leading-none text-yellow-200 mt-0.5">15:00</div>
+        <div class="text-[9px] text-gray-400 leading-tight mt-0.5">
+          <span id="daily-position">#1</span> / <span id="daily-total-words">1543</span>
+        </div>
+        <div class="w-full h-1 bg-gray-800 rounded-full mt-1 overflow-hidden">
+          <div id="daily-bar" class="h-full bg-gradient-to-r from-yellow-600 to-yellow-300 transition-all duration-200" style="width:0%"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Score / Combo HUD -->
-    <div class="flex justify-between items-start mb-2 px-1 mt-20 md:mt-16 w-full max-w-3xl shrink-0">
-      <div class="pl-2">
-        <div class="text-yellow-600 text-xs font-bold tracking-widest mb-1">SCORE</div>
-        <div id="current-score" class="text-3xl md:text-4xl font-mono font-bold leading-none text-white">0</div>
-        <div id="combo-container" class="mt-2 opacity-0 transition-opacity duration-300">
-          <div class="flex items-baseline gap-2">
-            <span id="combo-count" class="text-2xl font-black text-yellow-400 italic">0</span>
-            <span class="text-xs font-bold text-yellow-600 tracking-widest">COMBO</span>
-          </div>
-          <div class="text-[10px] text-yellow-200 font-bold" id="multiplier-display">x1.0 BONUS</div>
-        </div>
+    <!-- Q-TIME bar (full width, slim) -->
+    <div class="w-full max-w-3xl mx-auto flex items-center gap-2 shrink-0 mb-2">
+      <span class="text-yellow-600 text-[9px] font-bold tracking-widest leading-none">Q</span>
+      <div class="flex-grow h-1.5 bg-gray-900 rounded-full overflow-hidden">
+        <div id="question-time-bar" class="h-full bg-cyan-500 transition-all duration-100 ease-linear" style="width:100%"></div>
       </div>
-      <div class="text-right">
-        <div class="text-yellow-600 text-xs font-bold tracking-widest mb-1">Q-TIME</div>
-        <div id="qtime-display" class="text-3xl md:text-4xl font-mono font-bold text-white leading-none">3.0</div>
-        <div class="w-24 h-1 bg-gray-900 rounded-full mt-1.5 overflow-hidden ml-auto">
-          <div id="question-time-bar" class="h-full bg-cyan-500 transition-all duration-100 ease-linear" style="width:100%"></div>
-        </div>
-      </div>
+      <span id="qtime-display" class="text-[10px] font-mono font-bold text-white tabular-nums w-8 text-right">3.0</span>
     </div>
 
     <!-- Card -->
-    <div class="flex-grow flex flex-col items-center justify-start md:justify-center relative w-full pb-4 md:pb-0 pt-2 md:pt-0">
-      <div id="card" class="w-full max-w-3xl min-h-[240px] sm:min-h-[280px] md:min-h-[400px] bg-[#1a1a1a] rounded-xl shadow-2xl flex flex-col items-center justify-center p-4 md:p-12 text-center relative overflow-hidden transition-all duration-300 border border-yellow-600/30 cursor-pointer active:scale-95 transform group z-10">
+    <div class="flex-grow flex flex-col items-center justify-center relative w-full max-w-3xl mx-auto min-h-0">
+      <div id="card" class="w-full flex-grow min-h-[200px] bg-[#1a1a1a] rounded-xl shadow-2xl flex flex-col items-center justify-center p-3 md:p-10 text-center relative overflow-hidden transition-all duration-300 border border-yellow-600/30 cursor-pointer active:scale-95 transform group z-10">
         <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50"></div>
         <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50"></div>
-        <div id="fever-badge" class="hidden absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-xs font-black px-3 py-1 rounded shadow-[0_0_15px_rgba(234,179,8,0.6)] rotate-3 border border-white/20">FEVER</div>
+        <div id="fever-badge" class="hidden absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-[10px] font-black px-2 py-0.5 rounded shadow-[0_0_15px_rgba(234,179,8,0.6)] rotate-3 border border-white/20">FEVER</div>
 
         <div class="flex-grow flex items-center justify-center w-full pointer-events-none px-2 relative z-10">
-          <h2 id="word-front" class="text-3xl sm:text-5xl md:text-7xl font-bold break-words leading-tight w-full text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 pb-4"></h2>
+          <h2 id="word-front" class="text-3xl sm:text-5xl md:text-7xl font-bold break-words leading-tight w-full text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 pb-2"></h2>
         </div>
-        <div id="word-back-container" class="opacity-0 min-h-[4rem] md:min-h-[6rem] flex items-center justify-center w-full transition-all duration-200 transform translate-y-4 pointer-events-none px-2 relative z-10">
-          <p id="word-back" class="text-xl sm:text-2xl md:text-3xl text-yellow-100 font-bold break-words px-6 py-3 border-t border-b border-yellow-500/30 w-full bg-black/40"></p>
+        <div id="word-back-container" class="opacity-0 min-h-[3rem] md:min-h-[5rem] flex items-center justify-center w-full transition-all duration-200 transform translate-y-4 pointer-events-none px-2 relative z-10">
+          <p id="word-back" class="text-xl sm:text-2xl md:text-3xl text-yellow-100 font-bold break-words px-4 py-2 border-t border-b border-yellow-500/30 w-full bg-black/40"></p>
         </div>
         <div id="feedback-icon" class="absolute inset-0 flex items-center justify-center pointer-events-none z-20"></div>
-        <div id="instruction-text" class="absolute bottom-4 left-0 w-full text-center text-gray-500 text-xs font-bold animate-pulse hidden md:block tracking-widest uppercase">Press Enter to Answer</div>
-        <div id="tap-guide" class="absolute bottom-4 left-0 w-full text-center text-yellow-500/50 text-xs font-bold animate-pulse md:hidden tracking-widest">TAP TO OPEN</div>
+        <div id="instruction-text" class="absolute bottom-2 left-0 w-full text-center text-gray-500 text-xs font-bold animate-pulse hidden md:block tracking-widest uppercase">Press Enter to Answer</div>
+        <div id="tap-guide" class="absolute bottom-2 left-0 w-full text-center text-yellow-500/50 text-xs font-bold animate-pulse md:hidden tracking-widest">TAP TO OPEN</div>
       </div>
 
-      <!-- Mobile Touch Controls -->
-      <div class="w-full flex flex-col items-center gap-3 mt-4 relative z-40">
-        <div id="touch-controls" class="w-full grid grid-cols-2 gap-3 h-24 md:hidden transition-opacity duration-200 opacity-0 pointer-events-none px-1">
+      <!-- Mobile Touch Controls + UNDO row (compact, no bottom margin) -->
+      <div class="w-full flex flex-col items-center gap-2 mt-2 relative z-40 shrink-0">
+        <div id="touch-controls" class="w-full grid grid-cols-2 gap-2 h-20 md:hidden transition-opacity duration-200 opacity-0 pointer-events-none">
           <button id="btn-correct" class="bg-slate-900/90 border border-slate-700 active:border-green-500 rounded-2xl flex flex-col items-center justify-center shadow-lg active:scale-95 transition-all pointer-events-auto">
-            <svg class="w-10 h-10 mb-1 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle></svg>
-            <span class="text-green-400 font-bold text-sm tracking-widest">KNOW</span>
+            <svg class="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle></svg>
+            <span class="text-green-400 font-bold text-xs tracking-widest leading-none mt-0.5">KNOW</span>
           </button>
           <button id="btn-wrong" class="bg-slate-900/90 border border-slate-700 active:border-red-500 rounded-2xl flex flex-col items-center justify-center shadow-lg active:scale-95 transition-all pointer-events-auto">
-            <svg class="w-10 h-10 mb-1 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            <span class="text-red-400 font-bold text-sm tracking-widest">DON'T KNOW</span>
+            <svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <span class="text-red-400 font-bold text-xs tracking-widest leading-none mt-0.5">DON'T</span>
           </button>
         </div>
-        <div class="flex justify-center gap-4 w-full pb-2">
-          <button id="btn-undo-1" disabled class="disabled:opacity-30 bg-blue-900/90 text-blue-200 w-12 h-12 rounded-full border-2 border-blue-500/50 active:scale-95 transition flex items-center justify-center pointer-events-auto">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" /></svg>
+        <div class="flex justify-center gap-3 w-full">
+          <button id="btn-undo-1" disabled class="disabled:opacity-30 bg-blue-900/90 text-blue-200 w-11 h-11 rounded-full border-2 border-blue-500/50 active:scale-95 transition flex flex-col items-center justify-center pointer-events-auto shadow-[0_0_10px_rgba(59,130,246,0.3)]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" /></svg>
+            <span class="text-[9px] font-bold leading-none mt-0.5">1</span>
+          </button>
+          <button id="btn-undo-2" disabled class="disabled:opacity-30 bg-purple-900/90 text-purple-200 w-11 h-11 rounded-full border-2 border-purple-500/50 active:scale-95 transition flex flex-col items-center justify-center pointer-events-auto shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+            <div class="flex -space-x-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" /></svg>
+            </div>
+            <span class="text-[9px] font-bold leading-none mt-0.5">2</span>
           </button>
         </div>
       </div>
@@ -356,6 +360,15 @@ input[type=range]::-webkit-slider-runnable-track {
         </div>
         <input type="range" id="qlimit-slider" min="0.3" max="5.0" step="0.3" value="3.0" class="w-full">
         <p class="text-[11px] text-gray-500 mt-1">1問の制限時間。低いほど高難度。</p>
+      </div>
+
+      <div class="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2">
+        <div class="text-yellow-500 text-xs font-bold tracking-widest mb-1">BACKUP / RESTORE</div>
+        <p class="text-[11px] text-gray-500">カレンダー・進捗・スコアをJSONで保存/復元できます。iOSではたまにバックアップを取ることをおすすめします。</p>
+        <div class="flex gap-2 pt-1">
+          <button id="export-btn" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-bold rounded transition active:scale-95">📥 エクスポート</button>
+          <label id="import-label" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-bold rounded transition active:scale-95 text-center cursor-pointer">📤 インポート<input type="file" id="import-input" accept=".json" class="hidden"></label>
+        </div>
       </div>
 
       <div class="bg-red-950/30 border border-red-900 rounded-lg p-4 space-y-2">
@@ -2127,6 +2140,7 @@ const els = {
   btnCorrect: document.getElementById('btn-correct'),
   btnWrong: document.getElementById('btn-wrong'),
   btnUndo1: document.getElementById('btn-undo-1'),
+  btnUndo2: document.getElementById('btn-undo-2'),
 
   // result
   resultTitleArea: document.getElementById('result-title-area'),
@@ -2469,14 +2483,15 @@ function saveSnapshot() {
     isReviewWord: game.isReview ? game.currentWord : null,
     reviewQueueAtTime: game.isReview ? [...game.reviewQueue] : null,
   });
-  if (game.history.length > 1) game.history.pop();
+  if (game.history.length > 2) game.history.pop();
   els.btnUndo1.disabled = (game.history.length === 0);
+  els.btnUndo2.disabled = (game.history.length < 2);
 }
 
-function restoreSnapshot() {
-  if (game.history.length === 0) return;
+function restoreSnapshot(steps = 1) {
+  if (game.history.length < steps) return;
   if (game.nextTimer) { clearTimeout(game.nextTimer); game.nextTimer = null; }
-  const s = game.history.shift();
+  const s = game.history.splice(0, steps)[steps - 1];
   game.score = s.score; game.combo = s.combo; game.maxCombo = s.maxCombo;
   game.multiplier = s.multiplier; game.solved = s.solved;
   game.wrongThisSession = [...s.wrongThisSession];
@@ -2502,6 +2517,7 @@ function restoreSnapshot() {
   els.touchControls.classList.add('opacity-0','pointer-events-none');
   els.tapGuide.classList.remove('hidden');
   els.btnUndo1.disabled = (game.history.length === 0);
+  els.btnUndo2.disabled = (game.history.length < 2);
   SoundManager.delete();
   renderHUD();
 }
@@ -2735,7 +2751,8 @@ document.querySelectorAll('.back-home').forEach(b => b.addEventListener('click',
 els.card.addEventListener('click', () => { if (game.phase === 'question') revealAnswer(); });
 els.btnCorrect.addEventListener('click', e => { e.stopPropagation(); judge(true); });
 els.btnWrong.addEventListener('click', e => { e.stopPropagation(); judge(false); });
-els.btnUndo1.addEventListener('click', e => { e.stopPropagation(); restoreSnapshot(); });
+els.btnUndo1.addEventListener('click', e => { e.stopPropagation(); restoreSnapshot(1); });
+els.btnUndo2.addEventListener('click', e => { e.stopPropagation(); restoreSnapshot(2); });
 
 window.addEventListener('keydown', e => {
   if (game.phase === 'question') {
@@ -2810,6 +2827,39 @@ els.qlimitSlider.addEventListener('input', e => {
   els.qlimitDisplay.textContent = v.toFixed(1);
   const s = getSettings(); s.questionLimit = v; saveSettings(s);
 });
+document.getElementById('export-btn').addEventListener('click', () => {
+  const data = {};
+  Object.values(KEY).forEach(k => {
+    const v = Store.get(k);
+    if (v !== undefined) data[k] = v;
+  });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `toeic-daily-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('エクスポート完了');
+});
+document.getElementById('import-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      Object.entries(data).forEach(([k, v]) => Store.set(k, v));
+      showToast('インポート完了');
+      e.target.value = '';
+      showHome();
+    } catch {
+      showToast('ファイルエラー');
+    }
+  };
+  reader.readAsText(file);
+});
+
 els.resetPositionBtn.addEventListener('click', () => {
   showConfirm('進捗リセット', '単語の出題位置を最初に戻します。<br>カレンダー履歴は残ります。', () => {
     Store.del(KEY.DECK); Store.del(KEY.POSITION);
