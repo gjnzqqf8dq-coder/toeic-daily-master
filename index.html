@@ -1,0 +1,2848 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>TOEIC Daily Master</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TOEIC Daily">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+
+<style>
+@keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+.feedback-anim { animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+@keyframes rainbow-bg {
+  0% { border-color: #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.2); }
+  50% { border-color: #f59e0b; box-shadow: 0 0 40px rgba(245, 158, 11, 0.6); }
+  100% { border-color: #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.2); }
+}
+.fever-mode { animation: rainbow-bg 1s infinite; border-width: 4px; }
+@keyframes combo-pop { 0% { transform: scale(1); } 50% { transform: scale(1.5) rotate(-5deg); } 100% { transform: scale(1) rotate(0); } }
+.combo-anim { animation: combo-pop 0.2s ease-out; }
+@keyframes fade-in { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fade-in 0.4s ease-out forwards; }
+@keyframes shine { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+.shine-text {
+  background: linear-gradient(90deg, #fbbf24 0%, #fff 50%, #fbbf24 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 3s linear infinite;
+}
+
+body {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+  overscroll-behavior: none;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.gold-border-bottom { position: relative; }
+.gold-border-bottom::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, #fbbf24, #f59e0b, #fbbf24, transparent);
+}
+.gold-box {
+  position: relative; background: #111; border: 1px solid transparent;
+  background-clip: padding-box; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+.gold-box::before {
+  content: ''; position: absolute; top: -1px; bottom: -1px; left: -1px; right: -1px;
+  background: linear-gradient(135deg, #78350f, #fbbf24, #f59e0b, #78350f);
+  z-index: -1; border-radius: inherit;
+}
+.gold-text-gradient {
+  background: linear-gradient(to bottom, #fff7ed, #fbbf24, #d97706);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.serif-font { font-family: 'Cinzel', 'Noto Serif JP', serif; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #78350f, #fbbf24); border-radius: 3px; }
+
+input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%;
+  background: #fbbf24; cursor: pointer; margin-top: -8px;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px;
+}
+
+.cal-day {
+  aspect-ratio: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; border-radius: 8px;
+  font-size: 0.75rem; position: relative; transition: all 0.2s;
+}
+.cal-day.today { background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.5); }
+.cal-day.done { background: linear-gradient(135deg, #78350f, #b45309); color: #fff7ed; font-weight: bold; }
+.cal-day.done::after {
+  content: '✓'; position: absolute; top: 2px; right: 4px;
+  color: #fbbf24; font-size: 0.6rem; font-weight: bold;
+}
+.cal-day.streak { box-shadow: 0 0 8px rgba(251, 191, 36, 0.6); }
+.cal-day.future { color: #444; }
+.cal-day.empty { background: transparent; pointer-events: none; }
+</style>
+</head>
+
+<body class="text-white h-[100dvh] flex flex-col items-center justify-center overflow-hidden">
+
+<!-- Toast -->
+<div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full shadow-lg font-bold transition-all duration-300 opacity-0 pointer-events-none z-[10001]">📋 Copied!</div>
+
+<!-- Confirm Modal -->
+<div id="confirm-modal" class="hidden fixed inset-0 bg-black/80 z-[10000] flex items-center justify-center backdrop-blur-sm p-4">
+  <div class="bg-gray-900 border border-yellow-600/50 p-6 rounded-xl max-w-sm w-full shadow-2xl text-center relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent pointer-events-none"></div>
+    <h3 id="modal-title" class="text-xl font-bold text-white mb-2 relative z-10">セッション中断？</h3>
+    <p id="modal-msg" class="text-gray-400 mb-6 text-sm relative z-10">ホームに戻ります。<br>進行状況は自動で保存されます。</p>
+    <div class="flex gap-4 justify-center relative z-10">
+      <button id="modal-yes" class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white px-8 py-3 rounded-full font-bold transition shadow-lg transform active:scale-95">YES</button>
+      <button id="modal-no" class="bg-gray-700 hover:bg-gray-600 text-white px-8 py-3 rounded-full font-bold transition shadow-lg transform active:scale-95">NO</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="w-full max-w-2xl h-full flex flex-col relative overflow-hidden">
+
+  <!-- ===== HOME SCREEN ===== -->
+  <div id="home-screen" class="w-full h-full flex flex-col p-4 md:p-6 overflow-y-auto">
+    <div class="flex-grow flex flex-col w-full max-w-lg mx-auto py-4 space-y-4">
+
+      <!-- Title -->
+      <div class="text-center shrink-0">
+        <h1 class="text-3xl md:text-5xl font-black tracking-tighter serif-font gold-text-gradient leading-tight">
+          TOEIC<br>DAILY MASTER
+        </h1>
+        <p class="text-yellow-500/80 font-medium tracking-widest text-xs uppercase mt-1">15 min a day, every day</p>
+      </div>
+
+      <!-- Today Status Card (BIG) -->
+      <div id="today-card" class="gold-box p-5 rounded-xl">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-yellow-500 text-xs font-bold tracking-widest">TODAY</span>
+          <span id="today-date" class="text-gray-400 text-xs font-mono"></span>
+        </div>
+
+        <!-- Today: Not started / In progress / Done -->
+        <div id="today-status-area">
+          <!-- Filled by JS -->
+        </div>
+
+        <button id="start-btn" class="w-full mt-4 py-3 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black font-black text-lg rounded-full transition transform active:scale-95 shadow-[0_0_20px_rgba(234,179,8,0.4)] tracking-widest border border-yellow-300">
+          START
+        </button>
+
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <button id="review-btn" class="py-2 bg-gray-800 hover:bg-gray-700 text-yellow-200 text-xs font-bold rounded-full border border-gray-700 transition active:scale-95">復習リスト (<span id="wrong-count-home">0</span>)</button>
+          <button id="extra-btn" class="py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold rounded-full border border-gray-700 transition active:scale-95 hidden">追加でやる</button>
+          <button id="settings-btn" class="py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold rounded-full border border-gray-700 transition active:scale-95">設定</button>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="bg-black/40 border border-gray-800 rounded-lg p-2">
+          <div class="text-yellow-500 text-[10px] font-bold tracking-widest">STREAK</div>
+          <div class="text-2xl font-mono font-bold text-white"><span id="streak-count">0</span><span class="text-xs text-gray-500"> 日</span></div>
+        </div>
+        <div class="bg-black/40 border border-gray-800 rounded-lg p-2">
+          <div class="text-yellow-500 text-[10px] font-bold tracking-widest">PROGRESS</div>
+          <div class="text-2xl font-mono font-bold text-white"><span id="progress-display">0</span><span class="text-xs text-gray-500">/<span id="total-words-display">0</span></span></div>
+        </div>
+        <div class="bg-black/40 border border-gray-800 rounded-lg p-2">
+          <div class="text-yellow-500 text-[10px] font-bold tracking-widest">HIGH</div>
+          <div class="text-2xl font-mono font-bold text-white" id="high-score-display">0</div>
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="bg-black/40 border border-gray-800 rounded-xl p-3">
+        <div class="flex justify-between items-center mb-2">
+          <button id="cal-prev" class="text-gray-400 hover:text-yellow-400 px-2 py-1 text-sm">‹</button>
+          <span id="cal-title" class="text-yellow-200 font-bold text-sm tracking-widest"></span>
+          <button id="cal-next" class="text-gray-400 hover:text-yellow-400 px-2 py-1 text-sm">›</button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-gray-500 mb-1">
+          <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+        </div>
+        <div id="cal-grid" class="grid grid-cols-7 gap-1"></div>
+        <div id="cal-day-detail" class="hidden mt-3 pt-3 border-t border-gray-800 text-xs text-gray-400 text-center"></div>
+      </div>
+
+      <div class="text-center text-gray-600 text-[10px] tracking-widest pb-2">© Daily Master / All-in-One Edition</div>
+    </div>
+  </div>
+
+  <!-- ===== GAME SCREEN ===== -->
+  <div id="game-screen" class="hidden flex-grow flex flex-col w-full h-full relative p-4 md:p-6">
+
+    <!-- Quit -->
+    <button id="quit-btn" class="fixed top-4 left-4 p-2 text-gray-400 hover:text-white transition z-[9000] rounded-full bg-black/60 backdrop-blur-md border border-gray-700 active:scale-95" title="ホーム">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+    </button>
+
+    <!-- Daily Session Indicator (top-right small) -->
+    <div id="daily-indicator" class="fixed top-4 right-4 bg-black/70 backdrop-blur-md border border-yellow-600/40 rounded-xl px-3 py-2 z-[9000] text-right shadow-lg">
+      <div class="text-[9px] font-bold text-yellow-500 tracking-widest leading-none">DAILY</div>
+      <div class="flex items-baseline gap-1 justify-end mt-0.5">
+        <span id="daily-remaining" class="text-base font-mono font-bold text-yellow-200 leading-none">15:00</span>
+      </div>
+      <div class="text-[9px] text-gray-400 leading-tight mt-0.5">
+        <span id="daily-position">#1</span> / <span id="daily-total-words">1543</span>
+      </div>
+      <div class="w-full h-1 bg-gray-800 rounded-full mt-1 overflow-hidden">
+        <div id="daily-bar" class="h-full bg-gradient-to-r from-yellow-600 to-yellow-300 transition-all duration-200" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Score / Combo HUD -->
+    <div class="flex justify-between items-start mb-2 px-1 mt-20 md:mt-16 w-full max-w-3xl shrink-0">
+      <div class="pl-2">
+        <div class="text-yellow-600 text-xs font-bold tracking-widest mb-1">SCORE</div>
+        <div id="current-score" class="text-3xl md:text-4xl font-mono font-bold leading-none text-white">0</div>
+        <div id="combo-container" class="mt-2 opacity-0 transition-opacity duration-300">
+          <div class="flex items-baseline gap-2">
+            <span id="combo-count" class="text-2xl font-black text-yellow-400 italic">0</span>
+            <span class="text-xs font-bold text-yellow-600 tracking-widest">COMBO</span>
+          </div>
+          <div class="text-[10px] text-yellow-200 font-bold" id="multiplier-display">x1.0 BONUS</div>
+        </div>
+      </div>
+      <div class="text-right">
+        <div class="text-yellow-600 text-xs font-bold tracking-widest mb-1">Q-TIME</div>
+        <div id="qtime-display" class="text-3xl md:text-4xl font-mono font-bold text-white leading-none">3.0</div>
+        <div class="w-24 h-1 bg-gray-900 rounded-full mt-1.5 overflow-hidden ml-auto">
+          <div id="question-time-bar" class="h-full bg-cyan-500 transition-all duration-100 ease-linear" style="width:100%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card -->
+    <div class="flex-grow flex flex-col items-center justify-start md:justify-center relative w-full pb-4 md:pb-0 pt-2 md:pt-0">
+      <div id="card" class="w-full max-w-3xl min-h-[240px] sm:min-h-[280px] md:min-h-[400px] bg-[#1a1a1a] rounded-xl shadow-2xl flex flex-col items-center justify-center p-4 md:p-12 text-center relative overflow-hidden transition-all duration-300 border border-yellow-600/30 cursor-pointer active:scale-95 transform group z-10">
+        <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50"></div>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50"></div>
+        <div id="fever-badge" class="hidden absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-xs font-black px-3 py-1 rounded shadow-[0_0_15px_rgba(234,179,8,0.6)] rotate-3 border border-white/20">FEVER</div>
+
+        <div class="flex-grow flex items-center justify-center w-full pointer-events-none px-2 relative z-10">
+          <h2 id="word-front" class="text-3xl sm:text-5xl md:text-7xl font-bold break-words leading-tight w-full text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 pb-4"></h2>
+        </div>
+        <div id="word-back-container" class="opacity-0 min-h-[4rem] md:min-h-[6rem] flex items-center justify-center w-full transition-all duration-200 transform translate-y-4 pointer-events-none px-2 relative z-10">
+          <p id="word-back" class="text-xl sm:text-2xl md:text-3xl text-yellow-100 font-bold break-words px-6 py-3 border-t border-b border-yellow-500/30 w-full bg-black/40"></p>
+        </div>
+        <div id="feedback-icon" class="absolute inset-0 flex items-center justify-center pointer-events-none z-20"></div>
+        <div id="instruction-text" class="absolute bottom-4 left-0 w-full text-center text-gray-500 text-xs font-bold animate-pulse hidden md:block tracking-widest uppercase">Press Enter to Answer</div>
+        <div id="tap-guide" class="absolute bottom-4 left-0 w-full text-center text-yellow-500/50 text-xs font-bold animate-pulse md:hidden tracking-widest">TAP TO OPEN</div>
+      </div>
+
+      <!-- Mobile Touch Controls -->
+      <div class="w-full flex flex-col items-center gap-3 mt-4 relative z-40">
+        <div id="touch-controls" class="w-full grid grid-cols-2 gap-3 h-24 md:hidden transition-opacity duration-200 opacity-0 pointer-events-none px-1">
+          <button id="btn-correct" class="bg-slate-900/90 border border-slate-700 active:border-green-500 rounded-2xl flex flex-col items-center justify-center shadow-lg active:scale-95 transition-all pointer-events-auto">
+            <svg class="w-10 h-10 mb-1 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle></svg>
+            <span class="text-green-400 font-bold text-sm tracking-widest">KNOW</span>
+          </button>
+          <button id="btn-wrong" class="bg-slate-900/90 border border-slate-700 active:border-red-500 rounded-2xl flex flex-col items-center justify-center shadow-lg active:scale-95 transition-all pointer-events-auto">
+            <svg class="w-10 h-10 mb-1 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <span class="text-red-400 font-bold text-sm tracking-widest">DON'T KNOW</span>
+          </button>
+        </div>
+        <div class="flex justify-center gap-4 w-full pb-2">
+          <button id="btn-undo-1" disabled class="disabled:opacity-30 bg-blue-900/90 text-blue-200 w-12 h-12 rounded-full border-2 border-blue-500/50 active:scale-95 transition flex items-center justify-center pointer-events-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESULT (Today Cleared / Session End) SCREEN ===== -->
+  <div id="result-screen" class="hidden flex-grow flex flex-col w-full h-full relative p-4 md:p-6 overflow-y-auto">
+    <div class="flex-grow flex flex-col items-center justify-center max-w-lg mx-auto w-full py-4 space-y-5">
+      <div id="result-title-area" class="text-center">
+        <!-- Filled by JS: 今日はクリア！/ おつかれさま -->
+      </div>
+
+      <div class="gold-box p-5 rounded-xl w-full">
+        <div class="text-yellow-500 text-xs font-bold tracking-widest mb-3 text-center">SESSION RESULT</div>
+        <div class="grid grid-cols-2 gap-3 text-center">
+          <div>
+            <div class="text-[10px] text-gray-400 tracking-widest">SCORE</div>
+            <div id="result-score" class="text-3xl font-mono font-bold text-white">0</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-gray-400 tracking-widest">TIME</div>
+            <div id="result-time" class="text-3xl font-mono font-bold text-yellow-200">0:00</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-gray-400 tracking-widest">SOLVED</div>
+            <div id="result-solved" class="text-2xl font-mono font-bold text-white">0</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-gray-400 tracking-widest">MAX COMBO</div>
+            <div id="result-combo" class="text-2xl font-mono font-bold text-yellow-400">0</div>
+          </div>
+        </div>
+        <div id="new-record-badge" class="hidden text-center mt-3 text-yellow-300 font-bold text-sm animate-pulse">★ NEW HIGH SCORE ★</div>
+      </div>
+
+      <div class="w-full">
+        <button id="result-home-btn" class="w-full py-3 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black font-black text-base rounded-full transition transform active:scale-95 shadow-lg tracking-widest">HOME</button>
+      </div>
+
+      <!-- Wrong words from this session -->
+      <div id="result-wrong-area" class="w-full hidden">
+        <div class="text-yellow-500 text-xs font-bold tracking-widest mb-2 text-center">今回のまちがい (<span id="result-wrong-count">0</span>)</div>
+        <div id="result-wrong-list" class="bg-black/40 border border-gray-800 rounded-lg max-h-48 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== REVIEW SCREEN ===== -->
+  <div id="review-screen" class="hidden flex-grow flex flex-col w-full h-full relative p-4 md:p-6 overflow-y-auto">
+    <div class="flex justify-between items-center mb-4 max-w-lg mx-auto w-full">
+      <button class="back-home text-gray-400 hover:text-white text-sm">‹ HOME</button>
+      <h2 class="serif-font gold-text-gradient text-2xl font-bold">REVIEW</h2>
+      <button id="clear-review-btn" class="text-red-400 hover:text-red-300 text-xs">全消去</button>
+    </div>
+    <div class="max-w-lg mx-auto w-full flex-grow flex flex-col gap-2">
+      <div class="text-center text-gray-400 text-xs">間違えた単語を集めました</div>
+      <div class="flex gap-2">
+        <button id="start-review-btn" class="flex-1 py-3 bg-gradient-to-r from-purple-600 to-purple-400 text-white font-black text-sm rounded-full active:scale-95 shadow-lg tracking-widest">復習スタート</button>
+        <button id="copy-review-btn" class="px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold rounded-full border border-gray-700 active:scale-95">コピー</button>
+      </div>
+      <div id="review-list" class="bg-black/40 border border-gray-800 rounded-lg overflow-y-auto flex-grow mt-2"></div>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS SCREEN ===== -->
+  <div id="settings-screen" class="hidden flex-grow flex flex-col w-full h-full relative p-4 md:p-6 overflow-y-auto">
+    <div class="flex justify-between items-center mb-4 max-w-lg mx-auto w-full">
+      <button class="back-home text-gray-400 hover:text-white text-sm">‹ HOME</button>
+      <h2 class="serif-font gold-text-gradient text-2xl font-bold">SETTINGS</h2>
+      <span class="w-12"></span>
+    </div>
+    <div class="max-w-lg mx-auto w-full space-y-4">
+      <div class="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-1">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-gray-300 font-bold">DAILY TIME</span>
+          <span class="text-yellow-400 font-mono font-bold"><span id="setting-daily-min-display">15</span> 分</span>
+        </div>
+        <input type="range" id="daily-minutes-slider" min="5" max="60" step="5" value="15" class="w-full">
+        <p class="text-[11px] text-gray-500 mt-1">毎日のセッション時間。デフォルト15分。</p>
+      </div>
+      <div class="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-1">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-gray-300 font-bold">QUESTION LIMIT</span>
+          <span class="text-yellow-400 font-mono font-bold"><span id="setting-qlimit-display">3.0</span> 秒</span>
+        </div>
+        <input type="range" id="qlimit-slider" min="0.3" max="5.0" step="0.3" value="3.0" class="w-full">
+        <p class="text-[11px] text-gray-500 mt-1">1問の制限時間。低いほど高難度。</p>
+      </div>
+
+      <div class="bg-red-950/30 border border-red-900 rounded-lg p-4 space-y-2">
+        <div class="text-red-300 text-xs font-bold tracking-widest">DANGER ZONE</div>
+        <button id="reset-position-btn" class="w-full py-2 bg-red-900/60 hover:bg-red-800 text-red-200 text-xs font-bold rounded transition active:scale-95">単語の進捗をリセット (最初から)</button>
+        <button id="reset-all-btn" class="w-full py-2 bg-red-900/60 hover:bg-red-800 text-red-200 text-xs font-bold rounded transition active:scale-95">すべてリセット (履歴・カレンダー含む)</button>
+      </div>
+
+      <div class="text-center text-gray-600 text-[10px] tracking-widest pt-2">© Daily Master / All-in-One Edition</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// =========================================================
+// WORD DATA — merged & deduped from 3 source apps (1543 words)
+// =========================================================
+const RAW_DATA = [
+{en:"anyway",jp:"とにかく"},
+{en:"following",jp:"〜に続いて、次の、以下の"},
+{en:"refer",jp:"参照する、言及する、(人を)紹介する"},
+{en:"available",jp:"手に入る、利用できる、(人が)会うことができる"},
+{en:"department",jp:"部門、売り場"},
+{en:"conference",jp:"会議"},
+{en:"according to",jp:"〜によると、〜に従って"},
+{en:"likely",jp:"おそらく、〜しそうな"},
+{en:"offer",jp:"申し出る、提供する、申し出、オファー"},
+{en:"equipment",jp:"機器、装備"},
+{en:"provide",jp:"提供する"},
+{en:"local",jp:"地元の、地元の住民"},
+{en:"purchase",jp:"購入する、購入品"},
+{en:"opening",jp:"空き、開店"},
+{en:"construction",jp:"建設"},
+{en:"tour",jp:"見学する、旅行する、見学、旅行"},
+{en:"research",jp:"研究、調査、研究する、調査する"},
+{en:"attend",jp:"出席する、参加する"},
+{en:"delivery",jp:"配達(物)"},
+{en:"recently",jp:"最近"},
+{en:"indicate",jp:"示す"},
+{en:"employee",jp:"社員、従業員"},
+{en:"additional",jp:"追加の"},
+{en:"survey",jp:"アンケート調査、アンケート調査を行う"},
+{en:"review",jp:"検討する、評価する、検討、批評"},
+{en:"production",jp:"生産、作品"},
+{en:"located",jp:"位置して"},
+{en:"detail",jp:"詳細、詳しく述べる"},
+{en:"announce",jp:"発表する"},
+{en:"repair",jp:"修理する、修理"},
+{en:"increase",jp:"増える、増やす、増加"},
+{en:"include",jp:"含む"},
+{en:"currently",jp:"現在"},
+{en:"advertising",jp:"広告、宣伝"},
+{en:"charge",jp:"請求する、(責任を)負わせる、料金、責任"},
+{en:"expect",jp:"予期する、予定する"},
+{en:"firm",jp:"会社"},
+{en:"client",jp:"顧客、クライアント"},
+{en:"financial",jp:"お金の、財務の、金融の"},
+{en:"annual",jp:"年に一度の、一年の"},
+{en:"payment",jp:"支払い"},
+{en:"budget",jp:"予算、予算に計上する"},
+{en:"application",jp:"応募書類、応募、申請"},
+{en:"contract",jp:"契約(書)"},
+{en:"management",jp:"経営(陣)、管理"},
+{en:"performance",jp:"業績、仕事ぶり、性能、公演"},
+{en:"pleased",jp:"喜んで、満足して"},
+{en:"confirm",jp:"確認する"},
+{en:"award",jp:"賞、授与する"},
+{en:"clothing",jp:"衣類"},
+{en:"display",jp:"展示する、展示"},
+{en:"candidate",jp:"候補者"},
+{en:"state",jp:"述べる"},
+{en:"exhibit",jp:"展示物、展示会、展示する"},
+{en:"session",jp:"時間、集まり"},
+{en:"note",jp:"注意する、述べる、メモ"},
+{en:"process",jp:"処理する、プロセス、過程"},
+{en:"instruction",jp:"説明書、説明、指示"},
+{en:"membership",jp:"会員(であること)、会員数、会員資格"},
+{en:"agency",jp:"代理店、機関"},
+{en:"based",jp:"拠点を置く、基づく"},
+{en:"facility",jp:"施設"},
+{en:"advance",jp:"前進、進歩、事前の、進める、前進する"},
+{en:"committee",jp:"委員会"},
+{en:"successful",jp:"成功した、うまく行った"},
+{en:"excellent",jp:"素晴らしい"},
+{en:"industry",jp:"産業、業界"},
+{en:"fee",jp:"料金"},
+{en:"accept",jp:"受け入れる"},
+{en:"upcoming",jp:"今度の"},
+{en:"latest",jp:"最新の"},
+{en:"submit",jp:"提出する"},
+{en:"transportation",jp:"輸送手段"},
+{en:"résumé",jp:"履歴書"},
+{en:"executive",jp:"重役、重役(用)の、高級な"},
+{en:"introduce",jp:"導入する、紹介する"},
+{en:"previous",jp:"前の、以前の"},
+{en:"proposal",jp:"提案、提案書"},
+{en:"supply",jp:"必需品、供給する"},
+{en:"enclose",jp:"同封する、囲む"},
+{en:"policy",jp:"規定、方針"},
+{en:"register",jp:"登録する、レジ"},
+{en:"arrange",jp:"手配する、並べる"},
+{en:"bill",jp:"請求書、請求書を送る"},
+{en:"hire",jp:"雇う"},
+{en:"approve",jp:"承認する、賛成する"},
+{en:"conduct",jp:"実行する、実施する"},
+{en:"opportunity",jp:"機会、チャンス"},
+{en:"deadline",jp:"締め切り、期限"},
+{en:"corporate",jp:"企業の、法人の"},
+{en:"warranty",jp:"保証、保証書"},
+{en:"necessary",jp:"必要な"},
+{en:"reserve",jp:"予約する、確保する、蓄え"},
+{en:"resident",jp:"住民、住人"},
+{en:"create",jp:"創造する、作り出す"},
+{en:"inform",jp:"知らせる、影響を与える"},
+{en:"allow",jp:"許可する、可能にする"},
+{en:"mention",jp:"述べる、言及する、言及"},
+{en:"appreciate",jp:"感謝する"},
+{en:"replacement",jp:"交換、交換品、後任"},
+{en:"update",jp:"更新する、更新"},
+{en:"branch",jp:"支店"},
+{en:"paid",jp:"有給の、支払い済みの"},
+{en:"unfortunately",jp:"残念ながら"},
+{en:"original",jp:"元の、最初の、オリジナル、原本"},
+{en:"rent",jp:"賃貸料、賃貸する"},
+{en:"memo",jp:"社内連絡用メモ"},
+{en:"luggage",jp:"旅行カバン、手荷物"},
+{en:"edit",jp:"編集する"},
+{en:"exhibition",jp:"展示会、展示、展示物"},
+{en:"leading",jp:"首位の、一流の"},
+{en:"organization",jp:"団体、会社、組織(化)"},
+{en:"release",jp:"発売する、公表する、発売、発刊"},
+{en:"limited",jp:"限られた"},
+{en:"procedure",jp:"手続き、手順"},
+{en:"experienced",jp:"経験豊富な"},
+{en:"personnel",jp:"社員、人事部"},
+{en:"author",jp:"著者、作者、(本を)書く"},
+{en:"benefit",jp:"特典、福利厚生、〜のためになる"},
+{en:"focus",jp:"集中させる、重点を置く、焦点、重点"},
+{en:"participate",jp:"参加する"},
+{en:"cause",jp:"原因、引き起こす"},
+{en:"degree",jp:"程度、学位、(温度や角度の単位の)度"},
+{en:"directly",jp:"直接"},
+{en:"host",jp:"主催する、司会者"},
+{en:"expert",jp:"専門家、専門的な"},
+{en:"impress",jp:"感心させる、好印象を与える"},
+{en:"mainly",jp:"主に"},
+{en:"suggestion",jp:"提案"},
+{en:"supplier",jp:"供給業者、サプライヤー"},
+{en:"document",jp:"書類、(文書や映像等で)記録する"},
+{en:"remind",jp:"思い出させる"},
+{en:"require",jp:"求める、要求する"},
+{en:"representative",jp:"代表者、担当者"},
+{en:"packaging",jp:"梱包、パッケージ"},
+{en:"description",jp:"説明、描写、記述"},
+{en:"property",jp:"不動産、資産"},
+{en:"extension",jp:"延長、内線"},
+{en:"inquire",jp:"尋ねる、調査する"},
+{en:"merchandise",jp:"商品"},
+{en:"highly",jp:"非常に"},
+{en:"result",jp:"結果、〜という結果になる"},
+{en:"assistance",jp:"支援、援助"},
+{en:"encourage",jp:"奨励する、促す"},
+{en:"individual",jp:"個人の、個々の、個人"},
+{en:"laboratory",jp:"研究所、実験室"},
+{en:"consider",jp:"検討する、考える"},
+{en:"headquarters",jp:"本社"},
+{en:"ship",jp:"出荷する、発送する"},
+{en:"commercial",jp:"商業(用)の、商業的な、CM"},
+{en:"device",jp:"機器、装置"},
+{en:"intended",jp:"意図された、向けられた"},
+{en:"brochure",jp:"パンフレット"},
+{en:"mail",jp:"郵便物、郵便出す、郵便で送る"},
+{en:"prefer",jp:"〜を(〜よりも)好む"},
+{en:"response",jp:"返答、返事"},
+{en:"region",jp:"地域"},
+{en:"donation",jp:"寄付"},
+{en:"quarter",jp:"四半期"},
+{en:"agreement",jp:"契約(書)、同意(書)、合意"},
+{en:"journal",jp:"専門誌、雑誌"},
+{en:"distribute",jp:"配布する、流通させる"},
+{en:"potential",jp:"潜在的な、可能性のある、見込み"},
+{en:"reschedule",jp:"スケジュール変更する"},
+{en:"renew",jp:"更新する"},
+{en:"warehouse",jp:"倉庫"},
+{en:"refund",jp:"払い戻し、返金する"},
+{en:"advise",jp:"助言する、忠告する、通知する"},
+{en:"immediately",jp:"すぐに、即座に"},
+{en:"council",jp:"議会"},
+{en:"broadcast",jp:"放送する、放送"},
+{en:"responsible",jp:"担当している、責任がある"},
+{en:"avoid",jp:"避ける"},
+{en:"effective",jp:"効果的な、(法律等が)施行される"},
+{en:"invitation",jp:"招待(状)"},
+{en:"reduce",jp:"(価格を)下げる、減らす"},
+{en:"vehicle",jp:"乗り物、車両"},
+{en:"efficient",jp:"効率的な"},
+{en:"manufacturer",jp:"製造業者、メーカー"},
+{en:"comfortable",jp:"快適な、満足な、自信がある"},
+{en:"correct",jp:"正確な、正しい、修正する"},
+{en:"downtown",jp:"中心街の、中心街で、中心街"},
+{en:"method",jp:"方法"},
+{en:"entire",jp:"全体の"},
+{en:"range",jp:"範囲"},
+{en:"setting",jp:"環境"},
+{en:"apologize",jp:"おわびする"},
+{en:"frequent",jp:"頻繁な"},
+{en:"promotion",jp:"昇進、販売促進"},
+{en:"regarding",jp:"〜に関する"},
+{en:"temporary",jp:"一時的な、仮の"},
+{en:"traditional",jp:"伝統的な、従来の"},
+{en:"admission",jp:"入場、入場料、入場許可"},
+{en:"fit",jp:"合う、入れる"},
+{en:"reference",jp:"照会先、参照、参考"},
+{en:"status",jp:"状況、地位"},
+{en:"fuel",jp:"燃料"},
+{en:"nearly",jp:"ほとんど、もう少しで"},
+{en:"cafeteria",jp:"社員食堂"},
+{en:"determine",jp:"決定する、判断する、特定する"},
+{en:"expense",jp:"費用、経費"},
+{en:"overseas",jp:"海外の、海外で"},
+{en:"satisfied",jp:"満足した"},
+{en:"appear",jp:"現れる、〜のように見える"},
+{en:"develop",jp:"開発する、(スキルを)高める"},
+{en:"improve",jp:"改善する、改良する"},
+{en:"reasonable",jp:"(価格が)手ごろな、妥当な"},
+{en:"unable",jp:"(〜することが)できない"},
+{en:"delay",jp:"遅らせる、遅れ"},
+{en:"legal",jp:"法律に関する、合法的な"},
+{en:"regulation",jp:"規則、規制"},
+{en:"expand",jp:"拡大する、増築する"},
+{en:"launch",jp:"発売、開始、発売する、開始する"},
+{en:"recommendation",jp:"推薦"},
+{en:"direct",jp:"向ける、管理する、直接の"},
+{en:"profit",jp:"利益"},
+{en:"seek",jp:"探し求める"},
+{en:"entry",jp:"参加、入場、エントリー(作品)"},
+{en:"claim",jp:"主張する、(手荷物等の)受け取り、申し立て"},
+{en:"crew",jp:"グループ、班、乗組員"},
+{en:"demand",jp:"需要"},
+{en:"figure",jp:"数字、人物"},
+{en:"raise",jp:"上げる、(お金を)集める、高める、昇給"},
+{en:"attach",jp:"添付する、取り付ける"},
+{en:"attract",jp:"引きつける、呼び込む"},
+{en:"insurance",jp:"保険"},
+{en:"departure",jp:"出発、逸脱"},
+{en:"mayor",jp:"市長"},
+{en:"balance",jp:"残高、余り、バランス"},
+{en:"estimate",jp:"見積もり、見積もる"},
+{en:"district",jp:"地区"},
+{en:"former",jp:"前の、かつての、前者"},
+{en:"modern",jp:"現代的な、近代的な"},
+{en:"tip",jp:"アドバイス、コツ"},
+{en:"establish",jp:"設立する、創立する"},
+{en:"option",jp:"選択肢、オプション"},
+{en:"retire",jp:"退職する"},
+{en:"search",jp:"捜索、検索、捜す、検索する"},
+{en:"specific",jp:"具体的な、特定の"},
+{en:"agricultural",jp:"農業の"},
+{en:"historical",jp:"歴史に関する"},
+{en:"helpful",jp:"役に立つ、助けになる"},
+{en:"complaint",jp:"苦情、クレーム"},
+{en:"related",jp:"関連した"},
+{en:"simply",jp:"単純に、単に"},
+{en:"unique",jp:"独特の、独自の"},
+{en:"concerning",jp:"〜に関する"},
+{en:"reputation",jp:"評判"},
+{en:"ability",jp:"能力"},
+{en:"arrival",jp:"到着"},
+{en:"familiar",jp:"よく知っている、おなじみの"},
+{en:"ideal",jp:"理想的な"},
+{en:"maintain",jp:"維持する、管理する"},
+{en:"landscaping",jp:"造園"},
+{en:"organize",jp:"準備する、まとめる、組織化する"},
+{en:"significant",jp:"かなりの、大幅な、重要な"},
+{en:"occasion",jp:"特別な行事、(特定の)時"},
+{en:"standard",jp:"基準、標準の"},
+{en:"background",jp:"経歴、背景"},
+{en:"guided",jp:"ガイド付きの"},
+{en:"advanced",jp:"上級の、進んだ、高度な"},
+{en:"alternative",jp:"代わりの、代案"},
+{en:"confident",jp:"自信がある、確信している"},
+{en:"decade",jp:"10年、10年間"},
+{en:"initial",jp:"初めの、当初の"},
+{en:"separate",jp:"別々の、分ける"},
+{en:"celebration",jp:"お祝い、祝典"},
+{en:"concern",jp:"懸念、配慮、関心事"},
+{en:"environment",jp:"環境"},
+{en:"operate",jp:"営業する、操作する"},
+{en:"various",jp:"さまざまな"},
+{en:"brief",jp:"短い、手短な"},
+{en:"full-time",jp:"常勤の"},
+{en:"overall",jp:"全体の、概して"},
+{en:"achieve",jp:"達成する"},
+{en:"basis",jp:"ベース、基本、根拠"},
+{en:"complex",jp:"複雑な、複合施設"},
+{en:"delighted",jp:"とても喜んでいる"},
+{en:"obtain",jp:"得る、取得する"},
+{en:"honor",jp:"称える、(契約等を)守る、名誉、賞"},
+{en:"proper",jp:"適切な、適した"},
+{en:"suitable",jp:"ふさわしい、適切な"},
+{en:"electronic",jp:"電子の、電子的な"},
+{en:"finalize",jp:"取りまとめる、仕上げる、最終決定する"},
+{en:"generous",jp:"寛大な、太っ腹な"},
+{en:"preparation",jp:"準備、用意"},
+{en:"duty",jp:"任務、職務、関税"},
+{en:"earn",jp:"得る、もたらす"},
+{en:"willingness",jp:"意欲"},
+{en:"worth",jp:"価値がある、価値"},
+{en:"fund",jp:"資金、基金、資金を出す"},
+{en:"overnight",jp:"一晩の、翌日配送の、一晩"},
+{en:"particularly",jp:"特に"},
+{en:"aspect",jp:"面、局面"},
+{en:"hesitate",jp:"ためらう"},
+{en:"involve",jp:"関わる、伴う、巻き込む"},
+{en:"regularly",jp:"定期的に"},
+{en:"scholarship",jp:"奨学金"},
+{en:"grant",jp:"補助金、助成金、与える、許可する"},
+{en:"shortly",jp:"まもなく"},
+{en:"automotive",jp:"自動車の、自動車に関する"},
+{en:"deposit",jp:"頭金、保証金、預け入れる"},
+{en:"contain",jp:"含む、所有する"},
+{en:"content",jp:"内容、中身、満足している"},
+{en:"proof",jp:"証拠、証明"},
+{en:"affect",jp:"影響する"},
+{en:"recognize",jp:"(功績等を)認める、(人を)見分ける"},
+{en:"represent",jp:"代表する、表す、象徴する"},
+{en:"transfer",jp:"転勤させる、移動させる、転勤、移動"},
+{en:"anniversary",jp:"記念日"},
+{en:"automatically",jp:"自動的に"},
+{en:"capacity",jp:"(生産)能力、収容人数、役割"},
+{en:"destination",jp:"目的地、行き先"},
+{en:"publish",jp:"出版する、掲載する"},
+{en:"accompany",jp:"同行する、添付する"},
+{en:"economic",jp:"経済の、経済上の"},
+{en:"extremely",jp:"非常に、極めて"},
+{en:"institution",jp:"機関、団体、しきたり"},
+{en:"accurate",jp:"正確な"},
+{en:"compete",jp:"競う"},
+{en:"emphasize",jp:"〜を強調する、重視する"},
+{en:"aware",jp:"気付いて"},
+{en:"crowded",jp:"混雑した"},
+{en:"praise",jp:"ほめる、称賛する、称賛"},
+{en:"valuable",jp:"貴重な"},
+{en:"explore",jp:"探検する、調査する"},
+{en:"found",jp:"設立する、創立する"},
+{en:"function",jp:"機能、行事、宴会"},
+{en:"amazing",jp:"驚くべき、素晴らしい"},
+{en:"assure",jp:"保証する、請け合う"},
+{en:"cooperation",jp:"協力"},
+{en:"popularity",jp:"人気"},
+{en:"permit",jp:"許可する、許可証"},
+{en:"solve",jp:"解決する"},
+{en:"vote",jp:"投票する、投票"},
+{en:"crop",jp:"作物、収穫量"},
+{en:"neighborhood",jp:"近所、地域"},
+{en:"permanent",jp:"常設の、終身の、永久の"},
+{en:"regret",jp:"後悔する、残念に思う"},
+{en:"slightly",jp:"わずかに、少し"},
+{en:"complicated",jp:"複雑な、込み入った"},
+{en:"factor",jp:"要因、要素"},
+{en:"favorable",jp:"好意的な、有利な"},
+{en:"guarantee",jp:"保証する、保証"},
+{en:"mechanical",jp:"機械の"},
+{en:"priority",jp:"優先順位、優先事項"},
+{en:"relatively",jp:"比較的に"},
+{en:"resource",jp:"資源"},
+{en:"shuttle",jp:"定期往復便"},
+{en:"divide",jp:"分ける"},
+{en:"native",jp:"出身の、固有の"},
+{en:"afford",jp:"〜する余裕がある"},
+{en:"income",jp:"収入"},
+{en:"occur",jp:"起こる、発生する、行われる"},
+{en:"saving",jp:"値引き、貯蓄、節約"},
+{en:"findings",jp:"調査結果、わかったこと"},
+{en:"locate",jp:"見つける"},
+{en:"postpone",jp:"延期する"},
+{en:"preserve",jp:"保護する、保存する"},
+{en:"prove",jp:"わかる、判明する、証明する"},
+{en:"exact",jp:"正確な、ちょうど"},
+{en:"gain",jp:"得る、増加、利益"},
+{en:"labor",jp:"労働、労働者"},
+{en:"regard",jp:"みなす、評価する、考慮"},
+{en:"closely",jp:"密に、注意深く"},
+{en:"deserve",jp:"値する"},
+{en:"identify",jp:"特定する"},
+{en:"loyal",jp:"忠実な"},
+{en:"promising",jp:"有望な"},
+{en:"stress",jp:"強調する、重点、ストレス"},
+{en:"analyze",jp:"分析する"},
+{en:"commission",jp:"委員会、委託、歩合"},
+{en:"committed",jp:"熱心に取り組む、献身的な"},
+{en:"comparison",jp:"比較"},
+{en:"component",jp:"部品"},
+{en:"enable",jp:"可能にする"},
+{en:"enjoyable",jp:"楽しい"},
+{en:"existing",jp:"従来の、既存の"},
+{en:"flyer",jp:"チラシ"},
+{en:"proceed",jp:"進む"},
+{en:"prevent",jp:"防ぐ、阻む"},
+{en:"alike",jp:"同様に、似た"},
+{en:"appoint",jp:"指名する、任命する"},
+{en:"connection",jp:"接続、つながり、関連、乗り継ぎ"},
+{en:"eager",jp:"〜したがる、熱望する"},
+{en:"ease",jp:"容易さ、和らげる"},
+{en:"fairly",jp:"かなり"},
+{en:"absolutely",jp:"完全に、間違いなく"},
+{en:"atmosphere",jp:"雰囲気"},
+{en:"calculate",jp:"計算する"},
+{en:"contrast",jp:"対照、対比"},
+{en:"monitor",jp:"監視する"},
+{en:"occasionally",jp:"時々"},
+{en:"practical",jp:"実務の、実際の、実用的な"},
+{en:"serious",jp:"重大な、真剣な、重要な"},
+{en:"strength",jp:"強さ、強度"},
+{en:"equally",jp:"同等に、等しく"},
+{en:"import",jp:"輸入、輸入する"},
+{en:"informal",jp:"非公式の、カジュアルな"},
+{en:"face",jp:"（〜の方を）向く"},
+{en:"wear",jp:"着用する、着る"},
+{en:"point",jp:"指す、指し示す"},
+{en:"shelf",jp:"棚"},
+{en:"ladder",jp:"ハシゴ"},
+{en:"trim",jp:"（芝や髪の毛を）刈りそろえる"},
+{en:"examine",jp:"詳しく調べる、チェックする"},
+{en:"greet",jp:"挨拶する"},
+{en:"sweep",jp:"（ホウキやブラシで）掃く"},
+{en:"adjust",jp:"調節する、調整する"},
+{en:"head",jp:"向かう"},
+{en:"handle",jp:"手で扱う、扱う"},
+{en:"lean",jp:"寄りかかる、もたれる"},
+{en:"cashier",jp:"レジ係"},
+{en:"polish",jp:"磨く"},
+{en:"lid",jp:"フタ"},
+{en:"stool",jp:"スツール（背もたれのない椅子）"},
+{en:"crosswalk",jp:"横断歩道"},
+{en:"brick",jp:"レンガ"},
+{en:"hang",jp:"掛かる、掛ける"},
+{en:"kneel",jp:"ひざをつく"},
+{en:"sew",jp:"縫う"},
+{en:"be propped up against",jp:"〜に立てかけられている"},
+{en:"walkway",jp:"歩道"},
+{en:"side by side",jp:"並んで"},
+{en:"applaud",jp:"拍手を送る"},
+{en:"water",jp:"水をかける"},
+{en:"fasten",jp:"結ぶ、留める"},
+{en:"hallway",jp:"廊下"},
+{en:"microscope",jp:"顕微鏡"},
+{en:"mount",jp:"据える、固定する"},
+{en:"audience",jp:"聴衆"},
+{en:"plaza",jp:"広場"},
+{en:"glove",jp:"手袋"},
+{en:"place",jp:"置く"},
+{en:"protective",jp:"防護用の"},
+{en:"scattered",jp:"散らばっている"},
+{en:"artwork",jp:"芸術作品"},
+{en:"cast a shadow",jp:"影を落とす"},
+{en:"page through",jp:"ページをめくる"},
+{en:"row",jp:"列"},
+{en:"reach",jp:"手を伸ばす"},
+{en:"diner",jp:"食事客"},
+{en:"pour",jp:"注ぐ"},
+{en:"load",jp:"積み込む"},
+{en:"board",jp:"乗り込む"},
+{en:"pot",jp:"深い鍋、植木鉢"},
+{en:"garbage can",jp:"ごみ箱"},
+{en:"stack",jp:"積み重ねる"},
+{en:"drawer",jp:"引き出し"},
+{en:"instrument",jp:"楽器"},
+{en:"remove",jp:"取り出す、取り外す"},
+{en:"cargo",jp:"貨物、積み荷"},
+{en:"auditorium",jp:"講堂"},
+{en:"railing",jp:"手すり"},
+{en:"potted plant",jp:"鉢植え"},
+{en:"position",jp:"位置に置く、位置を合わせる"},
+{en:"browse",jp:"（特に買う気もなく店内を）見て回る"},
+{en:"reflect",jp:"映る、反射する"},
+{en:"lay out",jp:"広げる"},
+{en:"doorway",jp:"戸口"},
+{en:"wheel",jp:"（車輪の付いたものを）動かす"},
+{en:"lead to",jp:"〜に通じる、つながる"},
+{en:"sit opposite",jp:"向き合って座る"},
+{en:"in the distance",jp:"遠くに"},
+{en:"mow",jp:"刈る"},
+{en:"vase",jp:"花瓶"},
+{en:"fountain",jp:"噴水、泉"},
+{en:"intersection",jp:"交差点"},
+{en:"platform",jp:"壇、プラットフォーム"},
+{en:"dock",jp:"波止場、埠頭"},
+{en:"glance",jp:"ちらっと見る"},
+{en:"cupboard",jp:"食器棚"},
+{en:"exit",jp:"（場所から）出る"},
+{en:"workstation",jp:"仕事場、作業場"},
+{en:"gaze",jp:"じっと見る"},
+{en:"curb",jp:"縁石（歩道と車道の間にある石の段差）"},
+{en:"slanted",jp:"傾斜した、斜めの"},
+{en:"staircase",jp:"階段"},
+{en:"spectator",jp:"（スポーツ等の）観客、見物人"},
+{en:"courtyard",jp:"中庭"},
+{en:"pottery",jp:"陶器、陶磁器"},
+{en:"cookware",jp:"調理器具"},
+{en:"overlook",jp:"見下ろす位置にある"},
+{en:"pier",jp:"桟橋"},
+{en:"lighthouse",jp:"灯台"},
+{en:"portrait",jp:"肖像画"},
+{en:"unattended",jp:"（人の）出入りがない"},
+{en:"awning",jp:"日よけ"},
+{en:"patio",jp:"テラス"},
+{en:"unoccupied",jp:"使われていない"},
+{en:"pedestrian",jp:"歩行者"},
+{en:"crate",jp:"（輸送用の）木箱、ケース"},
+{en:"utensil",jp:"調理器具"},
+{en:"station",jp:"配置する"},
+{en:"window pane",jp:"窓ガラス"},
+{en:"stroll",jp:"ぶらぶら歩く"},
+{en:"lamppost",jp:"街灯柱"},
+{en:"wheelbarrow",jp:"一輪車"},
+{en:"canopy",jp:"天蓋（四本の柱の上に布製の屋根が付いたテント状の物）"},
+{en:"lately",jp:"最近、この頃"},
+{en:"profession",jp:"職業"},
+{en:"supervisor",jp:"上司、責任者"},
+{en:"ensure",jp:"保証する、請け負う"},
+{en:"submission",jp:"提出物、提出"},
+{en:"notify",jp:"知らせる"},
+{en:"definitely",jp:"間違いなく、絶対に"},
+{en:"eligible",jp:"資格がある"},
+{en:"paperwork",jp:"事務作業、書類"},
+{en:"complimentary",jp:"無料の"},
+{en:"revise",jp:"修正する、見直す"},
+{en:"track",jp:"追跡する、足跡、線路"},
+{en:"administrative",jp:"管理の、管理上の"},
+{en:"retail",jp:"小売り、小売りの"},
+{en:"inventory",jp:"在庫（表）、棚卸し"},
+{en:"extensive",jp:"幅広い、広範囲にわたる、大規模な"},
+{en:"promotional",jp:"販促促進用の、宣伝用の"},
+{en:"catering",jp:"仕出し、出前、ケータリング"},
+{en:"wildlife",jp:"野生動物"},
+{en:"assign",jp:"割り当てる、任命する"},
+{en:"imply",jp:"暗にほのめかす、意図する"},
+{en:"banquet",jp:"夕食会"},
+{en:"valid",jp:"有効な"},
+{en:"affordable",jp:"手ごろな"},
+{en:"renovate",jp:"改装する"},
+{en:"guidelines",jp:"指針、ガイドライン"},
+{en:"certificate",jp:"証明書、認定証"},
+{en:"innovative",jp:"革新的な"},
+{en:"agenda",jp:"議題、協議事項"},
+{en:"assembly",jp:"組立、集まり、集会"},
+{en:"install",jp:"設置する、導入する"},
+{en:"orientation",jp:"新人研修、説明会"},
+{en:"renowned",jp:"名高い、著名な"},
+{en:"appropriate",jp:"適切な、適した"},
+{en:"ingredient",jp:"材料、成分"},
+{en:"storage",jp:"貯蔵、保管"},
+{en:"beverage",jp:"飲料"},
+{en:"prior",jp:"前の"},
+{en:"merger",jp:"合併、統合"},
+{en:"inn",jp:"宿、ホテル"},
+{en:"equip",jp:"備え付ける、装備する"},
+{en:"summary",jp:"要約"},
+{en:"lease",jp:"賃貸借（契約）、賃貸借する"},
+{en:"defective",jp:"欠陥のある、不備のある"},
+{en:"quarterly",jp:"年に4回の、四半期ごとの"},
+{en:"long-term",jp:"長期の、長期間の"},
+{en:"architect",jp:"建築家"},
+{en:"grocery",jp:"食品雑貨、食料雑貨店"},
+{en:"sculpture",jp:"彫刻"},
+{en:"itinerary",jp:"旅行日程、日程表"},
+{en:"directory",jp:"名簿"},
+{en:"expire",jp:"期限が切れる"},
+{en:"vendor",jp:"業者、露天商"},
+{en:"colleague",jp:"同僚"},
+{en:"patron",jp:"愛用者、利用者"},
+{en:"relocate",jp:"転居させる、引っ越す"},
+{en:"tourism",jp:"観光"},
+{en:"remodel",jp:"改築する"},
+{en:"consumer",jp:"消費者"},
+{en:"inspect",jp:"検査する"},
+{en:"numerous",jp:"多くの"},
+{en:"payroll",jp:"給与、給料台帳"},
+{en:"qualified",jp:"資格のある"},
+{en:"appliance",jp:"電化製品"},
+{en:"competitive",jp:"他に負けない、競争の激しい"},
+{en:"specialize",jp:"特化する、専門とする"},
+{en:"questionnaire",jp:"アンケート用紙"},
+{en:"approximately",jp:"おおよそ、約"},
+{en:"contribute",jp:"貢献する、寄付する"},
+{en:"productivity",jp:"生産性"},
+{en:"promptly",jp:"すばやく、即座に"},
+{en:"strategy",jp:"戦略"},
+{en:"dedicated",jp:"献身的な、専用の、特化した"},
+{en:"exceptional",jp:"非常に素晴らしい、異例の"},
+{en:"luncheon",jp:"昼食会"},
+{en:"exceed",jp:"超える"},
+{en:"multiple",jp:"複数の"},
+{en:"specify",jp:"明確に述べる、指定する"},
+{en:"venue",jp:"会場"},
+{en:"household",jp:"家庭"},
+{en:"evaluate",jp:"評価する"},
+{en:"negotiate",jp:"交渉する"},
+{en:"booking",jp:"予約"},
+{en:"circulation",jp:"発行部数、流通、(図書等の)貸出"},
+{en:"completion",jp:"完了、終了"},
+{en:"relevant",jp:"関連した"},
+{en:"thorough",jp:"徹底的な"},
+{en:"via",jp:"～を経由して"},
+{en:"workplace",jp:"職場"},
+{en:"accommodations",jp:"宿泊施設"},
+{en:"flexible",jp:"柔軟な"},
+{en:"predict",jp:"予測する"},
+{en:"preference",jp:"好み"},
+{en:"substantial",jp:"かなりの、かなりの大きさの"},
+{en:"accessible",jp:"利用できる、到達できる"},
+{en:"coverage",jp:"補償、(保険の)保護、(新聞の)報道"},
+{en:"generate",jp:"生み出す"},
+{en:"refreshment",jp:"軽食"},
+{en:"reliable",jp:"信頼できる、頼りになる"},
+{en:"revenue",jp:"収益"},
+{en:"fund-raising",jp:"資金調達のための"},
+{en:"accomplished",jp:"熟達した、スキルの高い"},
+{en:"acquire",jp:"習得する、得る、買収する"},
+{en:"accordingly",jp:"それに応じて、結果として"},
+{en:"critic",jp:"評論家、批評家"},
+{en:"highlight",jp:"強調する"},
+{en:"profile",jp:"人物紹介する、プロフィール"},
+{en:"motivated",jp:"やる気に満ちた"},
+{en:"subscription",jp:"購読、加入、会費"},
+{en:"encounter",jp:"遭遇する"},
+{en:"luxury",jp:"贅沢な"},
+{en:"prohibit",jp:"禁止する"},
+{en:"resolve",jp:"解決する"},
+{en:"restore",jp:"修復する、取り戻す"},
+{en:"surrounding",jp:"周辺の"},
+{en:"alert",jp:"警告する"},
+{en:"anticipated",jp:"待ち望まれた"},
+{en:"consistently",jp:"常に、一貫して"},
+{en:"dairy",jp:"乳製品、酪農、酪農業"},
+{en:"phase",jp:"段階"},
+{en:"manuscript",jp:"原稿"},
+{en:"overtime",jp:"残業、時間外に"},
+{en:"premises",jp:"敷地"},
+{en:"utility",jp:"公共料金、公共サービス"},
+{en:"laundry",jp:"洗濯、洗濯物"},
+{en:"enthusiastic",jp:"熱心な"},
+{en:"outline",jp:"概要"},
+{en:"packet",jp:"小包、袋"},
+{en:"retain",jp:"維持する、保持"},
+{en:"belongings",jp:"所持品、所有物"},
+{en:"conservation",jp:"保存、維持、環境保護"},
+{en:"routine",jp:"決まった、日常的に行われる"},
+{en:"urban",jp:"都会の、都市の"},
+{en:"workforce",jp:"全従業員、労働人口"},
+{en:"biography",jp:"人物紹介、伝記"},
+{en:"ownership",jp:"所有、所有権"},
+{en:"pastry",jp:"焼き菓子"},
+{en:"tenant",jp:"賃借人、入居者"},
+{en:"workload",jp:"仕事量"},
+{en:"sufficient",jp:"十分な"},
+{en:"characteristic",jp:"特徴"},
+{en:"combined",jp:"共同の、連合の"},
+{en:"conclude",jp:"終わる、終える、結論を出す"},
+{en:"associate",jp:"関連づける"},
+{en:"conflict",jp:"衝突、対立"},
+{en:"investment",jp:"投資"},
+{en:"physician",jp:"医師"},
+{en:"token",jp:"しるし"},
+{en:"partial",jp:"部分的な、一部の"},
+{en:"resume",jp:"再開する"},
+{en:"dealership",jp:"販売代理店"},
+{en:"garment",jp:"衣料品"},
+{en:"implement",jp:"実行する、実施する"},
+{en:"paycheck",jp:"給与、給与小切手"},
+{en:"recruit",jp:"採用する"},
+{en:"substitute",jp:"代わりを務める、代わり、代用品"},
+{en:"typically",jp:"通常、典型的に"},
+{en:"authorize",jp:"公認する、権限を与える"},
+{en:"comparable",jp:"同等の、同様の、似たような"},
+{en:"faculty",jp:"(大学の)学部、教授陣"},
+{en:"initiative",jp:"新しい計画、主導権"},
+{en:"postage",jp:"郵便料金"},
+{en:"afterwards",jp:"その後で"},
+{en:"aim",jp:"目指す、狙う"},
+{en:"generally",jp:"一般的に"},
+{en:"occupied",jp:"(部屋、座席、ベッド等が)使われている"},
+{en:"solid",jp:"確かな、信頼できる"},
+{en:"attempt",jp:"試みる"},
+{en:"authority",jp:"権限、権威、(公的な)機関"},
+{en:"domestic",jp:"国内の"},
+{en:"permission",jp:"許可"},
+{en:"presence",jp:"存在感、出席"},
+{en:"rapidly",jp:"急激に"},
+{en:"relief",jp:"安心感、(苦痛、悩み、苦しみ等の)緩和"},
+{en:"reward",jp:"報酬"},
+{en:"translate",jp:"翻訳する"},
+{en:"circumstance",jp:"状況"},
+{en:"contrary",jp:"正反対の"},
+{en:"eventually",jp:"最終的に、結局"},
+{en:"expose",jp:"さらす、さらけ出す"},
+{en:"panel",jp:"グループ、パネル"},
+{en:"portion",jp:"部分、一人分の食事"},
+{en:"primary",jp:"主な"},
+{en:"remark",jp:"コメント、意見"},
+{en:"timely",jp:"タイミングの良い、タイムリーな"},
+{en:"commonly",jp:"一般に、通常、普通に"},
+{en:"consult",jp:"コンサルタント、相談する"},
+{en:"convert",jp:"改造する、変える"},
+{en:"obligation",jp:"義務"},
+{en:"resign",jp:"辞任する"},
+{en:"securely",jp:"しっかりと、安全に"},
+{en:"strive",jp:"懸命に努力する"},
+{en:"timeline",jp:"予定表"},
+{en:"urge",jp:"強く促す"},
+{en:"acknowledge",jp:"認める、(受け取ったことを)知らせる"},
+{en:"diverse",jp:"多種多様な、たくさんの種類の"},
+{en:"transaction",jp:"取引"},
+{en:"lack",jp:"不足"},
+{en:"essential",jp:"最も重要な、必要不可欠な"},
+{en:"majority",jp:"大部分、大多数"},
+{en:"observe",jp:"気づく、観察する、(規則等を)守る"},
+{en:"possess",jp:"所有する"},
+{en:"sharply",jp:"急激に、はっきりと"},
+{en:"adjustment",jp:"調整、調節"},
+{en:"aisle",jp:"通路"},
+{en:"capture",jp:"記録する、(写真や記録に)とどめる"},
+{en:"consist",jp:"～から成る"},
+{en:"desirable",jp:"望ましい"},
+{en:"heavily",jp:"大量に、非常に"},
+{en:"investigate",jp:"調査する"},
+{en:"measurement",jp:"寸法、測定"},
+{en:"urgent",jp:"緊急の"},
+{en:"checkout",jp:"レジ、(ホテルの)チェックアウト"},
+{en:"dispose",jp:"処分する"},
+{en:"modify",jp:"修正する"},
+{en:"outlet",jp:"コンセント、直販店"},
+{en:"prescription",jp:"処方箋"},
+{en:"situated",jp:"位置している"},
+{en:"surprisingly",jp:"驚いたことに"},
+{en:"transform",jp:"変える"},
+{en:"undergo",jp:"経験する"},
+{en:"blueprint",jp:"設計図、計画"},
+{en:"boost",jp:"押し上げる"},
+{en:"considerably",jp:"かなり"},
+{en:"eliminate",jp:"取り除く、排除する"},
+{en:"exclusively",jp:"限定的に、独占的に"},
+{en:"leak",jp:"漏れる、漏らす"},
+{en:"preliminary",jp:"仮の、暫定の、前段階の"},
+{en:"sophisticated",jp:"洗練された、高度な、高機能の"},
+{en:"statistics",jp:"統計、統計学"},
+{en:"vacant",jp:"空の、空いた、欠員の"},
+{en:"evidence",jp:"証拠、証明"},
+{en:"excursion",jp:"お出かけ、小旅行"},
+{en:"influence",jp:"影響"},
+{en:"ordinary",jp:"普通の、通常の"},
+{en:"reject",jp:"拒絶する、拒否する"},
+{en:"tailor",jp:"ニーズに合わせる、仕立てる"},
+{en:"assume",jp:"思い込む、引き受ける"},
+{en:"engagement",jp:"婚約、関わり、約束"},
+{en:"fame",jp:"名声"},
+{en:"modest",jp:"控えめな、謙虚な"},
+{en:"patent",jp:"特許"},
+{en:"pursue",jp:"追求する、追い求める"},
+{en:"remote",jp:"離れた"},
+{en:"reveal",jp:"明らかにする"},
+{en:"allowance",jp:"手当、小遣い、許容量"},
+{en:"crucial",jp:"非常に重要な"},
+{en:"distinguished",jp:"傑出した、優れた、際立った"},
+{en:"disturb",jp:"妨害する、邪魔する、かき乱す"},
+{en:"fluent",jp:"流暢な"},
+{en:"fulfill",jp:"果たす、満たす"},
+{en:"objective",jp:"目的"},
+{en:"restrict",jp:"制限する"},
+{en:"steadily",jp:"着実に"},
+{en:"adequate",jp:"十分な"},
+{en:"assessment",jp:"評価、見積もり"},
+{en:"attribute",jp:"起因すると考える"},
+{en:"beforehand",jp:"あらかじめ"},
+{en:"challenging",jp:"やりがいのある"},
+{en:"endeavor",jp:"努力"},
+{en:"inspiring",jp:"意欲をかき立てる"},
+{en:"remarkable",jp:"注目すべき、素晴らしい"},
+{en:"measure",jp:"対策、手段、寸法"},
+{en:"struggle",jp:"奮闘する"},
+{en:"wage",jp:"賃金"},
+{en:"adapt",jp:"適応させる、適応する、改作する"},
+{en:"ambitious",jp:"意欲的な、野心的な"},
+{en:"capable",jp:"能力がある"},
+{en:"consequence",jp:"結果"},
+{en:"impose",jp:"課す、負わせる"},
+{en:"latter",jp:"後者の"},
+{en:"output",jp:"生産、生産量、生産高"},
+{en:"proudly",jp:"誇らしげに、堂々と"},
+{en:"stable",jp:"安定した"},
+{en:"transition",jp:"移行、転身"},
+{en:"consent",jp:"同意"},
+{en:"dependable",jp:"信頼できる"},
+{en:"diligently",jp:"勤勉に、熱心に、まじめに"},
+{en:"illustrate",jp:"説明する、例示する"},
+{en:"independently",jp:"単独で、独立して"},
+{en:"mission",jp:"使命"},
+{en:"moderate",jp:"ほどほどの、適度な"},
+{en:"outlook",jp:"見通し、モノの見方"},
+{en:"precisely",jp:"正確に"},
+{en:"concentrated",jp:"集中した、濃縮された"},
+{en:"ample",jp:"十分な、たっぷりある"},
+{en:"asset",jp:"財産、役立つ人やモノ"},
+{en:"controversial",jp:"議論を引き起こす"},
+{en:"disappointing",jp:"がっかりさせるような"},
+{en:"instrumental",jp:"重要な役割を果たす"},
+{en:"interruption",jp:"中断"},
+{en:"perspective",jp:"視点"},
+{en:"scope",jp:"範囲"},
+{en:"speculation",jp:"推測"},
+{en:"supplement",jp:"補足"},
+{en:"understaffed",jp:"人手不足の"},
+{en:"rarely",jp:"めったに～ない、まれに"},
+{en:"caution",jp:"用心、注意、警告"},
+{en:"legislation",jp:"法律、法制化"},
+{en:"logical",jp:"妥当な、論理的な"},
+{en:"board of directors",jp:"役員（会）"},
+{en:"accounting department",jp:"経理部"},
+{en:"marketing department",jp:"マーケティング部"},
+{en:"human resources department",jp:"人事部"},
+{en:"personnel department",jp:"人事部"},
+{en:"administrative department",jp:"管理部"},
+{en:"legal department",jp:"法務部"},
+{en:"sales department",jp:"営業部"},
+{en:"technology department",jp:"技術部"},
+{en:"security department",jp:"保安部"},
+{en:"purchasing department",jp:"購買部"},
+{en:"payroll department",jp:"給与課"},
+{en:"public relations department",jp:"広報部"},
+{en:"advertising department",jp:"宣伝部"},
+{en:"general affairs department",jp:"総務部"},
+{en:"plumber",jp:"配管工"},
+{en:"welder",jp:"溶接工"},
+{en:"mechanic",jp:"機械工"},
+{en:"electrician",jp:"電気屋"},
+{en:"carpenter",jp:"大工"},
+{en:"civil engineer",jp:"土木技師"},
+{en:"dentist",jp:"歯科医"},
+{en:"pharmacist",jp:"薬剤師"},
+{en:"surgeon",jp:"外科医"},
+{en:"veterinarian",jp:"獣医"},
+{en:"bakery",jp:"パン屋"},
+{en:"printer",jp:"印刷業者"},
+{en:"florist",jp:"花屋"},
+{en:"courier",jp:"宅配業者"},
+{en:"cleaner's",jp:"クリーニング店"},
+{en:"real estate agency",jp:"不動産屋"},
+{en:"locksmith",jp:"鍵屋"},
+{en:"moving company",jp:"引っ越し業者"},
+{en:"travel agent",jp:"旅行業者"},
+{en:"hardware store",jp:"ホームセンター"},
+{en:"accountant",jp:"会計士"},
+{en:"chemist",jp:"化学者"},
+{en:"auditor",jp:"会計監査官"},
+{en:"historian",jp:"歴史家"},
+{en:"anthropologist",jp:"人類学者"},
+{en:"lawyer/attorney",jp:"弁護士"},
+{en:"biologist",jp:"生物学者"},
+{en:"professor",jp:"教授"},
+{en:"botanist",jp:"植物学者"},
+{en:"paralegal",jp:"弁護士助手"},
+{en:"scientist",jp:"科学者"},
+{en:"journalist",jp:"ジャーナリスト"},
+{en:"correspondent",jp:"特派員"},
+{en:"announcer",jp:"アナウンサー"},
+{en:"editor",jp:"編集者"},
+{en:"proofreader",jp:"校正者"},
+{en:"novelist",jp:"小説家"},
+{en:"concierge",jp:"コンシェルジュ"},
+{en:"librarian",jp:"図書館員"},
+{en:"housekeeping",jp:"客室係"},
+{en:"flight attendant",jp:"フライトアテンダント"},
+{en:"conductor",jp:"車掌、指導者"},
+{en:"operator",jp:"オペレーター"},
+{en:"tour guide",jp:"ツアーガイド"},
+{en:"actor",jp:"俳優"},
+{en:"photographer",jp:"写真家"},
+{en:"actress",jp:"女優"},
+{en:"choreographer",jp:"振付師"},
+{en:"curator",jp:"学芸員"},
+{en:"receptionist",jp:"受付"},
+{en:"ambassador",jp:"大使"},
+{en:"secretary",jp:"秘書"},
+{en:"security guard",jp:"警備員"},
+{en:"spokesperson",jp:"広報担当者"},
+{en:"accounting",jp:"会計学"},
+{en:"journalism",jp:"ジャーナリズム"},
+{en:"architecture",jp:"建築学"},
+{en:"law",jp:"法学"},
+{en:"astronomy",jp:"天文学"},
+{en:"linguistics",jp:"言語学"},
+{en:"biology",jp:"生物学"},
+{en:"literature",jp:"文学"},
+{en:"chemistry",jp:"化学"},
+{en:"mathematics",jp:"数学"},
+{en:"ecology",jp:"生態学"},
+{en:"medicine",jp:"医学"},
+{en:"economics",jp:"経済学"},
+{en:"philosophy",jp:"哲学"},
+{en:"education",jp:"教育学"},
+{en:"physics",jp:"物理学"},
+{en:"engineering",jp:"工学"},
+{en:"psychology",jp:"心理学"},
+{en:"fine arts",jp:"芸術"},
+{en:"robotics",jp:"ロボット工学"},
+{en:"history",jp:"歴史学"},
+{en:"sociology",jp:"社会学"},
+{en:"lumber",jp:"材木、製材"},
+{en:"reverse",jp:"反対の"},
+{en:"voluntary",jp:"自発的な、任意の"},
+{en:"contractor",jp:"建設業者、契約業者"},
+{en:"on-site",jp:"社内の、現場の、その場での"},
+{en:"comprehensive",jp:"総合的な、包括的な"},
+{en:"confidential",jp:"機密の、秘密の"},
+{en:"expertise",jp:"専門知識"},
+{en:"premier",jp:"最高の、第一位の"},
+{en:"souvenir",jp:"お土産"},
+{en:"rafting",jp:"ラフティング"},
+{en:"compartment",jp:"一区画"},
+{en:"fabric",jp:"生地、織物"},
+{en:"spacious",jp:"広々とした、ゆったりした"},
+{en:"upgrade",jp:"改良する、アップグレードする"},
+{en:"showcase",jp:"展示する、披露する"},
+{en:"commuter",jp:"通勤者"},
+{en:"enhance",jp:"向上させる、強化する"},
+{en:"freight",jp:"貨物、輸送、輸送運賃"},
+{en:"nominate",jp:"（候補として）推薦する、指名する"},
+{en:"discontinued",jp:"（製造・販売が）終了した"},
+{en:"mentoring",jp:"メンター制度"},
+{en:"personalized",jp:"個人に合わせて作られた、名前入りの"},
+{en:"pharmacy",jp:"薬局"},
+{en:"excerpt",jp:"抜粋、引用"},
+{en:"publicize",jp:"公表する、宣伝する"},
+{en:"tuition",jp:"授業料"},
+{en:"compliance",jp:"（法律・規則等の）順守"},
+{en:"clarify",jp:"はっきりさせる、明確にする"},
+{en:"municipal",jp:"市の、市営の"},
+{en:"respectively",jp:"それぞれ"},
+{en:"durable",jp:"耐久性がある、丈夫な"},
+{en:"landmark",jp:"名所、（地名の）目印、重要な出来事"},
+{en:"portfolio",jp:"作品集、有価証券一覧"},
+{en:"recipient",jp:"受取人、受賞者"},
+{en:"prototype",jp:"試作品、原型"},
+{en:"transit",jp:"輸送、搬送"},
+{en:"verify",jp:"確認する、検証する、認証する"},
+{en:"managerial",jp:"管理職の、経営上の"},
+{en:"culinary",jp:"料理の"},
+{en:"attire",jp:"服装"},
+{en:"reimburse",jp:"払い戻す"},
+{en:"courteous",jp:"礼儀正しい"},
+{en:"furnished",jp:"家具付きの"},
+{en:"knowledgeable",jp:"知識が豊富な"},
+{en:"craftspeople",jp:"職人"},
+{en:"delete",jp:"削除する"},
+{en:"emerging",jp:"新たに現れた、新興の"},
+{en:"enroll",jp:"登録する、入会する、入学する"},
+{en:"proficiency",jp:"熟達、スキル、高い能力"},
+{en:"scenic",jp:"眺めがいい、景色の"},
+{en:"state-of-the-art",jp:"最新式の、最先端の"},
+{en:"cuisine",jp:"料理"},
+{en:"acclaimed",jp:"絶賛されている"},
+{en:"certified",jp:"資格のある、公認の"},
+{en:"medication",jp:"薬"},
+{en:"overview",jp:"概略、概況"},
+{en:"resistant",jp:"耐えられる、抵抗力のある"},
+{en:"superb",jp:"素晴らしい"},
+{en:"array",jp:"ずらりと並んだ、多数"},
+{en:"informative",jp:"有益な"},
+{en:"nationwide",jp:"全国的な、国中に"},
+{en:"outdated",jp:"時代遅れの"},
+{en:"shareholder",jp:"株主"},
+{en:"voucher",jp:"引換券"},
+{en:"adjacent",jp:"隣接した"},
+{en:"correspondence",jp:"（手紙やメールでの）やり取り"},
+{en:"detergent",jp:"洗剤"},
+{en:"duration",jp:"継続期間"},
+{en:"functional",jp:"機能を果たす、機能的な"},
+{en:"hands-on",jp:"実践的な、実務的な"},
+{en:"intensive",jp:"徹底的な、集中的な"},
+{en:"last-minute",jp:"直前になっての、土壇場の"},
+{en:"thrilled",jp:"とてもわくわくして、とても興奮して"},
+{en:"spectacular",jp:"豪華な、目を見張るほどの"},
+{en:"entrepreneur",jp:"起業家"},
+{en:"introductory",jp:"入門の、最初の、お試しの"},
+{en:"minimize",jp:"最小限に抑える、最小化する"},
+{en:"prestigious",jp:"権威のある、誉れ高い"},
+{en:"screening",jp:"上映、検査"},
+{en:"amenity",jp:"生活を便利に（楽しく）するもの"},
+{en:"lengthy",jp:"長期にわたる、冗長な"},
+{en:"compensate",jp:"補償する、埋め合わせる"},
+{en:"misplace",jp:"置き忘れる、置き間違える"},
+{en:"notable",jp:"注目すべき、有名な"},
+{en:"subsidiary",jp:"子会社"},
+{en:"authentic",jp:"本物の"},
+{en:"designated",jp:"指定された、指名された"},
+{en:"disruption",jp:"混乱、妨げ"},
+{en:"fragile",jp:"壊れやすい、はかない"},
+{en:"ongoing",jp:"進行中の、続いている"},
+{en:"periodical",jp:"定期刊行物"},
+{en:"incur",jp:"（損失や罰金等を）受ける"},
+{en:"oversee",jp:"監督する"},
+{en:"retrieve",jp:"（PCから情報を）取り出す、取り戻す"},
+{en:"reunion",jp:"同窓会、再会"},
+{en:"rigorous",jp:"厳格な、厳密な"},
+{en:"specification",jp:"仕様（書）"},
+{en:"tentative",jp:"仮の"},
+{en:"tutorial",jp:"指導書、個別指導"},
+{en:"apprentice",jp:"見習い、実習生"},
+{en:"bid",jp:"入札、入札する"},
+{en:"discard",jp:"捨てる"},
+{en:"outing",jp:"外出、お出かけ"},
+{en:"overwhelmingly",jp:"圧倒的に"},
+{en:"proceeds",jp:"収益"},
+{en:"refrain",jp:"差し控える"},
+{en:"inclement",jp:"荒天の"},
+{en:"novice",jp:"初心者"},
+{en:"activate",jp:"使えるようにする、始動させる"},
+{en:"anecdote",jp:"逸話"},
+{en:"collaboration",jp:"協力、協同"},
+{en:"commemorate",jp:"（記念日等を）祝う、記念する"},
+{en:"duplicate",jp:"複製品、複製する、複写の"},
+{en:"intermission",jp:"休憩時間"},
+{en:"fertilizer",jp:"肥料"},
+{en:"proofread",jp:"校正する"},
+{en:"solicit",jp:"求める、懇願する"},
+{en:"unveil",jp:"明らかにする"},
+{en:"applicable",jp:"適用される、あてはまる"},
+{en:"commend",jp:"ほめる"},
+{en:"complement",jp:"補う、補完する"},
+{en:"incentive",jp:"動機付け、やる気を起こさせるもの"},
+{en:"incorporate",jp:"取り入れる、組み込む"},
+{en:"lapse",jp:"（過失による）中断、失効、うっかりミス"},
+{en:"picturesque",jp:"絵のように美しい"},
+{en:"prospective",jp:"見込みのある、将来の"},
+{en:"simplify",jp:"簡略化する、単純にする"},
+{en:"surpass",jp:"超える、上回る"},
+{en:"surplus",jp:"余り、剰余"},
+{en:"withstand",jp:"耐える"},
+{en:"advocate",jp:"提唱者、支持者、提唱する"},
+{en:"aspiring",jp:"～志望の、～になろうとする"},
+{en:"assorted",jp:"詰め合わせの"},
+{en:"credentials",jp:"資格、経歴、資質"},
+{en:"interoffice",jp:"社内の、オフィスの間の"},
+{en:"malfunction",jp:"故障"},
+{en:"mutually",jp:"互いに、相互に"},
+{en:"periodically",jp:"定期的に"},
+{en:"copyright",jp:"著作権"},
+{en:"nutritious",jp:"栄養のある"},
+{en:"obstruct",jp:"（通路や視界を）ふさぐ、さえぎる"},
+{en:"abundant",jp:"豊富な、十分な"},
+{en:"agreeable",jp:"感じのよい、（合意可能な）"},
+{en:"compromise",jp:"妥協、妥協点、妥協する"},
+{en:"continuous",jp:"途切れない、絶え間ない"},
+{en:"dominant",jp:"支配的な、圧倒的な"},
+{en:"exhausted",jp:"疲れ切った"},
+{en:"fierce",jp:"激しい"},
+{en:"prosperous",jp:"繁栄している、裕福な"},
+{en:"quote",jp:"引用、見積もり"},
+{en:"reluctant",jp:"気乗りしない、渋っている"},
+{en:"remedy",jp:"改善策、治療法、改善する"},
+{en:"solely",jp:"唯一、一人で、単独で"},
+{en:"vital",jp:"不可欠な、非常に重要な"},
+{en:"revitalize",jp:"再活性化する、復興させる"},
+{en:"commence",jp:"始まる"},
+{en:"countless",jp:"数えきれないほどの、無数の"},
+{en:"devise",jp:"考案する、立案する"},
+{en:"execute",jp:"実行する"},
+{en:"foster",jp:"促進する、養う"},
+{en:"initiate",jp:"始める"},
+{en:"insight",jp:"洞察、洞察力"},
+{en:"misleading",jp:"誤解を招く恐れのある"},
+{en:"precaution",jp:"予防策、予防措置"},
+{en:"transparent",jp:"透明の"},
+{en:"coincide",jp:"同時に起こる"},
+{en:"concise",jp:"簡潔な"},
+{en:"delegation",jp:"代表団、（権限の）委譲"},
+{en:"diagnosis",jp:"診断"},
+{en:"enforce",jp:"施行する、実行する、強制する"},
+{en:"hypothesis",jp:"仮説"},
+{en:"predecessor",jp:"前任者、前身"},
+{en:"prominently",jp:"目立って、傑出して"},
+{en:"adoption",jp:"採用"},
+{en:"accelerate",jp:"加速させる、拍車をかける"},
+{en:"adhere",jp:"（規則や法律等に）忠実に従う、粘着する"},
+{en:"allocate",jp:"割り当てる"},
+{en:"appraisal",jp:"査定、評価"},
+{en:"compile",jp:"取りまとめる、編集する"},
+{en:"conform",jp:"（規則や周囲の状況に）合わせる、一致する"},
+{en:"constraint",jp:"制約"},
+{en:"distraction",jp:"注意を削ぐもの、注意の妨げになるもの"},
+{en:"facilitate",jp:"容易にする、促進する"},
+{en:"integral",jp:"不可欠の"},
+{en:"interact",jp:"交流する"},
+{en:"persistence",jp:"粘り強さ"},
+{en:"quota",jp:"ノルマ、割り当て"},
+{en:"congested",jp:"渋滞した"},
+{en:"deduct",jp:"控除する"},
+{en:"embrace",jp:"積極的に受け入れる、快諾する"},
+{en:"synthetic",jp:"合成の"},
+{en:"terminate",jp:"終わらせる"},
+{en:"detect",jp:"見つける、検知する"},
+{en:"patiently",jp:"根気よく、我慢強く"},
+{en:"ratio",jp:"比率"},
+{en:"dietary",jp:"食事の"},
+{en:"intentionally",jp:"意図的に"},
+{en:"persuasive",jp:"説得力のある"},
+{en:"accommodate",jp:"宿泊させる、収容する"},
+{en:"account",jp:"口座、得意先"},
+{en:"address",jp:"対処する、話しかける"},
+{en:"a course of action",jp:"一連の行動"},
+{en:"a number of",jp:"いくつかの"},
+{en:"a wealth of",jp:"豊富な"},
+{en:"above all",jp:"とりわけ、何よりも"},
+{en:"after all",jp:"結局"},
+{en:"ahead of schedule",jp:"予定より早く"},
+{en:"along with",jp:"～と一緒に"},
+{en:"among other things",jp:"とりわけ、何よりも"},
+{en:"as a whole",jp:"全体として"},
+{en:"as early as",jp:"早ければ"},
+{en:"as far as",jp:"～する範囲では"},
+{en:"as of",jp:"～以降、～付で"},
+{en:"aside from",jp:"～は別として"},
+{en:"at all times",jp:"常時"},
+{en:"at least",jp:"少なくとも"},
+{en:"at the latest",jp:"遅くとも"},
+{en:"at your earliest convenience",jp:"あなたの都合がつき次第"},
+{en:"be credited with",jp:"～の功績があるとされる"},
+{en:"be supposed to do",jp:"～することになっている"},
+{en:"behind schedule",jp:"予定より遅れて"},
+{en:"box office",jp:"チケット売り場"},
+{en:"bulk order",jp:"大量注文、大口発注"},
+{en:"by a wide margin",jp:"大差で"},
+{en:"by any chance",jp:"ひょっとして"},
+{en:"by means of",jp:"～という手段で"},
+{en:"Can you do me a favor?",jp:"お願いがあるのですが"},
+{en:"come up with",jp:"～を思いつく"},
+{en:"cordially invite",jp:"謹んで招待する"},
+{en:"deal with",jp:"～を扱う"},
+{en:"depend on",jp:"～次第だ、～に頼る"},
+{en:"drop off",jp:"～を届ける"},
+{en:"Either is fine.",jp:"どちらでも構いません"},
+{en:"field trip",jp:"外界学習、現地調査"},
+{en:"figure out",jp:"理解する"},
+{en:"fill out",jp:"記入する"},
+{en:"for further information",jp:"詳細については"},
+{en:"for instance",jp:"たとえば"},
+{en:"get in touch with",jp:"連絡を取る"},
+{en:"has/have yet to do",jp:"まだ～していない"},
+{en:"in a rush",jp:"大急ぎで"},
+{en:"in a timely manner",jp:"タイミングよく"},
+{en:"in accordance with",jp:"～に従って"},
+{en:"in an effort to do",jp:"～しようとして"},
+{en:"in charge of",jp:"～を担当している"},
+{en:"in fact",jp:"実際に"},
+{en:"in for a treat",jp:"もうすぐ楽しいことがある"},
+{en:"in keeping with",jp:"～に合わせて"},
+{en:"in person",jp:"(本人が)直接、じかに"},
+{en:"in short",jp:"要するに"},
+{en:"in progress",jp:"進行中"},
+{en:"in the long run",jp:"長期的には"},
+{en:"in the meantime",jp:"その間、それまでの間"},
+{en:"in the process of",jp:"～の最中"},
+{en:"in time for",jp:"～に間に合って"},
+{en:"in writing",jp:"書面で"},
+{en:"instead of",jp:"～の代わりに"},
+{en:"it has come to our attention that",jp:"～が我々の知るところとなった"},
+{en:"job fair",jp:"就職説明会"},
+{en:"keep in mind that",jp:"～を念頭に置く"},
+{en:"keep up with",jp:"～に遅れずについていく"},
+{en:"live up to",jp:"(期待、要求等に)応える"},
+{en:"look no further than",jp:"～以外を見る必要はない"},
+{en:"look to do",jp:"～しようとする"},
+{en:"lost and found",jp:"遺失物取扱所"},
+{en:"make room for",jp:"～のためにスペースを空ける"},
+{en:"make sense",jp:"もっともだ"},
+{en:"narrow down",jp:"候補を絞り込む"},
+{en:"no later than",jp:"遅くとも"},
+{en:"no longer",jp:"もはや～ない"},
+{en:"not only A but B as well",jp:"AだけでなくBも"},
+{en:"null and void",jp:"無効の"},
+{en:"on a budget",jp:"限られた予算内で"},
+{en:"on a first-come, first-served basis",jp:"先着順で"},
+{en:"on average",jp:"平均で"},
+{en:"on behalf of",jp:"～を代表して"},
+{en:"on one's way to",jp:"～へ行く途中で"},
+{en:"on such short notice",jp:"急な知らせにもかかわらず"},
+{en:"on time",jp:"時間通りに"},
+{en:"open to the public",jp:"一般公開されている"},
+{en:"out of order",jp:"故障中"},
+{en:"out of paper",jp:"用紙切れ"},
+{en:"out of place",jp:"場違いの"},
+{en:"out of print",jp:"絶版の"},
+{en:"out of service",jp:"運転休止中"},
+{en:"out of shape",jp:"体調が万全ではない"},
+{en:"out of stock",jp:"在庫切れ"},
+{en:"out of town",jp:"出張中で"},
+{en:"parking lot",jp:"駐車場"},
+{en:"pass up the opportunity",jp:"チャンスを見送る"},
+{en:"pay off",jp:"(努力等が)報われる、完済する"},
+{en:"plenty of",jp:"たくさんの、十分な"},
+{en:"press conference",jp:"記者会見"},
+{en:"press release",jp:"報道用資料"},
+{en:"quite a few",jp:"かなりの数の"},
+{en:"rather than",jp:"～よりむしろ"},
+{en:"regardless of",jp:"～とは無関係に"},
+{en:"report to work",jp:"出勤する"},
+{en:"right away",jp:"ただちに"},
+{en:"room and board",jp:"部屋代と食事代"},
+{en:"round-trip ticket",jp:"往復のチケット"},
+{en:"run into",jp:"～と出くわす"},
+{en:"set aside",jp:"～を取っておく"},
+{en:"Should you have any questions",jp:"もしご質問があれば"},
+{en:"spare no expense",jp:"出費を惜しまない"},
+{en:"speak highly of",jp:"～をほめる"},
+{en:"stuck in traffic",jp:"渋滞にはまって"},
+{en:"take advantage of",jp:"～を利用する"},
+{en:"take effect",jp:"有効になる"},
+{en:"take place",jp:"起こる、開催される"},
+{en:"thanks to",jp:"～のおかげで"},
+{en:"To whom it may concern",jp:"ご担当者様"},
+{en:"trade fair",jp:"見本市"},
+{en:"until further notice",jp:"別途通知があるまでの間"},
+{en:"upon request",jp:"リクエストがあり次第"},
+{en:"wear and tear",jp:"摩耗"},
+{en:"well in advance",jp:"十分前もって"},
+{en:"when it comes to",jp:"～に関して言えば"},
+{en:"with the exception of",jp:"～を例外として"},
+{en:"within walking distance",jp:"徒歩圏内"},
+{en:"work ethic",jp:"勤労意欲"},
+{en:"contact",jp:"連絡を取る、連絡先"},
+{en:"article",jp:"記事、品物"},
+{en:"advertise",jp:"広告を出す"},
+{en:"feature",jp:"特徴、〜を特集する"},
+{en:"material",jp:"資料、材料"},
+{en:"appointment",jp:"予約、約束"},
+{en:"recommend",jp:"薦める"},
+{en:"package",jp:"小包、プラン"},
+{en:"extra",jp:"追加の"},
+{en:"base",jp:"拠点、基づく"},
+{en:"rate",jp:"料金、割合"},
+{en:"replace",jp:"〜に取って代わる、交換する"},
+{en:"promote",jp:"昇進させる、宣伝する"},
+{en:"development",jp:"開発、進展"},
+{en:"feedback",jp:"感想、フィードバック"},
+{en:"renovation",jp:"改修、リフォーム"},
+{en:"describe",jp:"説明する、述べる"},
+{en:"volunteer",jp:"ボランティア、進んで〜する"},
+{en:"selection",jp:"選定、品揃え"},
+{en:"suppose",jp:"仮定する、〜することになっている"},
+{en:"regular",jp:"定期的な、通常の"},
+{en:"respond",jp:"返答する、対応する"},
+{en:"task",jp:"業務、課題"},
+{en:"intend",jp:"意図する"},
+{en:"competition",jp:"競合、コンペ、競技会"},
+{en:"further",jp:"さらなる、さらに遠くへ"},
+{en:"solution",jp:"解決策"},
+{en:"general",jp:"一般的な"},
+{en:"photography",jp:"写真撮影"},
+{en:"improvement",jp:"改善、向上"},
+{en:"deal",jp:"取引、扱う"},
+{en:"division",jp:"部門、分割"},
+{en:"statement",jp:"声明、明細書"},
+{en:"demonstrate",jp:"実演する、証明する"},
+{en:"tax",jp:"税金"},
+{en:"approach",jp:"アプローチ、手法"},
+{en:"frequently",jp:"頻繁に"},
+{en:"electric",jp:"電気の"},
+{en:"particular",jp:"特定の、詳細な"},
+{en:"drawing",jp:"抽選、図面"},
+{en:"flavor",jp:"風味"},
+{en:"graduate",jp:"卒業する、卒業生"},
+{en:"exactly",jp:"正確に"},
+{en:"quantity",jp:"数量"},
+{en:"minimum",jp:"最小限の"},
+{en:"environmental",jp:"環境の"},
+{en:"mostly",jp:"主に、たいてい"},
+{en:"educational",jp:"教育の"},
+{en:"decline",jp:"断る、低下する"},
+{en:"forecast",jp:"予測"},
+{en:"campus",jp:"キャンパス"},
+{en:"clerk",jp:"店員、事務員"},
+{en:"progress",jp:"進捗"},
+{en:"structure",jp:"構造"},
+{en:"combine",jp:"組み合わせる"},
+{en:"institute",jp:"研究所、機関"},
+{en:"completely",jp:"完全に"},
+{en:"fare",jp:"運賃"},
+{en:"athletic",jp:"運動の、競技の"},
+{en:"diet",jp:"食事"},
+{en:"emergency",jp:"緊急事態"},
+{en:"physical",jp:"身体の、物理的な"},
+{en:"appearance",jp:"外見、出現"},
+{en:"soil",jp:"土壌"},
+{en:"appeal",jp:"魅力、訴える"},
+{en:"storm",jp:"嵐"},
+{en:"surround",jp:"囲む"},
+{en:"treatment",jp:"治療、取り扱い"},
+{en:"dozen",jp:"ダース（12個）"},
+{en:"rush",jp:"急ぐ"},
+{en:"normally",jp:"通常は"},
+{en:"election",jp:"選挙"},
+{en:"settle",jp:"解決する、定住する"},
+{en:"invoice",jp:"請求書"},
+{en:"trail",jp:"小道、跡"},
+{en:"inspection",jp:"検査"},
+{en:"in-person",jp:"対面で"},
+{en:"anticipate",jp:"予期する"},
+{en:"hardware",jp:"金物、ハードウェア"},
+{en:"craft",jp:"工芸、技能"},
+{en:"historic",jp:"歴史的な"},
+{en:"pickup",jp:"回収、迎え"},
+{en:"outstanding",jp:"優れた、未払いの"},
+{en:"publicity",jp:"宣伝、公表"},
+{en:"reopen",jp:"再開する"},
+{en:"machinery",jp:"機械類"},
+{en:"talented",jp:"才能のある"},
+{en:"engage",jp:"携わる、惹きつける"},
+{en:"inspire",jp:"刺激を与える"},
+{en:"aircraft",jp:"航空機"},
+{en:"primarily",jp:"主に"},
+{en:"commute",jp:"通勤する"},
+{en:"coordinate",jp:"調整する"},
+{en:"county",jp:"郡"},
+{en:"input",jp:"入力、助言"},
+{en:"expo",jp:"博覧会"},
+{en:"authorized",jp:"認可された"},
+{en:"usage",jp:"使用法"},
+{en:"disappointed",jp:"失望した"},
+{en:"internal",jp:"内部の"},
+{en:"exclusive",jp:"独占的な、専用の"},
+{en:"exterior",jp:"外装、外部の"},
+{en:"tune",jp:"曲、調整する"},
+{en:"recall",jp:"思い出す、回収する"},
+{en:"patience",jp:"忍耐"},
+{en:"sightseeing",jp:"観光"},
+{en:"gear",jp:"用具、装置"},
+{en:"nutrition",jp:"栄養"},
+{en:"accomplishment",jp:"成就、実績"},
+{en:"forum",jp:"公開討論会、フォーラム"},
+{en:"round-trip",jp:"往復の"},
+{en:"videoconference",jp:"テレビ会議"},
+{en:"postal",jp:"郵便の"},
+{en:"assess",jp:"評価する"},
+{en:"independent",jp:"独立した"},
+{en:"skilled",jp:"熟練した"},
+{en:"weekday",jp:"平日"},
+{en:"stain",jp:"汚れ"},
+{en:"seasonal",jp:"季節の"},
+{en:"visible",jp:"目に見える"},
+{en:"thoroughly",jp:"徹底的に"},
+{en:"collaborate",jp:"協力する"},
+{en:"stream",jp:"流れ、ストリーミング"},
+{en:"entitle",jp:"資格を与える"},
+{en:"enlarge",jp:"拡大する"},
+{en:"partnership",jp:"提携、共同経営"},
+{en:"scratch",jp:"ひっかき傷、ゼロから"},
+{en:"compensation",jp:"報酬、補償"},
+{en:"steady",jp:"着実な、安定した"},
+{en:"differ",jp:"異なる"},
+{en:"critical",jp:"批判的な、非常に重要な"},
+{en:"sector",jp:"部門、分野"},
+{en:"cite",jp:"引用する、挙げる"},
+{en:"hopefully",jp:"願わくば"},
+{en:"brand-new",jp:"新品の"},
+{en:"shortage",jp:"不足"},
+{en:"removal",jp:"除去、移動"},
+{en:"suspend",jp:"中断する"},
+{en:"poll",jp:"世論調査"},
+{en:"gratitude",jp:"感謝"},
+{en:"exposure",jp:"露出、さらされること"},
+{en:"owe",jp:"借りがある"},
+{en:"kindly",jp:"親切に、どうぞ"},
+{en:"artificial",jp:"人工の"},
+{en:"manner",jp:"方法、行儀"},
+{en:"outcome",jp:"結果"},
+{en:"persuade",jp:"説得する"},
+{en:"confusing",jp:"紛らわしい"},
+{en:"prominent",jp:"著名な、目立つ"},
+{en:"in-house",jp:"社内の"},
+{en:"apparently",jp:"どうやら〜らしい"},
+{en:"separately",jp:"別々に"},
+{en:"concentrate",jp:"集中する"},
+{en:"abandon",jp:"捨てる、あきらめる"},
+{en:"inconvenience",jp:"不便"},
+{en:"mentor",jp:"指導者"},
+{en:"bin",jp:"ゴミ箱、入れ物"},
+{en:"plumbing",jp:"配管"},
+{en:"discontinue",jp:"中止する"},
+{en:"textile",jp:"織物、布地"},
+{en:"fleet",jp:"車両群、艦隊"},
+{en:"slot",jp:"枠、溝"},
+{en:"projection",jp:"予測、投影"},
+{en:"lodging",jp:"宿泊"},
+{en:"designate",jp:"指定する"},
+{en:"bulk",jp:"大量"},
+{en:"compliment",jp:"褒め言葉"},
+{en:"wholesale",jp:"卸売り"},
+{en:"restart",jp:"再開する"},
+{en:"closure",jp:"閉鎖"},
+{en:"webinar",jp:"ウェビナー"},
+{en:"cardboard",jp:"段ボール"},
+{en:"checkup",jp:"健康診断"},
+{en:"dimension",jp:"寸法、次元"},
+{en:"suite",jp:"組、スイートルーム"},
+{en:"segment",jp:"部分"},
+{en:"logistics",jp:"物流、ロジスティクス"},
+{en:"audit",jp:"監査"},
+{en:"preview",jp:"下見、プレビュー"},
+{en:"thrive",jp:"繁栄する"},
+{en:"frustrated",jp:"イライラした"},
+{en:"congestion",jp:"渋滞"},
+{en:"respected",jp:"尊敬されている"},
+{en:"convey",jp:"伝える、運ぶ"},
+{en:"eatery",jp:"飲食店"},
+{en:"boast",jp:"誇る"},
+{en:"tremendous",jp:"巨大な、凄まじい"},
+{en:"criterion",jp:"基準"},
+{en:"texture",jp:"質感"},
+{en:"memorable",jp:"記憶に残る"},
+{en:"fascinating",jp:"魅力的な"},
+{en:"cutting-edge",jp:"最先端の"},
+{en:"perfume",jp:"香水"},
+{en:"utilize",jp:"利用する"},
+{en:"correspond",jp:"一致する、連絡を取り合う"},
+{en:"flaw",jp:"欠陥"},
+{en:"recyclables",jp:"リサイクル可能なもの"},
+{en:"undertake",jp:"引き受ける"},
+{en:"seasoned",jp:"経験豊富な"},
+{en:"overwhelming",jp:"圧倒的な"},
+{en:"devoted",jp:"献身的な"},
+{en:"shed",jp:"小屋、落とす"},
+{en:"outgoing",jp:"外向的な、出発する"},
+{en:"landlord",jp:"大家"},
+{en:"transcript",jp:"成績証明書、写し"},
+{en:"trustee",jp:"理事、受託者"},
+{en:"periodic",jp:"定期的な"},
+{en:"accumulate",jp:"蓄積する"},
+{en:"optimistic",jp:"楽観的な"},
+{en:"dispatch",jp:"派遣する、送る"},
+{en:"protocol",jp:"慣習、プロトコル"},
+{en:"artisan",jp:"職人"},
+{en:"top-notch",jp:"一流の"},
+{en:"autograph",jp:"サイン"},
+{en:"influential",jp:"影響力のある"},
+{en:"dominate",jp:"支配する"},
+{en:"breakdown",jp:"内訳、故障"},
+{en:"privilege",jp:"特権"},
+{en:"remainder",jp:"残り"},
+{en:"subsequently",jp:"その後に"},
+{en:"evenly",jp:"均等に"},
+{en:"humidity",jp:"湿度"},
+{en:"fraction",jp:"ほんの一部、分数"},
+{en:"coincidence",jp:"偶然の一致"},
+{en:"straightforward",jp:"わかりやすい"},
+{en:"interim",jp:"暫定的な"},
+{en:"prime",jp:"主要な、最高の"},
+{en:"acquaintance",jp:"知人"},
+{en:"batch",jp:"束、一括"},
+{en:"morale",jp:"士気"},
+{en:"irrigation",jp:"灌漑"},
+{en:"redeem",jp:"引き換える"},
+{en:"stunning",jp:"素晴らしい"},
+{en:"refill",jp:"おかわり、補充"},
+{en:"endorsement",jp:"承認、宣伝"},
+{en:"debris",jp:"残骸"},
+{en:"overdue",jp:"期限切れの"},
+{en:"kiosk",jp:"売店"},
+{en:"tow",jp:"牽引する"},
+{en:"attest",jp:"証明する"},
+{en:"obstruction",jp:"障害物"},
+{en:"footage",jp:"映像"},
+{en:"refurbish",jp:"改装する"},
+{en:"sanitize",jp:"消毒する"},
+{en:"drape",jp:"覆う、カーテン"},
+{en:"errand",jp:"使い走り"},
+{en:"offset",jp:"相殺する"},
+{en:"high-profile",jp:"注目を集める"},
+{en:"groundbreaking",jp:"画期的な"},
+{en:"chronicle",jp:"記録する"},
+{en:"apprenticeship",jp:"見習い期間"},
+{en:"sizable",jp:"かなりの大きさの"},
+{en:"bustling",jp:"賑やかな"},
+{en:"delegate",jp:"委任する、代表者"},
+{en:"reproduce",jp:"複製する"},
+{en:"embark",jp:"乗り出す、着手する"},
+{en:"compelling",jp:"説得力のある"},
+{en:"rectangular",jp:"長方形の"},
+{en:"ergonomic",jp:"人間工学に基づいた"},
+{en:"landfill",jp:"埋立地"},
+{en:"hone",jp:"磨く"},
+{en:"excavation",jp:"発掘"},
+{en:"repurpose",jp:"別の目的で使う"},
+{en:"upholstery",jp:"家具の張り地"},
+{en:"effortlessly",jp:"楽々と"},
+{en:"lucrative",jp:"儲かる"},
+{en:"intuitive",jp:"直感的な"},
+{en:"sequel",jp:"続編"},
+{en:"replenish",jp:"補充する"},
+{en:"onboarding",jp:"オンボーディング（新人研修等）"},
+{en:"resilience",jp:"回復力"},
+{en:"reinvent",jp:"再発明する、刷新する"},
+{en:"involved",jp:"関わっている"},
+{en:"extended",jp:"延長された"},
+{en:"letter",jp:"手紙、文字"},
+{en:"diligent",jp:"勤勉な"},
+{en:"subsequent",jp:"その後の"},
+{en:"thoughtfully",jp:"深く考えて、配慮して"},
+{en:"abridged",jp:"要約された"},
+{en:"endorse",jp:"支持する、推薦する"},
+{en:"explicit",jp:"明確な"},
+{en:"keenly",jp:"鋭く、痛切に"},
+{en:"dilute",jp:"薄める"},
+{en:"exempt",jp:"免除された"},
+{en:"oversight",jp:"見落とし、監視"},
+{en:"privileged",jp:"特権のある"},
+{en:"recur",jp:"再発する"},
+{en:"skeptical",jp:"懐疑的な"},
+{en:"breathtaking",jp:"息をのむような"},
+{en:"affiliated",jp:"提携した、関連のある"},
+{en:"definitive",jp:"最終的な、決定的な"},
+{en:"redeemable",jp:"交換可能な"},
+{en:"occupancy",jp:"占有、収容人数"},
+{en:"unanimous",jp:"全員一致の"},
+{en:"deteriorate",jp:"悪化する"},
+{en:"adverse",jp:"不利な、逆の"},
+{en:"bearer",jp:"持参人"},
+{en:"unprecedented",jp:"前例のない"},
+{en:"deliberation",jp:"審議、熟考"},
+{en:"discreetly",jp:"慎重に、目立たないように"},
+{en:"fluctuation",jp:"変動"},
+{en:"foremost",jp:"第一の、最高の"},
+{en:"meticulously",jp:"細心の注意を払って"},
+{en:"tenure",jp:"在職期間"},
+{en:"alleviate",jp:"軽減する"},
+{en:"exemplary",jp:"模範的な"},
+{en:"proprietor",jp:"所有者"},
+{en:"stagnant",jp:"停滞した"},
+{en:"stringent",jp:"厳格な"},
+{en:"amendment",jp:"修正、改正"},
+{en:"fraud",jp:"詐欺"},
+{en:"liable",jp:"法的責任がある"},
+{en:"considerate",jp:"思いやりのある"},
+{en:"consolidate",jp:"統合する、強固にする"},
+{en:"vigorous",jp:"精力的な"},
+{en:"custodian",jp:"管理人"},
+{en:"forge",jp:"築く、偽造する"},
+{en:"impending",jp:"差し迫った"},
+{en:"liaison",jp:"連絡係"},
+{en:"objectionable",jp:"不快な、異議のある"},
+{en:"shortcoming",jp:"欠点"},
+{en:"viable",jp:"実行可能な"},
+{en:"memorabilia",jp:"記念品"},
+{en:"deplete",jp:"使い果たす"},
+{en:"jeopardy",jp:"危険"},
+{en:"nominal",jp:"名目上の、わずかな"},
+{en:"deviate",jp:"それる"},
+{en:"forfeit",jp:"没収される、失う"},
+{en:"optimal",jp:"最適な"},
+{en:"purveyor",jp:"業者、お用達"},
+{en:"unwavering",jp:"揺るぎない"}
+];
+
+// =========================================================
+// CONFIG
+// =========================================================
+const CFG = {
+  baseScore: 100,
+  bonusTime: 2,        // game time bonus per correct (not used for daily, but kept for compat)
+  penaltyTime: 4,      // not used in daily mode
+  feedbackDelay: 450,
+  feverComboThreshold: 10,
+  defaultDailyMinutes: 15,
+  defaultQuestionLimit: 3.0,
+};
+
+// =========================================================
+// STORAGE
+// =========================================================
+const KEY = {
+  DECK:     'tdm-deck-v1',
+  POSITION: 'tdm-position-v1',
+  TODAY:    'tdm-today-v1',
+  HISTORY:  'tdm-history-v1',
+  WRONG:    'tdm-wrong-v1',
+  HIGH:     'tdm-high-v1',
+  SETTINGS: 'tdm-settings-v1',
+};
+
+const Store = {
+  get(k, fallback) {
+    try { const v = localStorage.getItem(k); return v == null ? fallback : JSON.parse(v); }
+    catch { return fallback; }
+  },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
+  del(k) { localStorage.removeItem(k); },
+};
+
+// =========================================================
+// HELPERS
+// =========================================================
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function fmtTime(secs) {
+  secs = Math.max(0, Math.round(secs));
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return m + ':' + String(s).padStart(2,'0');
+}
+
+// =========================================================
+// SOUND
+// =========================================================
+const SoundManager = {
+  ctx: null,
+  init() {
+    if (!this.ctx) {
+      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  tone(freq, type, dur, vol, attack=0.01) {
+    if (!this.ctx) return;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    o.connect(g); g.connect(this.ctx.destination);
+    const t = this.ctx.currentTime;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t); o.stop(t + dur);
+  },
+  start(){ this.tone(523, 'sine', 0.15, 0.15); setTimeout(()=>this.tone(784,'sine',0.2,0.15),100); },
+  reveal(){ this.tone(440,'sine',0.06,0.08); },
+  correct(combo){ const f = 600 + Math.min(combo*30, 600); this.tone(f,'triangle',0.1,0.1); },
+  wrong(){ this.tone(180,'sawtooth',0.2,0.12); },
+  fever(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.tone(f,'square',0.1,0.08),i*60)); },
+  delete(){ this.tone(300,'square',0.1,0.05); },
+  done(){ [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.tone(f,'triangle',0.2,0.12),i*120)); },
+};
+
+// =========================================================
+// DATA INIT — build dedup deck (just RAW_DATA already deduped)
+// =========================================================
+const WORD_DATA = RAW_DATA;
+const TOTAL_WORDS = WORD_DATA.length;
+
+function getOrCreateDeck() {
+  let deck = Store.get(KEY.DECK, null);
+  if (!deck || deck.length !== TOTAL_WORDS) {
+    deck = shuffleArray(WORD_DATA.map((_, i) => i));
+    Store.set(KEY.DECK, deck);
+    Store.set(KEY.POSITION, 0);
+  }
+  return deck;
+}
+function getPosition() { return Store.get(KEY.POSITION, 0); }
+function setPosition(p) { Store.set(KEY.POSITION, p % TOTAL_WORDS); }
+
+// =========================================================
+// TODAY MGMT
+// =========================================================
+function getToday() {
+  const t = todayStr();
+  let today = Store.get(KEY.TODAY, null);
+  if (!today || today.date !== t) {
+    today = { date: t, secondsUsed: 0, completed: false, score: 0, solved: 0, maxCombo: 0 };
+    Store.set(KEY.TODAY, today);
+  }
+  return today;
+}
+function saveToday(today) { Store.set(KEY.TODAY, today); }
+
+function getSettings() {
+  const def = { dailyMinutes: CFG.defaultDailyMinutes, questionLimit: CFG.defaultQuestionLimit };
+  return { ...def, ...Store.get(KEY.SETTINGS, {}) };
+}
+function saveSettings(s) { Store.set(KEY.SETTINGS, s); }
+
+function getHistory() { return Store.get(KEY.HISTORY, {}); }
+function markTodayComplete() {
+  const today = getToday();
+  today.completed = true;
+  saveToday(today);
+  const hist = getHistory();
+  hist[today.date] = {
+    seconds: today.secondsUsed,
+    solved: today.solved,
+    score: today.score,
+    maxCombo: today.maxCombo,
+  };
+  Store.set(KEY.HISTORY, hist);
+}
+
+// Wrong-words storage (existing legacy)
+function getWrong() { return Store.get(KEY.WRONG, []); }
+function addWrong(words) {
+  const cur = getWrong();
+  words.forEach(w => { if (!cur.some(c => c.en === w.en)) cur.push(w); });
+  Store.set(KEY.WRONG, cur);
+}
+function removeWrong(en) {
+  Store.set(KEY.WRONG, getWrong().filter(w => w.en !== en));
+}
+function clearWrong() { Store.del(KEY.WRONG); }
+
+// =========================================================
+// DOM REFS
+// =========================================================
+const els = {
+  screens: {
+    home: document.getElementById('home-screen'),
+    game: document.getElementById('game-screen'),
+    result: document.getElementById('result-screen'),
+    review: document.getElementById('review-screen'),
+    settings: document.getElementById('settings-screen'),
+  },
+  todayDate: document.getElementById('today-date'),
+  todayStatusArea: document.getElementById('today-status-area'),
+  startBtn: document.getElementById('start-btn'),
+  reviewBtn: document.getElementById('review-btn'),
+  extraBtn: document.getElementById('extra-btn'),
+  settingsBtn: document.getElementById('settings-btn'),
+  wrongCountHome: document.getElementById('wrong-count-home'),
+  streakCount: document.getElementById('streak-count'),
+  progressDisplay: document.getElementById('progress-display'),
+  totalWordsDisplay: document.getElementById('total-words-display'),
+  highScoreDisplay: document.getElementById('high-score-display'),
+
+  calPrev: document.getElementById('cal-prev'),
+  calNext: document.getElementById('cal-next'),
+  calTitle: document.getElementById('cal-title'),
+  calGrid: document.getElementById('cal-grid'),
+  calDayDetail: document.getElementById('cal-day-detail'),
+
+  // game
+  quitBtn: document.getElementById('quit-btn'),
+  dailyRemaining: document.getElementById('daily-remaining'),
+  dailyPosition: document.getElementById('daily-position'),
+  dailyTotalWords: document.getElementById('daily-total-words'),
+  dailyBar: document.getElementById('daily-bar'),
+  currentScore: document.getElementById('current-score'),
+  qtimeDisplay: document.getElementById('qtime-display'),
+  questionTimeBar: document.getElementById('question-time-bar'),
+  comboContainer: document.getElementById('combo-container'),
+  comboCount: document.getElementById('combo-count'),
+  multiplier: document.getElementById('multiplier-display'),
+  card: document.getElementById('card'),
+  feverBadge: document.getElementById('fever-badge'),
+  wordFront: document.getElementById('word-front'),
+  wordBack: document.getElementById('word-back'),
+  wordBackContainer: document.getElementById('word-back-container'),
+  feedback: document.getElementById('feedback-icon'),
+  instruction: document.getElementById('instruction-text'),
+  tapGuide: document.getElementById('tap-guide'),
+  touchControls: document.getElementById('touch-controls'),
+  btnCorrect: document.getElementById('btn-correct'),
+  btnWrong: document.getElementById('btn-wrong'),
+  btnUndo1: document.getElementById('btn-undo-1'),
+
+  // result
+  resultTitleArea: document.getElementById('result-title-area'),
+  resultScore: document.getElementById('result-score'),
+  resultTime: document.getElementById('result-time'),
+  resultSolved: document.getElementById('result-solved'),
+  resultCombo: document.getElementById('result-combo'),
+  newRecord: document.getElementById('new-record-badge'),
+  resultHomeBtn: document.getElementById('result-home-btn'),
+  resultWrongArea: document.getElementById('result-wrong-area'),
+  resultWrongCount: document.getElementById('result-wrong-count'),
+  resultWrongList: document.getElementById('result-wrong-list'),
+
+  // review
+  startReviewBtn: document.getElementById('start-review-btn'),
+  copyReviewBtn: document.getElementById('copy-review-btn'),
+  clearReviewBtn: document.getElementById('clear-review-btn'),
+  reviewList: document.getElementById('review-list'),
+
+  // settings
+  dailyMinSlider: document.getElementById('daily-minutes-slider'),
+  dailyMinDisplay: document.getElementById('setting-daily-min-display'),
+  qlimitSlider: document.getElementById('qlimit-slider'),
+  qlimitDisplay: document.getElementById('setting-qlimit-display'),
+  resetPositionBtn: document.getElementById('reset-position-btn'),
+  resetAllBtn: document.getElementById('reset-all-btn'),
+
+  // modal
+  modal: document.getElementById('confirm-modal'),
+  modalTitle: document.getElementById('modal-title'),
+  modalMsg: document.getElementById('modal-msg'),
+  modalYes: document.getElementById('modal-yes'),
+  modalNo: document.getElementById('modal-no'),
+
+  toast: document.getElementById('toast'),
+};
+
+function showScreen(name) {
+  Object.entries(els.screens).forEach(([k, el]) => el.classList.toggle('hidden', k !== name));
+}
+function showToast(msg) {
+  els.toast.textContent = msg;
+  els.toast.classList.remove('opacity-0');
+  els.toast.classList.add('opacity-100');
+  setTimeout(() => {
+    els.toast.classList.remove('opacity-100');
+    els.toast.classList.add('opacity-0');
+  }, 1500);
+}
+
+// =========================================================
+// MODAL
+// =========================================================
+let modalCallback = null;
+function showConfirm(title, msg, onYes) {
+  els.modalTitle.textContent = title;
+  els.modalMsg.innerHTML = msg;
+  modalCallback = onYes;
+  els.modal.classList.remove('hidden');
+}
+els.modalYes.addEventListener('click', () => {
+  els.modal.classList.add('hidden');
+  if (modalCallback) modalCallback();
+  modalCallback = null;
+});
+els.modalNo.addEventListener('click', () => {
+  els.modal.classList.add('hidden');
+  modalCallback = null;
+});
+
+// =========================================================
+// HOME RENDER
+// =========================================================
+function renderHome() {
+  const today = getToday();
+  const settings = getSettings();
+  const wrong = getWrong();
+  const totalDailySec = settings.dailyMinutes * 60;
+  const remainSec = Math.max(0, totalDailySec - today.secondsUsed);
+
+  els.todayDate.textContent = today.date;
+  els.totalWordsDisplay.textContent = TOTAL_WORDS;
+  els.progressDisplay.textContent = getPosition();
+  els.highScoreDisplay.textContent = Store.get(KEY.HIGH, 0);
+  els.wrongCountHome.textContent = wrong.length;
+  els.streakCount.textContent = computeStreak();
+
+  // Today status area
+  if (today.completed) {
+    els.todayStatusArea.innerHTML = `
+      <div class="text-center py-3">
+        <div class="text-4xl mb-1">✨</div>
+        <div class="serif-font text-2xl font-black shine-text leading-tight">今日はクリア！</div>
+        <div class="text-gray-400 text-xs mt-1">${settings.dailyMinutes}分のセッション完了</div>
+      </div>`;
+    els.startBtn.classList.add('hidden');
+    els.extraBtn.classList.remove('hidden');
+  } else if (today.secondsUsed > 0) {
+    const usedMin = Math.floor(today.secondsUsed / 60);
+    const usedSec = today.secondsUsed % 60;
+    els.todayStatusArea.innerHTML = `
+      <div class="space-y-2">
+        <div class="flex justify-between items-baseline">
+          <span class="text-gray-400 text-xs">途中まで進行中</span>
+          <span class="text-yellow-300 font-mono font-bold text-sm">残り ${fmtTime(remainSec)}</span>
+        </div>
+        <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-yellow-600 to-yellow-300" style="width: ${(today.secondsUsed/totalDailySec*100).toFixed(1)}%"></div>
+        </div>
+        <div class="text-[11px] text-gray-500">続きの単語: <span class="text-yellow-200 font-bold">#${getPosition()+1}</span> から</div>
+      </div>`;
+    els.startBtn.textContent = 'CONTINUE';
+    els.startBtn.classList.remove('hidden');
+    els.extraBtn.classList.add('hidden');
+  } else {
+    els.todayStatusArea.innerHTML = `
+      <div class="space-y-2">
+        <div class="flex justify-between items-baseline">
+          <span class="text-gray-400 text-xs">今日はまだスタートしていません</span>
+          <span class="text-yellow-300 font-mono font-bold text-sm">${settings.dailyMinutes}:00</span>
+        </div>
+        <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-full bg-yellow-600/30" style="width: 0%"></div></div>
+        <div class="text-[11px] text-gray-500">スタート単語: <span class="text-yellow-200 font-bold">#${getPosition()+1}</span> / ${TOTAL_WORDS}</div>
+      </div>`;
+    els.startBtn.textContent = 'START';
+    els.startBtn.classList.remove('hidden');
+    els.extraBtn.classList.add('hidden');
+  }
+
+  renderCalendar();
+}
+
+// =========================================================
+// CALENDAR
+// =========================================================
+let calCursor = (() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })();
+
+function renderCalendar() {
+  const hist = getHistory();
+  const today = todayStr();
+  const y = calCursor.y, m = calCursor.m;
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  els.calTitle.textContent = `${y} ${monthNames[m]}`;
+
+  const firstDay = new Date(y, m, 1).getDay();
+  const lastDate = new Date(y, m+1, 0).getDate();
+  const grid = els.calGrid;
+  grid.innerHTML = '';
+
+  for (let i = 0; i < firstDay; i++) {
+    const d = document.createElement('div'); d.className = 'cal-day empty'; grid.appendChild(d);
+  }
+  for (let day = 1; day <= lastDate; day++) {
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+    if (hist[ds]) cell.classList.add('done');
+    if (ds === today) cell.classList.add('today');
+    if (ds > today) cell.classList.add('future');
+    cell.innerHTML = `<span>${day}</span>`;
+    cell.onclick = () => showCalDetail(ds);
+    grid.appendChild(cell);
+  }
+}
+function showCalDetail(ds) {
+  const hist = getHistory();
+  const det = els.calDayDetail;
+  const entry = hist[ds];
+  if (entry) {
+    det.classList.remove('hidden');
+    det.innerHTML = `<span class="text-yellow-300 font-bold">${ds}</span> ✓ 達成 — ${fmtTime(entry.seconds)} / ${entry.solved||0}問 / Score ${entry.score||0}`;
+  } else {
+    det.classList.remove('hidden');
+    det.innerHTML = `<span class="text-gray-500">${ds}</span> 未達成`;
+  }
+  setTimeout(() => det.classList.add('hidden'), 4000);
+}
+function computeStreak() {
+  const hist = getHistory();
+  const today = getToday();
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const doneToday = (ds === todayStr() && today.completed);
+    if (hist[ds] || doneToday) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else if (ds === todayStr() && !today.completed) {
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+els.calPrev.addEventListener('click', () => {
+  calCursor.m--;
+  if (calCursor.m < 0) { calCursor.m = 11; calCursor.y--; }
+  renderCalendar();
+});
+els.calNext.addEventListener('click', () => {
+  calCursor.m++;
+  if (calCursor.m > 11) { calCursor.m = 0; calCursor.y++; }
+  renderCalendar();
+});
+
+// =========================================================
+// GAME STATE
+// =========================================================
+let game = {
+  active: false,
+  phase: 'idle', // 'question' | 'answer' | 'idle'
+  isExtra: false,   // user pressed "extra session" after today done — doesn't count
+  isReview: false,
+  // session timer
+  dailySecondsRemaining: 0,
+  sessionStartTime: 0,
+  sessionStartUsedSec: 0, // today.secondsUsed at session start
+  // cards
+  deckIndex: 0,           // index into the deck (Store-backed)
+  reviewQueue: [],        // for review mode
+  currentWord: null,
+  currentDeckIdx: 0,
+  // stats this session
+  score: 0,
+  combo: 0,
+  maxCombo: 0,
+  multiplier: 1.0,
+  solved: 0,
+  wrongThisSession: [],
+  // q-timer
+  qLimit: 3.0,
+  qLeft: 3.0,
+  // intervals
+  tickInterval: null,
+  nextTimer: null,
+  isProcessing: false,
+  // undo
+  history: [],
+};
+
+function startSession({ isExtra = false, isReview = false } = {}) {
+  SoundManager.init();
+  SoundManager.start();
+
+  const settings = getSettings();
+  const today = getToday();
+
+  game.active = true;
+  game.phase = 'question';
+  game.isExtra = isExtra;
+  game.isReview = isReview;
+  game.score = 0; game.combo = 0; game.maxCombo = 0; game.multiplier = 1.0; game.solved = 0;
+  game.wrongThisSession = []; game.history = [];
+  game.qLimit = settings.questionLimit; game.qLeft = settings.questionLimit;
+  game.isProcessing = false;
+  game.sessionStartTime = Date.now();
+  game.sessionStartUsedSec = today.secondsUsed;
+
+  // Determine timer behavior
+  if (isReview) {
+    // Review mode: no daily timer. Just go through wrong words.
+    game.dailySecondsRemaining = Infinity;
+    game.reviewQueue = shuffleArray(getWrong());
+    if (game.reviewQueue.length === 0) { showToast('復習リストは空'); showHome(); return; }
+  } else if (isExtra) {
+    // Extra session: arbitrary time (use settings dailyMinutes)
+    game.dailySecondsRemaining = settings.dailyMinutes * 60;
+  } else {
+    // Normal daily session
+    game.dailySecondsRemaining = settings.dailyMinutes * 60 - today.secondsUsed;
+    if (game.dailySecondsRemaining <= 0) {
+      // already done — treat as extra
+      game.isExtra = true;
+      game.dailySecondsRemaining = settings.dailyMinutes * 60;
+    }
+  }
+
+  els.dailyTotalWords.textContent = isReview ? game.reviewQueue.length : TOTAL_WORDS;
+  showScreen('game');
+  renderHUD();
+  loadNextWord();
+
+  if (game.tickInterval) clearInterval(game.tickInterval);
+  game.tickInterval = setInterval(tick, 100);
+}
+
+function loadNextWord() {
+  if (game.isReview) {
+    if (game.reviewQueue.length === 0) { endSession(true); return; }
+    game.currentWord = game.reviewQueue.pop();
+    game.currentDeckIdx = -1; // n/a
+  } else {
+    const deck = getOrCreateDeck();
+    game.currentDeckIdx = getPosition();
+    const wordIdx = deck[game.currentDeckIdx];
+    game.currentWord = WORD_DATA[wordIdx];
+  }
+
+  game.phase = 'question';
+  game.isProcessing = false;
+  game.qLeft = game.qLimit;
+
+  els.wordFront.textContent = game.currentWord.en;
+  els.wordBack.textContent = game.currentWord.jp;
+  els.wordBackContainer.classList.add('duration-0');
+  els.wordBackContainer.classList.remove('opacity-100', 'translate-y-0');
+  els.wordBackContainer.classList.add('opacity-0', 'translate-y-4');
+  els.feedback.innerHTML = '';
+  els.instruction.textContent = 'PRESS ENTER TO REVEAL';
+  els.instruction.classList.remove('text-green-400','text-red-400');
+  els.instruction.classList.add('text-gray-500');
+  els.touchControls.classList.add('opacity-0','pointer-events-none');
+  els.tapGuide.classList.remove('hidden');
+}
+
+function revealAnswer() {
+  if (game.phase !== 'question') return;
+  SoundManager.reveal();
+  game.phase = 'answer';
+  els.wordBackContainer.classList.remove('duration-0');
+  void els.wordBackContainer.offsetWidth;
+  els.wordBackContainer.classList.remove('opacity-0','translate-y-4');
+  els.wordBackContainer.classList.add('opacity-100','translate-y-0');
+  els.instruction.innerHTML = `
+    <span class="mr-3">ENTER: <span class="text-green-400">○ KNOW</span></span>
+    <span>SHIFT/↑: <span class="text-red-400">× DON'T</span></span>`;
+  els.tapGuide.classList.add('hidden');
+  els.touchControls.classList.remove('opacity-0','pointer-events-none');
+}
+
+function saveSnapshot() {
+  game.history.unshift({
+    score: game.score, combo: game.combo, maxCombo: game.maxCombo,
+    multiplier: game.multiplier, solved: game.solved,
+    wrongThisSession: [...game.wrongThisSession],
+    deckIndexAtTime: game.currentDeckIdx,
+    isReviewWord: game.isReview ? game.currentWord : null,
+    reviewQueueAtTime: game.isReview ? [...game.reviewQueue] : null,
+  });
+  if (game.history.length > 1) game.history.pop();
+  els.btnUndo1.disabled = (game.history.length === 0);
+}
+
+function restoreSnapshot() {
+  if (game.history.length === 0) return;
+  if (game.nextTimer) { clearTimeout(game.nextTimer); game.nextTimer = null; }
+  const s = game.history.shift();
+  game.score = s.score; game.combo = s.combo; game.maxCombo = s.maxCombo;
+  game.multiplier = s.multiplier; game.solved = s.solved;
+  game.wrongThisSession = [...s.wrongThisSession];
+  if (game.isReview && s.reviewQueueAtTime) {
+    game.reviewQueue = [...s.reviewQueueAtTime];
+    game.currentWord = s.isReviewWord;
+  } else if (!game.isReview) {
+    setPosition(s.deckIndexAtTime);
+    const deck = getOrCreateDeck();
+    game.currentDeckIdx = s.deckIndexAtTime;
+    game.currentWord = WORD_DATA[deck[game.currentDeckIdx]];
+  }
+  game.qLeft = game.qLimit;
+  game.phase = 'question';
+  game.isProcessing = false;
+
+  els.wordFront.textContent = game.currentWord.en;
+  els.wordBack.textContent = game.currentWord.jp;
+  els.wordBackContainer.classList.add('duration-0');
+  els.wordBackContainer.classList.remove('opacity-100','translate-y-0');
+  els.wordBackContainer.classList.add('opacity-0','translate-y-4');
+  els.feedback.innerHTML = '';
+  els.touchControls.classList.add('opacity-0','pointer-events-none');
+  els.tapGuide.classList.remove('hidden');
+  els.btnUndo1.disabled = (game.history.length === 0);
+  SoundManager.delete();
+  renderHUD();
+}
+
+function judge(isCorrect, isForced = false) {
+  if (!isForced && (game.phase !== 'answer' || game.isProcessing)) return;
+  saveSnapshot();
+  game.isProcessing = true;
+
+  els.wordBackContainer.classList.remove('duration-0','opacity-0','translate-y-4');
+  els.wordBackContainer.classList.add('opacity-100','translate-y-0');
+
+  if (isCorrect) {
+    game.combo++;
+    if (game.combo > game.maxCombo) game.maxCombo = game.combo;
+    SoundManager.correct(game.combo);
+    if (game.combo === CFG.feverComboThreshold) SoundManager.fever();
+    const bonusStage = Math.floor(game.combo / 10);
+    game.multiplier = 1.0 + bonusStage * 0.5;
+    game.score += Math.floor(CFG.baseScore * game.multiplier);
+    game.solved++;
+    if (game.isReview) {
+      // Got it right in review — remove from wrong list
+      removeWrong(game.currentWord.en);
+    }
+    showFeedback(true);
+  } else {
+    SoundManager.wrong();
+    game.combo = 0; game.multiplier = 1.0;
+    if (!game.wrongThisSession.some(w => w.en === game.currentWord.en)) {
+      game.wrongThisSession.push(game.currentWord);
+    }
+    showFeedback(false);
+  }
+
+  // advance position only if it's not a review word
+  if (!game.isReview) {
+    setPosition(getPosition() + 1);
+  }
+
+  renderHUD();
+  game.nextTimer = setTimeout(() => {
+    loadNextWord();
+    game.nextTimer = null;
+  }, CFG.feedbackDelay);
+}
+
+function showFeedback(ok) {
+  const cls = ok ? 'text-green-500' : 'text-red-500';
+  const svg = ok
+    ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="currentColor" class="w-32 h-32 md:w-48 md:h-48 ${cls} feedback-anim drop-shadow-xl"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75"/></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="currentColor" class="w-32 h-32 md:w-48 md:h-48 ${cls} feedback-anim drop-shadow-xl"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
+  els.feedback.innerHTML = svg;
+}
+
+function tick() {
+  // daily countdown
+  if (game.dailySecondsRemaining !== Infinity) {
+    game.dailySecondsRemaining -= 0.1;
+    if (game.dailySecondsRemaining <= 0) {
+      game.dailySecondsRemaining = 0;
+      renderHUD();
+      endSession(false);
+      return;
+    }
+  }
+
+  // q-timer
+  if (!game.isProcessing && (game.phase === 'question' || game.phase === 'answer')) {
+    game.qLeft -= 0.1;
+    if (game.qLeft <= 0) {
+      game.qLeft = 0;
+      // forced wrong
+      judge(false, true);
+    }
+  }
+  renderHUD();
+}
+
+function renderHUD() {
+  els.currentScore.textContent = game.score;
+  els.qtimeDisplay.textContent = Math.max(0, game.qLeft).toFixed(1);
+  const qpct = Math.min(100, Math.max(0, (game.qLeft / game.qLimit) * 100));
+  els.questionTimeBar.style.width = qpct + '%';
+  els.questionTimeBar.classList.toggle('bg-cyan-500', qpct >= 30);
+  els.questionTimeBar.classList.toggle('bg-red-500', qpct < 30);
+
+  // combo
+  els.comboCount.textContent = game.combo;
+  els.multiplier.textContent = `x${game.multiplier.toFixed(1)} BONUS`;
+  if (game.combo > 1) {
+    els.comboContainer.classList.remove('opacity-0');
+    els.comboCount.classList.remove('combo-anim');
+    void els.comboCount.offsetWidth;
+    els.comboCount.classList.add('combo-anim');
+  } else {
+    els.comboContainer.classList.add('opacity-0');
+  }
+  els.card.classList.toggle('fever-mode', game.combo >= CFG.feverComboThreshold);
+  els.feverBadge.classList.toggle('hidden', game.combo < CFG.feverComboThreshold);
+
+  // daily indicator
+  if (game.isReview) {
+    els.dailyRemaining.textContent = 'REV';
+    els.dailyPosition.textContent = `残り ${game.reviewQueue.length+1}`;
+    els.dailyBar.style.width = '0%';
+  } else {
+    const settings = getSettings();
+    const totalSec = settings.dailyMinutes * 60;
+    els.dailyRemaining.textContent = fmtTime(game.dailySecondsRemaining);
+    els.dailyPosition.textContent = '#' + (getPosition() + 1);
+    const elapsed = totalSec - game.dailySecondsRemaining;
+    els.dailyBar.style.width = (elapsed / totalSec * 100).toFixed(1) + '%';
+  }
+}
+
+function endSession(reviewFinished) {
+  game.active = false;
+  if (game.tickInterval) { clearInterval(game.tickInterval); game.tickInterval = null; }
+  if (game.nextTimer) { clearTimeout(game.nextTimer); game.nextTimer = null; }
+
+  // Update today.secondsUsed
+  const today = getToday();
+  if (!game.isReview && !game.isExtra) {
+    const settings = getSettings();
+    const totalSec = settings.dailyMinutes * 60;
+    today.secondsUsed = totalSec - Math.max(0, game.dailySecondsRemaining);
+    today.secondsUsed = Math.min(totalSec, today.secondsUsed);
+    today.score = (today.score || 0) + game.score;
+    today.solved = (today.solved || 0) + game.solved;
+    today.maxCombo = Math.max(today.maxCombo || 0, game.maxCombo);
+    saveToday(today);
+
+    // Check today complete (timer ran out)
+    if (game.dailySecondsRemaining <= 0 && !today.completed) {
+      markTodayComplete();
+      SoundManager.done();
+    }
+  }
+
+  // High score
+  const high = Store.get(KEY.HIGH, 0);
+  let isNewRecord = false;
+  if (game.score > high && !game.isReview) {
+    Store.set(KEY.HIGH, game.score);
+    isNewRecord = true;
+  }
+
+  // Save wrong words
+  if (game.wrongThisSession.length > 0) {
+    addWrong(game.wrongThisSession);
+  }
+
+  // Render result
+  const todayAfter = getToday();
+  let titleHTML = '';
+  if (game.isReview) {
+    titleHTML = `<div class="text-4xl mb-1">📘</div><div class="serif-font text-3xl font-black gold-text-gradient">REVIEW DONE</div>`;
+  } else if (todayAfter.completed) {
+    titleHTML = `<div class="text-5xl mb-1">✨</div><div class="serif-font text-4xl md:text-5xl font-black shine-text">今日はクリア！</div><div class="text-yellow-200 text-xs mt-2 tracking-widest">DAILY SESSION COMPLETED</div>`;
+  } else {
+    titleHTML = `<div class="text-3xl mb-1">⏸</div><div class="serif-font text-3xl font-black gold-text-gradient">SAVED</div><div class="text-gray-400 text-xs mt-1">続きはまたあとで</div>`;
+  }
+  els.resultTitleArea.innerHTML = titleHTML;
+  els.resultScore.textContent = game.score;
+  const elapsedThisSession = (game.isReview || game.isExtra)
+    ? Math.floor((Date.now() - game.sessionStartTime)/1000)
+    : (todayAfter.secondsUsed - game.sessionStartUsedSec);
+  els.resultTime.textContent = fmtTime(Math.max(0, elapsedThisSession));
+  els.resultSolved.textContent = game.solved;
+  els.resultCombo.textContent = game.maxCombo;
+  els.newRecord.classList.toggle('hidden', !isNewRecord);
+
+  if (game.wrongThisSession.length > 0) {
+    els.resultWrongArea.classList.remove('hidden');
+    els.resultWrongCount.textContent = game.wrongThisSession.length;
+    els.resultWrongList.innerHTML = '';
+    game.wrongThisSession.forEach(w => {
+      const item = document.createElement('div');
+      item.className = 'flex justify-between items-center px-3 py-2 border-b border-gray-800 text-sm';
+      item.innerHTML = `<span class="text-yellow-200 font-bold">${w.en}</span><span class="text-gray-400 text-xs">${w.jp}</span>`;
+      els.resultWrongList.appendChild(item);
+    });
+  } else {
+    els.resultWrongArea.classList.add('hidden');
+  }
+
+  showScreen('result');
+}
+
+// =========================================================
+// EVENT BINDINGS
+// =========================================================
+function quitToHome() {
+  if (!game.active) { showHome(); return; }
+  showConfirm('セッション中断？', '進行状況は自動保存されます。<br>あとで「CONTINUE」で続けられます。', () => {
+    // record partial time
+    if (game.tickInterval) clearInterval(game.tickInterval);
+    if (game.nextTimer) clearTimeout(game.nextTimer);
+    game.tickInterval = null; game.nextTimer = null;
+    game.active = false;
+    if (!game.isReview && !game.isExtra) {
+      const today = getToday();
+      const settings = getSettings();
+      const totalSec = settings.dailyMinutes * 60;
+      today.secondsUsed = Math.min(totalSec, totalSec - Math.max(0, game.dailySecondsRemaining));
+      today.score = (today.score || 0) + game.score;
+      today.solved = (today.solved || 0) + game.solved;
+      today.maxCombo = Math.max(today.maxCombo || 0, game.maxCombo);
+      saveToday(today);
+    }
+    if (game.wrongThisSession.length > 0) addWrong(game.wrongThisSession);
+    showHome();
+  });
+}
+
+function showHome() {
+  renderHome();
+  showScreen('home');
+}
+
+els.quitBtn.addEventListener('click', quitToHome);
+els.startBtn.addEventListener('click', () => startSession());
+els.extraBtn.addEventListener('click', () => startSession({ isExtra: true }));
+els.reviewBtn.addEventListener('click', () => { renderReview(); showScreen('review'); });
+els.settingsBtn.addEventListener('click', () => { renderSettings(); showScreen('settings'); });
+els.resultHomeBtn.addEventListener('click', showHome);
+
+document.querySelectorAll('.back-home').forEach(b => b.addEventListener('click', showHome));
+
+els.card.addEventListener('click', () => { if (game.phase === 'question') revealAnswer(); });
+els.btnCorrect.addEventListener('click', e => { e.stopPropagation(); judge(true); });
+els.btnWrong.addEventListener('click', e => { e.stopPropagation(); judge(false); });
+els.btnUndo1.addEventListener('click', e => { e.stopPropagation(); restoreSnapshot(); });
+
+window.addEventListener('keydown', e => {
+  if (game.phase === 'question') {
+    if (e.key === 'Enter') { e.preventDefault(); revealAnswer(); }
+    if (e.key === 'Backspace') { e.preventDefault(); restoreSnapshot(); }
+  } else if (game.phase === 'answer') {
+    if (e.key === 'Enter') { e.preventDefault(); judge(true); }
+    else if (e.key === 'ArrowUp' || e.key === 'Shift' || e.key === 'ArrowDown') { e.preventDefault(); judge(false); }
+  }
+});
+
+// =========================================================
+// REVIEW SCREEN
+// =========================================================
+function renderReview() {
+  const wrong = getWrong();
+  const list = els.reviewList;
+  list.innerHTML = '';
+  if (wrong.length === 0) {
+    list.innerHTML = `<div class="text-center text-gray-500 py-8"><div class="text-4xl mb-1">🎉</div><div class="font-bold">Perfect!</div><div class="text-xs">復習リストは空です</div></div>`;
+    return;
+  }
+  [...wrong].reverse().forEach(w => {
+    const item = document.createElement('div');
+    item.className = 'flex justify-between items-center px-3 py-2 border-b border-gray-800';
+    item.innerHTML = `<div class="flex flex-col"><span class="text-yellow-100 font-bold">${w.en}</span><span class="text-gray-400 text-xs">${w.jp}</span></div>`;
+    const del = document.createElement('button');
+    del.className = 'text-gray-600 hover:text-red-400 p-2';
+    del.innerHTML = '×';
+    del.style.fontSize = '20px';
+    del.onclick = () => { removeWrong(w.en); SoundManager.delete(); renderReview(); };
+    item.appendChild(del);
+    list.appendChild(item);
+  });
+}
+els.startReviewBtn.addEventListener('click', () => {
+  if (getWrong().length === 0) { showToast('復習リストが空です'); return; }
+  startSession({ isReview: true });
+});
+els.copyReviewBtn.addEventListener('click', async () => {
+  const w = getWrong();
+  if (w.length === 0) { showToast('リストが空'); return; }
+  const txt = w.map(x => `${x.en}\t${x.jp}`).join('\n');
+  try {
+    await navigator.clipboard.writeText(txt);
+    showToast('📋 コピーしました');
+  } catch { showToast('コピー失敗'); }
+});
+els.clearReviewBtn.addEventListener('click', () => {
+  showConfirm('全消去？', '復習リストの単語をすべて削除します', () => {
+    clearWrong(); renderReview();
+  });
+});
+
+// =========================================================
+// SETTINGS SCREEN
+// =========================================================
+function renderSettings() {
+  const s = getSettings();
+  els.dailyMinSlider.value = s.dailyMinutes;
+  els.dailyMinDisplay.textContent = s.dailyMinutes;
+  els.qlimitSlider.value = s.questionLimit;
+  els.qlimitDisplay.textContent = s.questionLimit.toFixed(1);
+}
+els.dailyMinSlider.addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  els.dailyMinDisplay.textContent = v;
+  const s = getSettings(); s.dailyMinutes = v; saveSettings(s);
+});
+els.qlimitSlider.addEventListener('input', e => {
+  const v = parseFloat(e.target.value);
+  els.qlimitDisplay.textContent = v.toFixed(1);
+  const s = getSettings(); s.questionLimit = v; saveSettings(s);
+});
+els.resetPositionBtn.addEventListener('click', () => {
+  showConfirm('進捗リセット', '単語の出題位置を最初に戻します。<br>カレンダー履歴は残ります。', () => {
+    Store.del(KEY.DECK); Store.del(KEY.POSITION);
+    showToast('進捗をリセット');
+    showHome();
+  });
+});
+els.resetAllBtn.addEventListener('click', () => {
+  showConfirm('完全リセット', 'すべての履歴・進捗・復習リストを削除します。<br>取り消せません。', () => {
+    Object.values(KEY).forEach(k => Store.del(k));
+    showToast('リセット完了');
+    showHome();
+  });
+});
+
+// =========================================================
+// SERVICE WORKER
+// =========================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// =========================================================
+// INIT
+// =========================================================
+function init() {
+  getOrCreateDeck();
+  getToday();
+  showHome();
+}
+init();
+</script>
+</body>
+</html>
