@@ -238,15 +238,13 @@ input[type=range]::-webkit-slider-runnable-track {
         <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50"></div>
         <div id="fever-badge" class="hidden absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-[10px] font-black px-2 py-0.5 rounded shadow-[0_0_15px_rgba(234,179,8,0.6)] rotate-3 border border-white/20">FEVER</div>
 
-        <!-- Upper half: English word -->
-        <div class="flex-1 flex items-center justify-center w-full pointer-events-none px-2 relative z-10">
+        <!-- English: centered in full card (absolute, vertical center) -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none px-2 z-10">
           <h2 id="word-front" class="text-3xl sm:text-5xl md:text-7xl font-bold break-words leading-tight w-full text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400"></h2>
         </div>
-        <!-- Lower half: Japanese translation -->
-        <div class="flex-1 flex items-center justify-center w-full pointer-events-none px-2 relative z-10">
-          <div id="word-back-container" class="opacity-0 w-full transition-all duration-200 transform translate-y-4 flex items-center justify-center">
-            <p id="word-back" class="text-xl sm:text-2xl md:text-3xl text-yellow-100 font-bold break-words px-4 py-2 border-t border-b border-yellow-500/30 w-full bg-black/40"></p>
-          </div>
+        <!-- Japanese: absolute in lower portion (kept at the user-approved position) -->
+        <div id="word-back-container" class="opacity-0 absolute left-0 right-0 px-2 z-10 flex items-center justify-center pointer-events-none transition-all duration-200 transform translate-y-4" style="bottom: 18%;">
+          <p id="word-back" class="text-xl sm:text-2xl md:text-3xl text-yellow-100 font-bold break-words px-4 py-2 border-t border-b border-yellow-500/30 w-full bg-black/40"></p>
         </div>
         <div id="feedback-icon" class="absolute inset-0 flex items-center justify-center pointer-events-none z-20"></div>
         <div id="instruction-text" class="absolute bottom-2 left-0 w-full text-center text-gray-500 text-xs font-bold animate-pulse hidden md:block tracking-widest uppercase">Press Enter to Answer</div>
@@ -364,6 +362,23 @@ input[type=range]::-webkit-slider-runnable-track {
         </div>
         <input type="range" id="qlimit-slider" min="0.3" max="5.0" step="0.3" value="3.0" class="w-full">
         <p class="text-[11px] text-gray-500 mt-1">1問の制限時間。低いほど高難度。</p>
+      </div>
+
+      <div class="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-gray-300 font-bold text-sm">SOUND</span>
+          <button id="sound-toggle-btn" class="relative w-12 h-6 rounded-full transition-colors duration-200 bg-yellow-500">
+            <span id="sound-toggle-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-6"></span>
+          </button>
+        </div>
+        <div id="volume-row" class="space-y-1">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-300 font-bold">VOLUME</span>
+            <span class="text-yellow-400 font-mono font-bold"><span id="setting-volume-display">80</span>%</span>
+          </div>
+          <input type="range" id="volume-slider" min="0" max="100" step="5" value="80" class="w-full">
+        </div>
+        <p class="text-[11px] text-gray-500">単語の読み上げ・効果音の音量。</p>
       </div>
 
       <div class="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2">
@@ -1999,25 +2014,26 @@ function fmtTime(secs) {
 // =========================================================
 const SoundManager = {
   ctx: null,
+  _enabled() { try { return getSettings().soundEnabled !== false; } catch { return true; } },
+  _vol()    { try { const v = getSettings().soundVolume; return v == null ? 0.8 : v; } catch { return 0.8; } },
   init() {
     if (!this.ctx) {
       try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
     }
     if (this.ctx) {
-      // iOS Safari unlock: play a 1-sample silent buffer inside the user gesture
+      // iOS Safari unlock: silent 1-sample buffer must be played in same gesture
       try {
         const buf = this.ctx.createBuffer(1, 1, 22050);
         const src = this.ctx.createBufferSource();
-        src.buffer = buf;
-        src.connect(this.ctx.destination);
-        src.start(0);
+        src.buffer = buf; src.connect(this.ctx.destination); src.start(0);
       } catch(e) {}
       if (this.ctx.state === 'suspended') this.ctx.resume();
     }
   },
-  tone(freq, type, dur, vol, attack=0.01) {
-    if (!this.ctx) return;
+  tone(freq, type, dur, baseVol, attack=0.01) {
+    if (!this._enabled() || !this.ctx) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
+    const vol = baseVol * this._vol();
     const o = this.ctx.createOscillator();
     const g = this.ctx.createGain();
     o.type = type; o.frequency.value = freq;
@@ -2028,24 +2044,41 @@ const SoundManager = {
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     o.start(t); o.stop(t + dur);
   },
-  start(){ this.tone(523, 'sine', 0.15, 0.15); setTimeout(()=>this.tone(784,'sine',0.2,0.15),100); },
-  reveal(){ this.tone(440,'sine',0.06,0.08); },
-  correct(combo){ const f = 600 + Math.min(combo*30, 600); this.tone(f,'triangle',0.1,0.1); },
-  wrong(){ this.tone(180,'sawtooth',0.2,0.12); },
-  fever(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.tone(f,'square',0.1,0.08),i*60)); },
-  delete(){ this.tone(300,'square',0.1,0.05); },
-  done(){ [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.tone(f,'triangle',0.2,0.12),i*120)); },
+  _buzz(startFreq, endFreq, dur, delay) {
+    if (!this._enabled() || !this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    setTimeout(() => {
+      const vol = 0.2 * this._vol();
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
+      o.frequency.linearRampToValueAtTime(endFreq, this.ctx.currentTime + dur);
+      o.connect(g); g.connect(this.ctx.destination);
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.start(t); o.stop(t + dur);
+    }, delay);
+  },
+  start()   { this.tone(523,'sine',0.15,0.15); setTimeout(()=>this.tone(784,'sine',0.2,0.15),100); },
+  reveal()  { this.tone(440,'sine',0.06,0.08); },
+  // ピンポン: two ascending bell tones
+  correct() { this.tone(880,'sine',0.1,0.2); setTimeout(()=>this.tone(1175,'sine',0.15,0.25),90); },
+  // ブッブー: two descending sawtooth buzzes
+  wrong()   { this._buzz(280,110,0.16,0); this._buzz(240,90,0.18,180); },
+  fever()   { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.tone(f,'square',0.1,0.08),i*60)); },
+  delete()  { this.tone(300,'square',0.1,0.05); },
+  done()    { [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.tone(f,'triangle',0.2,0.12),i*120)); },
+  speak(text) {
+    if (!this._enabled() || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = 'en-US'; utt.rate = 0.85; utt.pitch = 1.0;
+    utt.volume = this._vol();
+    window.speechSynthesis.speak(utt);
+  },
 };
-
-function speakWord(text) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'en-US';
-  utt.rate = 0.85;
-  utt.pitch = 1.0;
-  window.speechSynthesis.speak(utt);
-}
 
 // =========================================================
 // DATA INIT — build dedup deck (just RAW_DATA already deduped)
@@ -2080,7 +2113,7 @@ function getToday() {
 function saveToday(today) { Store.set(KEY.TODAY, today); }
 
 function getSettings() {
-  const def = { dailyMinutes: CFG.defaultDailyMinutes, questionLimit: CFG.defaultQuestionLimit };
+  const def = { dailyMinutes: CFG.defaultDailyMinutes, questionLimit: CFG.defaultQuestionLimit, soundEnabled: true, soundVolume: 0.8 };
   return { ...def, ...Store.get(KEY.SETTINGS, {}) };
 }
 function saveSettings(s) { Store.set(KEY.SETTINGS, s); }
@@ -2473,7 +2506,7 @@ function loadNextWord() {
 
   els.wordFront.textContent = game.currentWord.en;
   els.wordBack.textContent = game.currentWord.jp;
-  speakWord(game.currentWord.en);
+  SoundManager.speak(game.currentWord.en);
   els.wordBackContainer.classList.add('duration-0');
   els.wordBackContainer.classList.remove('opacity-100', 'translate-y-0');
   els.wordBackContainer.classList.add('opacity-0', 'translate-y-4');
@@ -2536,7 +2569,7 @@ function restoreSnapshot(steps = 1) {
 
   els.wordFront.textContent = game.currentWord.en;
   els.wordBack.textContent = game.currentWord.jp;
-  speakWord(game.currentWord.en);
+  SoundManager.speak(game.currentWord.en);
   els.wordBackContainer.classList.add('duration-0');
   els.wordBackContainer.classList.remove('opacity-100','translate-y-0');
   els.wordBackContainer.classList.add('opacity-0','translate-y-4');
@@ -2854,6 +2887,41 @@ els.qlimitSlider.addEventListener('input', e => {
   els.qlimitDisplay.textContent = v.toFixed(1);
   const s = getSettings(); s.questionLimit = v; saveSettings(s);
 });
+// Sound settings
+const soundToggleBtn = document.getElementById('sound-toggle-btn');
+const soundToggleKnob = document.getElementById('sound-toggle-knob');
+const volumeSlider = document.getElementById('volume-slider');
+const volumeDisplay = document.getElementById('setting-volume-display');
+const volumeRow = document.getElementById('volume-row');
+function updateSoundUI(s) {
+  const enabled = s.soundEnabled !== false;
+  soundToggleBtn.classList.toggle('bg-yellow-500', enabled);
+  soundToggleBtn.classList.toggle('bg-gray-600', !enabled);
+  soundToggleKnob.classList.toggle('translate-x-6', enabled);
+  soundToggleKnob.classList.toggle('translate-x-0', !enabled);
+  volumeRow.style.opacity = enabled ? '1' : '0.4';
+  volumeSlider.disabled = !enabled;
+  const vPct = Math.round((s.soundVolume == null ? 0.8 : s.soundVolume) * 100);
+  volumeSlider.value = vPct;
+  volumeDisplay.textContent = vPct;
+}
+soundToggleBtn.addEventListener('click', () => {
+  const s = getSettings();
+  s.soundEnabled = (s.soundEnabled === false);
+  saveSettings(s);
+  updateSoundUI(s);
+  if (s.soundEnabled) { SoundManager.init(); SoundManager.reveal(); }
+});
+volumeSlider.addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  volumeDisplay.textContent = v;
+  const s = getSettings(); s.soundVolume = v / 100; saveSettings(s);
+});
+volumeSlider.addEventListener('change', () => {
+  SoundManager.init(); SoundManager.correct();
+});
+updateSoundUI(getSettings());
+
 document.getElementById('export-btn').addEventListener('click', () => {
   const data = {};
   Object.values(KEY).forEach(k => {
