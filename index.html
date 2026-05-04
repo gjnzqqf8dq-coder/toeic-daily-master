@@ -238,8 +238,12 @@ input[type=range]::-webkit-slider-runnable-track {
         <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50"></div>
         <div id="fever-badge" class="hidden absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-[10px] font-black px-2 py-0.5 rounded shadow-[0_0_15px_rgba(234,179,8,0.6)] rotate-3 border border-white/20">FEVER</div>
 
-        <div class="flex-grow flex flex-col items-center justify-center w-full pointer-events-none px-2 relative z-10 gap-4">
+        <!-- Upper half: English word -->
+        <div class="flex-1 flex items-center justify-center w-full pointer-events-none px-2 relative z-10">
           <h2 id="word-front" class="text-3xl sm:text-5xl md:text-7xl font-bold break-words leading-tight w-full text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400"></h2>
+        </div>
+        <!-- Lower half: Japanese translation -->
+        <div class="flex-1 flex items-center justify-center w-full pointer-events-none px-2 relative z-10">
           <div id="word-back-container" class="opacity-0 w-full transition-all duration-200 transform translate-y-4 flex items-center justify-center">
             <p id="word-back" class="text-xl sm:text-2xl md:text-3xl text-yellow-100 font-bold break-words px-4 py-2 border-t border-b border-yellow-500/30 w-full bg-black/40"></p>
           </div>
@@ -1999,10 +2003,21 @@ const SoundManager = {
     if (!this.ctx) {
       try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
     }
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx) {
+      // iOS Safari unlock: play a 1-sample silent buffer inside the user gesture
+      try {
+        const buf = this.ctx.createBuffer(1, 1, 22050);
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(this.ctx.destination);
+        src.start(0);
+      } catch(e) {}
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+    }
   },
   tone(freq, type, dur, vol, attack=0.01) {
     if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
     const o = this.ctx.createOscillator();
     const g = this.ctx.createGain();
     o.type = type; o.frequency.value = freq;
@@ -2021,6 +2036,16 @@ const SoundManager = {
   delete(){ this.tone(300,'square',0.1,0.05); },
   done(){ [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.tone(f,'triangle',0.2,0.12),i*120)); },
 };
+
+function speakWord(text) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-US';
+  utt.rate = 0.85;
+  utt.pitch = 1.0;
+  window.speechSynthesis.speak(utt);
+}
 
 // =========================================================
 // DATA INIT — build dedup deck (just RAW_DATA already deduped)
@@ -2448,6 +2473,7 @@ function loadNextWord() {
 
   els.wordFront.textContent = game.currentWord.en;
   els.wordBack.textContent = game.currentWord.jp;
+  speakWord(game.currentWord.en);
   els.wordBackContainer.classList.add('duration-0');
   els.wordBackContainer.classList.remove('opacity-100', 'translate-y-0');
   els.wordBackContainer.classList.add('opacity-0', 'translate-y-4');
@@ -2510,6 +2536,7 @@ function restoreSnapshot(steps = 1) {
 
   els.wordFront.textContent = game.currentWord.en;
   els.wordBack.textContent = game.currentWord.jp;
+  speakWord(game.currentWord.en);
   els.wordBackContainer.classList.add('duration-0');
   els.wordBackContainer.classList.remove('opacity-100','translate-y-0');
   els.wordBackContainer.classList.add('opacity-0','translate-y-4');
