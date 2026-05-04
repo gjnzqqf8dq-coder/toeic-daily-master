@@ -238,11 +238,11 @@ input[type=range]::-webkit-slider-runnable-track {
         <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50"></div>
         <div id="fever-badge" class="hidden absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black text-[10px] font-black px-2 py-0.5 rounded shadow-[0_0_15px_rgba(234,179,8,0.6)] rotate-3 border border-white/20">FEVER</div>
 
-        <div class="flex-grow flex items-center justify-center w-full pointer-events-none px-2 relative z-10">
-          <h2 id="word-front" class="text-3xl sm:text-5xl md:text-7xl font-bold break-words leading-tight w-full text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 pb-2"></h2>
-        </div>
-        <div id="word-back-container" class="opacity-0 min-h-[3rem] md:min-h-[5rem] flex items-center justify-center w-full transition-all duration-200 transform translate-y-4 pointer-events-none px-2 relative z-10">
-          <p id="word-back" class="text-xl sm:text-2xl md:text-3xl text-yellow-100 font-bold break-words px-4 py-2 border-t border-b border-yellow-500/30 w-full bg-black/40"></p>
+        <div class="flex-grow flex flex-col items-center justify-center w-full pointer-events-none px-2 relative z-10 gap-4">
+          <h2 id="word-front" class="text-3xl sm:text-5xl md:text-7xl font-bold break-words leading-tight w-full text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400"></h2>
+          <div id="word-back-container" class="opacity-0 w-full transition-all duration-200 transform translate-y-4 flex items-center justify-center">
+            <p id="word-back" class="text-xl sm:text-2xl md:text-3xl text-yellow-100 font-bold break-words px-4 py-2 border-t border-b border-yellow-500/30 w-full bg-black/40"></p>
+          </div>
         </div>
         <div id="feedback-icon" class="absolute inset-0 flex items-center justify-center pointer-events-none z-20"></div>
         <div id="instruction-text" class="absolute bottom-2 left-0 w-full text-center text-gray-500 text-xs font-bold animate-pulse hidden md:block tracking-widest uppercase">Press Enter to Answer</div>
