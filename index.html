@@ -371,14 +371,31 @@ input[type=range]::-webkit-slider-runnable-track {
             <span id="sound-toggle-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-6"></span>
           </button>
         </div>
-        <div id="volume-row" class="space-y-1">
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-300 font-bold">VOLUME</span>
-            <span class="text-yellow-400 font-mono font-bold"><span id="setting-volume-display">80</span>%</span>
+        <div id="volume-rows" class="space-y-3">
+          <!-- 効果音 -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-300 font-bold">効果音 (○×)</span>
+              <div class="flex items-center gap-2">
+                <span class="text-yellow-400 font-mono font-bold text-xs"><span id="setting-effect-vol-display">80</span>%</span>
+                <button id="test-effect-btn" class="text-[10px] text-gray-300 hover:text-yellow-400 px-2 py-0.5 border border-gray-600 rounded active:scale-95">▶ TEST</button>
+              </div>
+            </div>
+            <input type="range" id="effect-volume-slider" min="0" max="100" step="5" value="80" class="w-full">
           </div>
-          <input type="range" id="volume-slider" min="0" max="100" step="5" value="80" class="w-full">
+          <!-- 発音 -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-300 font-bold">発音 (英単語)</span>
+              <div class="flex items-center gap-2">
+                <span class="text-yellow-400 font-mono font-bold text-xs"><span id="setting-speech-vol-display">80</span>%</span>
+                <button id="test-speech-btn" class="text-[10px] text-gray-300 hover:text-yellow-400 px-2 py-0.5 border border-gray-600 rounded active:scale-95">▶ TEST</button>
+              </div>
+            </div>
+            <input type="range" id="speech-volume-slider" min="0" max="100" step="5" value="80" class="w-full">
+          </div>
         </div>
-        <p class="text-[11px] text-gray-500">単語の読み上げ・効果音の音量。</p>
+        <p class="text-[11px] text-gray-500">音が出ない場合は「TEST」で確認してください。Mac/iPhone のミュートスイッチもご確認を。</p>
       </div>
 
       <div class="bg-black/40 border border-gray-800 rounded-lg p-4 space-y-2">
@@ -2015,68 +2032,81 @@ function fmtTime(secs) {
 const SoundManager = {
   ctx: null,
   _enabled() { try { return getSettings().soundEnabled !== false; } catch { return true; } },
-  _vol()    { try { const v = getSettings().soundVolume; return v == null ? 0.8 : v; } catch { return 0.8; } },
-  init() {
-    if (!this.ctx) {
-      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  _evol()    { try { const s=getSettings(); const v = s.effectVolume != null ? s.effectVolume : s.soundVolume; return v == null ? 0.8 : v; } catch { return 0.8; } },
+  _svol()    { try { const s=getSettings(); const v = s.speechVolume != null ? s.speechVolume : s.soundVolume; return v == null ? 0.8 : v; } catch { return 0.8; } },
+  _ensureCtx() {
+    if (!this.ctx || this.ctx.state === 'closed') {
+      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return false; }
     }
+    if (!this.ctx) return false;
+    if (this.ctx.state === 'suspended' || this.ctx.state === 'interrupted') {
+      try { this.ctx.resume(); } catch(e) {}
+    }
+    return true;
+  },
+  init() {
+    this._ensureCtx();
     if (this.ctx) {
-      // iOS Safari unlock: silent 1-sample buffer must be played in same gesture
+      // iOS / Safari unlock: play a silent 1-sample buffer in the user gesture
       try {
         const buf = this.ctx.createBuffer(1, 1, 22050);
         const src = this.ctx.createBufferSource();
         src.buffer = buf; src.connect(this.ctx.destination); src.start(0);
       } catch(e) {}
-      if (this.ctx.state === 'suspended') this.ctx.resume();
     }
   },
   tone(freq, type, dur, baseVol, attack=0.01) {
-    if (!this._enabled() || !this.ctx) return;
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-    const vol = baseVol * this._vol();
-    const o = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    o.type = type; o.frequency.value = freq;
-    o.connect(g); g.connect(this.ctx.destination);
-    const t = this.ctx.currentTime;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol, t + attack);
-    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    o.start(t); o.stop(t + dur);
-  },
-  _buzz(startFreq, endFreq, dur, delay) {
-    if (!this._enabled() || !this.ctx) return;
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-    setTimeout(() => {
-      const vol = 0.2 * this._vol();
+    if (!this._enabled() || !this._ensureCtx()) return;
+    try {
+      const vol = baseVol * this._evol();
       const o = this.ctx.createOscillator();
       const g = this.ctx.createGain();
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
-      o.frequency.linearRampToValueAtTime(endFreq, this.ctx.currentTime + dur);
+      o.type = type; o.frequency.value = freq;
       o.connect(g); g.connect(this.ctx.destination);
       const t = this.ctx.currentTime;
-      g.gain.setValueAtTime(vol, t);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + attack);
       g.gain.exponentialRampToValueAtTime(0.001, t + dur);
       o.start(t); o.stop(t + dur);
+    } catch(e) {}
+  },
+  _buzz(startFreq, endFreq, dur, delay) {
+    if (!this._enabled()) return;
+    setTimeout(() => {
+      if (!this._ensureCtx()) return;
+      try {
+        const vol = 0.25 * this._evol();
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
+        o.frequency.linearRampToValueAtTime(endFreq, this.ctx.currentTime + dur);
+        o.connect(g); g.connect(this.ctx.destination);
+        const t = this.ctx.currentTime;
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.start(t); o.stop(t + dur);
+      } catch(e) {}
     }, delay);
   },
   start()   { this.tone(523,'sine',0.15,0.15); setTimeout(()=>this.tone(784,'sine',0.2,0.15),100); },
   reveal()  { this.tone(440,'sine',0.06,0.08); },
   // ピンポン: two ascending bell tones
-  correct() { this.tone(880,'sine',0.1,0.2); setTimeout(()=>this.tone(1175,'sine',0.15,0.25),90); },
+  correct() { this.tone(880,'sine',0.1,0.22); setTimeout(()=>this.tone(1175,'sine',0.15,0.27),90); },
   // ブッブー: two descending sawtooth buzzes
-  wrong()   { this._buzz(280,110,0.16,0); this._buzz(240,90,0.18,180); },
-  fever()   { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.tone(f,'square',0.1,0.08),i*60)); },
-  delete()  { this.tone(300,'square',0.1,0.05); },
-  done()    { [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.tone(f,'triangle',0.2,0.12),i*120)); },
+  wrong()   { this._buzz(280,110,0.18,0); this._buzz(240,90,0.20,200); },
+  fever()   { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.tone(f,'square',0.1,0.1),i*60)); },
+  delete()  { this.tone(300,'square',0.1,0.06); },
+  done()    { [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>this.tone(f,'triangle',0.2,0.14),i*120)); },
   speak(text) {
     if (!this._enabled() || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = 'en-US'; utt.rate = 0.85; utt.pitch = 1.0;
-    utt.volume = this._vol();
-    window.speechSynthesis.speak(utt);
+    try {
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = 'en-US'; utt.rate = 0.85; utt.pitch = 1.0;
+      utt.volume = this._svol();
+      window.speechSynthesis.speak(utt);
+    } catch(e) {}
   },
 };
 
@@ -2113,7 +2143,7 @@ function getToday() {
 function saveToday(today) { Store.set(KEY.TODAY, today); }
 
 function getSettings() {
-  const def = { dailyMinutes: CFG.defaultDailyMinutes, questionLimit: CFG.defaultQuestionLimit, soundEnabled: true, soundVolume: 0.8 };
+  const def = { dailyMinutes: CFG.defaultDailyMinutes, questionLimit: CFG.defaultQuestionLimit, soundEnabled: true, effectVolume: 0.8, speechVolume: 0.8 };
   return { ...def, ...Store.get(KEY.SETTINGS, {}) };
 }
 function saveSettings(s) { Store.set(KEY.SETTINGS, s); }
@@ -2890,35 +2920,55 @@ els.qlimitSlider.addEventListener('input', e => {
 // Sound settings
 const soundToggleBtn = document.getElementById('sound-toggle-btn');
 const soundToggleKnob = document.getElementById('sound-toggle-knob');
-const volumeSlider = document.getElementById('volume-slider');
-const volumeDisplay = document.getElementById('setting-volume-display');
-const volumeRow = document.getElementById('volume-row');
+const effectVolSlider = document.getElementById('effect-volume-slider');
+const effectVolDisplay = document.getElementById('setting-effect-vol-display');
+const speechVolSlider = document.getElementById('speech-volume-slider');
+const speechVolDisplay = document.getElementById('setting-speech-vol-display');
+const volumeRows = document.getElementById('volume-rows');
+const testEffectBtn = document.getElementById('test-effect-btn');
+const testSpeechBtn = document.getElementById('test-speech-btn');
+
 function updateSoundUI(s) {
   const enabled = s.soundEnabled !== false;
   soundToggleBtn.classList.toggle('bg-yellow-500', enabled);
   soundToggleBtn.classList.toggle('bg-gray-600', !enabled);
   soundToggleKnob.classList.toggle('translate-x-6', enabled);
   soundToggleKnob.classList.toggle('translate-x-0', !enabled);
-  volumeRow.style.opacity = enabled ? '1' : '0.4';
-  volumeSlider.disabled = !enabled;
-  const vPct = Math.round((s.soundVolume == null ? 0.8 : s.soundVolume) * 100);
-  volumeSlider.value = vPct;
-  volumeDisplay.textContent = vPct;
+  volumeRows.style.opacity = enabled ? '1' : '0.4';
+  effectVolSlider.disabled = !enabled;
+  speechVolSlider.disabled = !enabled;
+  testEffectBtn.disabled = !enabled;
+  testSpeechBtn.disabled = !enabled;
+  const e = Math.round((s.effectVolume == null ? 0.8 : s.effectVolume) * 100);
+  effectVolSlider.value = e; effectVolDisplay.textContent = e;
+  const sv = Math.round((s.speechVolume == null ? 0.8 : s.speechVolume) * 100);
+  speechVolSlider.value = sv; speechVolDisplay.textContent = sv;
 }
 soundToggleBtn.addEventListener('click', () => {
   const s = getSettings();
   s.soundEnabled = (s.soundEnabled === false);
   saveSettings(s);
   updateSoundUI(s);
-  if (s.soundEnabled) { SoundManager.init(); SoundManager.reveal(); }
+  if (s.soundEnabled) { SoundManager.init(); SoundManager.correct(); }
 });
-volumeSlider.addEventListener('input', e => {
+effectVolSlider.addEventListener('input', e => {
   const v = parseInt(e.target.value);
-  volumeDisplay.textContent = v;
-  const s = getSettings(); s.soundVolume = v / 100; saveSettings(s);
+  effectVolDisplay.textContent = v;
+  const s = getSettings(); s.effectVolume = v / 100; saveSettings(s);
 });
-volumeSlider.addEventListener('change', () => {
-  SoundManager.init(); SoundManager.correct();
+speechVolSlider.addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  speechVolDisplay.textContent = v;
+  const s = getSettings(); s.speechVolume = v / 100; saveSettings(s);
+});
+testEffectBtn.addEventListener('click', () => {
+  SoundManager.init();
+  SoundManager.correct();
+  setTimeout(() => SoundManager.wrong(), 700);
+});
+testSpeechBtn.addEventListener('click', () => {
+  SoundManager.init();
+  SoundManager.speak('hello, this is a test.');
 });
 updateSoundUI(getSettings());
 
