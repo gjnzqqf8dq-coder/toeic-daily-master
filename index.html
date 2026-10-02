@@ -165,15 +165,14 @@ body.playing nav{display:none}
 .seg label.on{border-color:#84d8ff;background:var(--eel-p);color:var(--eel-d)}
 .flash{flex:1;display:flex;align-items:center;justify-content:center;perspective:1200px;min-height:260px;margin-bottom:12px}
 .fcard{position:relative;display:block;width:100%;height:min(46vh,380px)}
-.flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .38s cubic-bezier(.2,.7,.2,1)}
-.fcard.rev .flip{transform:rotateY(180deg)}
-.fcard .face.b{visibility:hidden;transition:visibility 0s .16s}
-.fcard.rev .face.b{visibility:visible}
-.fcard .face.a{visibility:visible;transition:visibility 0s .16s}
-.fcard.rev .face.a{visibility:hidden}
+.flip{position:absolute;inset:0;will-change:transform}
+/* 表と裏は回転で透かさず、真横になった瞬間に入れ替える */
+.fcard .face.b{display:none}
+.fcard.rev .face.a{display:none}
+.fcard.rev .face.b{display:flex}
 .fcard.out-ok,.fcard.out-ng{transition:opacity .16s linear;opacity:0}
-.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:18px;text-align:center;overflow:hidden}
-.face.b{transform:rotateY(180deg);overflow-y:auto;justify-content:center}
+.face{position:absolute;inset:0;border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:18px;text-align:center;overflow:hidden}
+.face.b{overflow-y:auto;justify-content:center}
 .face.b.pf{justify-content:flex-start;text-align:left;align-items:stretch}
 .face .word{font-size:36px}
 .face .spk{position:absolute;top:14px;right:14px;width:48px;height:48px;border-radius:14px}
@@ -976,7 +975,7 @@ function load() {
 }
 function loadCard(t, key) {
   const fc = $('fcard'), fa = $('fa'), fb = $('fb');
-  fc.className = 'fcard'; fb.className = 'face b';
+  fc.style.opacity = '0'; fc.className = 'fcard'; fb.className = 'face b'; fc.querySelector('.flip').getAnimations().forEach(a => a.cancel());
   if (G.type === 'w') {
     const w = wByEn[key.slice(2)]; G.ans = w;
     $('qText').textContent = '意味、覚えてる？';
@@ -992,6 +991,7 @@ function loadCard(t, key) {
     const nk = t.q[t.pos + 1]; if (nk) { const np = pById[nk.replace(/^!/, '').slice(2)]; if (np) new Image().src = np.img; }
   }
   $('fhint').textContent = 'カードをタップでめくる';
+  requestAnimationFrame(() => { fc.style.opacity = ''; try { fc.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120 }); } catch {} });
   $('pbar').style.width = (doneCount(t) / Math.max(1, t.goal) * 100) + '%';
   const L = $('lesson'); L.scrollTop = 0; try { L.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 140 }); } catch {}
   startTimer();
@@ -999,7 +999,12 @@ function loadCard(t, key) {
 function flipCard(auto) {
   if (!G || G.mode !== 'card' || G.flipped || G.answered) return;
   wake(); G.flipped = true; stopTimer();
-  $('fcard').classList.add('rev'); Sound.flip();
+  const fc = $('fcard'), fl = fc.querySelector('.flip'); Sound.flip();
+  const swap = () => fc.classList.add('rev');
+  try {
+    const a1 = fl.animate([{ transform: 'perspective(1200px) rotateY(0deg)' }, { transform: 'perspective(1200px) rotateY(90deg)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' });
+    a1.onfinish = () => { swap(); a1.cancel(); fl.animate([{ transform: 'perspective(1200px) rotateY(-90deg)' }, { transform: 'perspective(1200px) rotateY(0deg)' }], { duration: 170, easing: 'ease-out' }); };
+  } catch { swap(); }
   $('fhint').textContent = auto ? '時間切れ！' : '';
   $('bFlip').hidden = true; $('bDuo').hidden = false;
   if (G.type === 'p' && S.settings.name) Sound.say(G.ans.kana || G.ans.name, 'ja');
@@ -1072,7 +1077,7 @@ function result(ok, reason, el) {
   if (lvOf(S.xp || 0) > lvBefore) G.pendingLv = lvOf(S.xp || 0);
   if (G.mode === 'card') {
     $('fcard').classList.add(ok ? 'out-ok' : 'out-ng');
-    setTimeout(next, 220);
+    setTimeout(next, 180);
     return;
   }
   if (ok && G.type === 'w') { clearTimeout(autoT); autoT = setTimeout(next, 650); return; }
