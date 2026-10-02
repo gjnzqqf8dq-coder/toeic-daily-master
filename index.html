@@ -131,7 +131,8 @@ body.playing nav{display:none}
 .prompt.face{justify-content:center}
 .timer{height:8px;background:var(--swan);border-radius:99px;overflow:hidden;margin:4px 0 16px;flex:none}
 .timer i{display:block;height:100%;width:100%;background:var(--eel);border-radius:99px;transform-origin:left;will-change:transform}
-.timer.warn i{background:var(--fox)} .timer.danger i{background:var(--car)} .timer.off{visibility:hidden}
+.timer i{background:#c9ecfd}
+.timer.warn i{background:#c9ecfd} .timer.danger i{background:#ffb2b2} .timer.off{visibility:hidden}
 .opts{display:grid;gap:10px}
 .opts.two{grid-template-columns:1fr 1fr}
 .opt{position:relative;display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 14px;border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;font-size:16px;font-weight:700;line-height:1.35;text-align:left;transition:transform .1s}
@@ -143,10 +144,10 @@ body.playing nav{display:none}
 .opt.ng{background:var(--car-p);border-color:#ffb2b2;color:var(--car-d);animation:shake .35s}
 .opt.dim{opacity:.4}
 .opts.locked .opt{pointer-events:none}
-@keyframes shake{25%,75%{transform:translateX(-6px)}50%{transform:translateX(6px)}}
+@keyframes shake{25%,75%{transform:translateX(-3px)}50%{transform:translateX(3px)}}
 #lesson{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
-#lesson.enter{animation:lin .26s ease-out}
-@keyframes lin{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+#lesson.enter{animation:lin .14s linear}
+@keyframes lin{from{opacity:.4}to{opacity:1}}
 .lfoot{margin:auto -16px 0;padding:16px 16px calc(var(--sb) + 16px);border-top:2px solid var(--swan);background:#fff}
 
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
@@ -154,10 +155,9 @@ body.playing nav{display:none}
 .seg label.on{border-color:#84d8ff;background:var(--eel-p);color:var(--eel-d)}
 .flash{flex:1;display:flex;align-items:center;justify-content:center;perspective:1200px;min-height:260px;margin-bottom:12px}
 .fcard{position:relative;display:block;width:100%;height:min(46vh,380px)}
-.flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .45s var(--back)}
+.flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .38s cubic-bezier(.2,.7,.2,1)}
 .fcard.rev .flip{transform:rotateY(180deg)}
-.fcard.out-ok{transition:transform .3s ease-in,opacity .3s;transform:translateX(120%) rotate(14deg);opacity:0}
-.fcard.out-ng{transition:transform .3s ease-in,opacity .3s;transform:translateX(-120%) rotate(-14deg);opacity:0}
+.fcard.out-ok,.fcard.out-ng{transition:opacity .16s linear;opacity:0}
 .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:18px;text-align:center;overflow:hidden}
 .face.b{transform:rotateY(180deg);overflow-y:auto;justify-content:center}
 .face.b.pf{justify-content:flex-start;text-align:left;align-items:stretch}
@@ -593,11 +593,12 @@ function applyHap() { document.querySelectorAll('.hsw').forEach(i => i.disabled 
 
 // Android は vibrate で強弱のパターンを付ける（iPhone はタップ時の触覚のみ）
 const Haptic = {
-  run(ms) { if (!S || !S.settings.hap || isIOS || !navigator.vibrate) return; try { navigator.vibrate(ms); } catch {} },
-  ok(m = 1) { const a = [30]; for (let i = 1; i < Math.min(m, 4); i++) a.push(70, 25); this.run(a); },
-  ng() { this.run([60, 90, 60, 90, 60]); },
-  up() { this.run([30, 70, 30, 70, 30, 70, 90]); },
-  big() { this.run([40, 90, 40, 90, 40, 130, 140]); },
+  native(kind) { try { const h = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.haptic; if (h) { h.postMessage(kind); return true; } } catch {} return false; },
+  run(ms, kind) { if (!S || !S.settings.hap) return; if (this.native(kind || 'light')) return; if (isIOS || !navigator.vibrate) return; try { navigator.vibrate(ms); } catch {} },
+  ok(m = 1) { const a = [30]; for (let i = 1; i < Math.min(m, 4); i++) a.push(70, 25); this.run(a, 'success'); },
+  ng() { this.run([60, 90, 60, 90, 60], 'error'); },
+  up() { this.run([30, 70, 30, 70, 30, 70, 90], 'heavy'); },
+  big() { this.run([40, 90, 40, 90, 40, 130, 140], 'heavy'); },
 };
 
 // =========================================================
@@ -612,20 +613,21 @@ const SFX = {
     const tone = (c, f, t, d, type, a) => { const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); env(c, t, g, a, d); o.connect(g).connect(c.destination); o.start(t); o.stop(t + d + .02); return o; };
     const bell = (c, f, t, d, a) => { tone(c, f, t, d, 'sine', a); tone(c, f * 2.01, t, d * .6, 'sine', a * .3); tone(c, f * 3.02, t, d * .3, 'sine', a * .1); };
     const chirp = (c, f0, f1, t, d, a) => { const o = tone(c, f0, t, d, 'sine', a); o.frequency.exponentialRampToValueAtTime(f1, t + d * .7); };
-    // アイテムを拾った時のような2段の「ピロリン」：明るい矩形波＋三角波を少しこもらせ、最後に高い粒をのせる
+    // 「ト↗ピン」：短く柔らかいマリンバの「ト」→高く澄んだグロッケンの「ピン」（余韻長め）
+    const mallet = (c, f, t, d, a, bright) => {
+      tone(c, f, t, d, 'sine', a);                       // 基音
+      tone(c, f * 2, t, d * .5, 'sine', a * (bright ? .28 : .12));
+      tone(c, f * 3.98, t, d * .12, 'sine', a * (bright ? .18 : .25)); // 打鍵の硬さ
+      tone(c, f * 9.2, t, .03, 'sine', a * .06);         // 当たりのカチッ
+    };
     const coin = (c, p, v) => {
-      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6500; lp.connect(c.destination);
-      const n = (f, t, d, a) => ['square', 'triangle'].forEach((ty, j) => { const o = c.createOscillator(), g = c.createGain(); o.type = ty; o.frequency.setValueAtTime(f, t);
-        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(a * (j ? 1 : .35), t + .006); g.gain.setValueAtTime(a * (j ? 1 : .35), t + d * .35); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-        o.connect(g).connect(lp); o.start(t); o.stop(t + d + .02); });
-      n(1318.5 * p, 0, .085, .22 * v);       // E6
-      n(1760 * p, .07, .42, .24 * v);        // A6
-      tone(c, 3520 * p, .07, .18, 'sine', .05 * v);
-      tone(c, 2637 * p, .14, .3, 'sine', .04 * v);
+      mallet(c, 1046.5 * p, 0, .11, .28 * v, false);     // ト（C6・短い）
+      mallet(c, 1568 * p, .085, .7, .32 * v, true);      // ピン（G6・伸ばす）
+      tone(c, 3136 * p, .09, .35, 'sine', .035 * v);     // きらめき
     };
     for (let k = 0; k <= 12; k++) {
       const p = Math.pow(2, k / 24);
-      D['ok' + k] = [.7, (c, v) => coin(c, p, v)];
+      D['ok' + k] = [.9, (c, v) => coin(c, p, v)];
     }
     D.ng = [.55, (c, v) => { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(c.destination);
       [[311, 0, .16], [233, .13, .34]].forEach(([f, t, d]) => { const o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = f;
@@ -1028,17 +1030,17 @@ function result(ok, reason, el) {
 
   if (ok) {
     Sound.ok(G.combo); Haptic.ok(m);
-    const r = (el || $('opts')).getBoundingClientRect();
-    FX.burst(r.left + r.width / 2, r.top + r.height / 2, 10 + m * 5, 5 + m);
+    const r = (el || $('bOk')).getBoundingClientRect();
+    FX.float('+' + pts, r.right - 40, r.top + 8);
     if (m > m0) setTimeout(() => { Sound.multUp(m); Haptic.up(); FX.praise(`${ICON('fire')}×${m} コンボ！`); FX.burst(innerWidth / 2, innerHeight * .36, 30 + m * 10, 9 + m); }, 160);
   } else { Sound.ng(); Haptic.ng(); }
   if (lvOf(S.xp || 0) > lvBefore) G.pendingLv = lvOf(S.xp || 0);
   if (G.mode === 'card') {
-    const fc = $('fcard'); fc.classList.add(ok ? 'out-ok' : 'out-ng');
-    if (ok) { const r = $('bOk').getBoundingClientRect(); FX.float('+' + pts, r.left + r.width / 2, r.top); }
-    setTimeout(next, ok ? 320 : 420);
+    $('fcard').classList.add(ok ? 'out-ok' : 'out-ng');
+    setTimeout(next, 220);
     return;
   }
+  if (ok && G.type === 'w') { clearTimeout(autoT); autoT = setTimeout(next, 650); return; }
   showSheet(ok, reason, pts, fast);
 }
 function profHTML(p) {
@@ -1066,7 +1068,7 @@ function next() {
   clearTimeout(autoT);
   $('sheet').classList.remove('on');
   if (G.pendingLv) { const n = G.pendingLv; G.pendingLv = 0; return levelUp(n); }
-  setTimeout(load, 120);
+  setTimeout(load, $('sheet').classList.contains('on') ? 0 : 0);
 }
 function levelUp(n) {
   $('lvN').textContent = n; $('lvT').textContent = lvTitle(n) + ' に昇格';
