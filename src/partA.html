@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Daily Master">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+<title>Daily Master</title>
+<style>
+/* Duolingo の色名と値（Owl / Eel / Cardinal / Bee / Fox / Beetle / Swan / Hare / Wolf） */
+:root{
+  --owl:#58cc02; --owl-d:#58a700; --owl-l:#89e219; --owl-p:#d7ffb8;
+  --eel:#1cb0f6; --eel-d:#1899d6; --eel-p:#ddf4ff;
+  --car:#ff4b4b; --car-d:#ea2b2b; --car-p:#ffdfe0;
+  --bee:#ffc800; --bee-d:#e5a500;
+  --fox:#ff9600; --fox-d:#cc7a00;
+  --bet:#ce82ff; --bet-d:#a568cc; --bet-p:#f4e3ff;
+  --ink:#3c3c3c; --wolf:#777; --hare:#afafaf; --swan:#e5e5e5; --polar:#f7f7f7;
+  --c:var(--owl); --cd:var(--owl-d); --cp:var(--owl-p);
+  --sb:env(safe-area-inset-bottom,0px); --st:env(safe-area-inset-top,0px);
+  --back:cubic-bezier(.34,1.56,.64,1);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#fff;color:var(--ink);overflow:hidden;overscroll-behavior:none;
+  font-family:"Nunito","Hiragino Maru Gothic ProN","M PLUS Rounded 1c",system-ui,sans-serif;font-weight:700;font-size:15px;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;-webkit-user-select:none;user-select:none;position:fixed;inset:0;width:100%;touch-action:pan-y}
+button,label{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.hsw{position:absolute;left:0;top:0;width:1px;height:1px;margin:0;visibility:hidden}
+label{touch-action:manipulation}
+.screen{flex:1;display:none;flex-direction:column;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;padding:calc(var(--st) + 10px) 16px 24px;min-height:0;width:100%}
+.screen.on{display:flex}
+#sFaces{--c:var(--bet);--cd:var(--bet-d);--cp:var(--bet-p)}
+@media (min-width:640px){
+  .screen{padding-left:max(16px,calc(50vw - 300px));padding-right:max(16px,calc(50vw - 300px))}
+  .stats{margin-left:calc(-1 * max(16px,calc(50vw - 300px)) - 0px);margin-right:calc(-1 * max(16px,calc(50vw - 300px)));padding-left:max(18px,calc(50vw - 298px));padding-right:max(18px,calc(50vw - 298px))}
+  .sheet{padding-left:max(16px,calc(50vw - 300px))!important;padding-right:max(16px,calc(50vw - 300px))!important}
+  nav{justify-content:center} nav label{max-width:140px}
+  #play,#sDone{padding-left:max(16px,calc(50vw - 300px))!important;padding-right:max(16px,calc(50vw - 300px))!important}
+  .fcard{height:min(46vh,420px)}
+}
+h1{font-size:24px;font-weight:800;margin:4px 0 16px}
+
+/* ボタン：4pxの下リップ・角16px・16px/800・大文字 */
+.btn{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;padding:13px 20px;border-radius:16px;
+  font-size:16px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:var(--c);color:#fff;border-bottom:4px solid var(--cd);transition:transform .1s,filter .15s}
+.btn:active{transform:translateY(4px);border-bottom-color:transparent}
+.btn.dis{background:var(--swan);border-bottom-color:#d0d0d0;color:var(--hare);pointer-events:none}
+.btn.sec{background:#fff;color:var(--eel);border:2px solid var(--swan);border-bottom-width:4px}
+.btn.sec.gray{color:var(--hare)}
+.btn.eel{--c:var(--eel);--cd:var(--eel-d)} .btn.car{--c:var(--car);--cd:var(--car-d)} .btn.owl{--c:var(--owl);--cd:var(--owl-d)}
+
+/* 上のステータス */
+.stats{display:flex;justify-content:space-between;align-items:center;padding:4px 18px 12px;border-bottom:2px solid var(--swan);margin:0 -16px 16px}
+.stat{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800}
+.stat svg{width:24px;height:24px}
+.stat.fire{color:var(--fox)} .stat.bolt{color:var(--bee-d)} .stat.lv{color:var(--eel)}
+.stat.off{color:var(--hare)} .stat.off svg{filter:grayscale(1);opacity:.45}
+
+/* マスコット＋吹き出し */
+.hero{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.mascot{width:84px;height:84px;flex:none;animation:bob 2.6s ease-in-out infinite;transform-origin:50% 100%;will-change:transform}
+.mascot.jump{animation:jump .48s var(--back) 3}
+@keyframes bob{0%,100%{transform:none}50%{transform:translateY(-3px)}}
+@keyframes jump{0%{transform:scale(1.08,.92)}45%{transform:translateY(-22px) scale(.96,1.04)}100%{transform:none}}
+.mascot .eyes{animation:blink 5s infinite;transform-origin:60px 58px}
+@keyframes blink{0%,95%,100%{transform:none}97%{transform:scaleY(.1)}}
+.mascot .happy{display:none} .mascot.joy .happy{display:block} .mascot.joy .eyes{display:none}
+.bubble{position:relative;flex:1;border:2px solid var(--swan);border-radius:16px;padding:12px 14px;font-size:15px;line-height:1.45}
+.bubble::before{content:"";position:absolute;left:-8px;top:50%;margin-top:-6px;width:12px;height:12px;background:#fff;border-left:2px solid var(--swan);border-bottom:2px solid var(--swan);transform:rotate(45deg)}
+
+/* カード */
+.box{border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;padding:16px;margin-bottom:16px}
+.lvrow{display:flex;align-items:center;gap:12px}
+.lvb{width:48px;height:48px;flex:none;border-radius:50%;background:var(--bee);border-bottom:4px solid var(--bee-d);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.lvb small{font-size:9px;font-weight:800}.lvb b{font-size:20px;font-weight:900}
+.lvi{flex:1;min-width:0}.lvi .t{font-size:15px;font-weight:800}.lvi .s{font-size:12px;color:var(--wolf);margin-top:4px}
+.bar{position:relative;height:16px;background:var(--swan);border-radius:99px;overflow:hidden;margin-top:6px}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--c);border-radius:99px;transition:width .32s ease-out;min-width:16px}
+.bar i::after{content:"";position:absolute;left:8px;right:8px;top:4px;height:4px;border-radius:2px;background:rgba(255,255,255,.3)}
+.bar.bee i{background:var(--bee)}
+.best{text-align:right;font-size:12px;color:var(--wolf)}.best b{display:block;font-size:17px;color:var(--ink);font-weight:800}
+.cap{font-size:13px;color:var(--wolf);font-weight:700}
+.big{font-size:32px;font-weight:900;line-height:1.15;color:var(--c)} .big small{font-size:17px;color:var(--hare);font-weight:800}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pill{font-size:12px;font-weight:800;padding:4px 10px;border-radius:99px;background:var(--polar);color:var(--wolf)}
+.pill.n{background:var(--eel-p);color:var(--eel-d)} .pill.r{background:#fff4d6;color:var(--bee-d)}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.trio div{border:2px solid var(--swan);border-radius:16px;padding:10px 4px;text-align:center}
+.trio b{display:block;font-size:20px;font-weight:900}
+.trio span{font-size:12px;color:var(--wolf)}
+.trio div:nth-child(1) b{color:var(--owl)} .trio div:nth-child(2) b{color:var(--bee-d)} .trio div:nth-child(3) b{color:var(--eel)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.chip{position:relative;padding:8px 12px;border-radius:12px;border:2px solid var(--swan);border-bottom-width:4px;font-size:13px;font-weight:800;color:var(--wolf)}
+.chip.on{border-color:var(--bet);color:var(--bet-d);background:var(--bet-p)}
+
+/* タブバー */
+nav{display:flex;border-top:2px solid var(--swan);background:#fff;padding:6px 8px calc(var(--sb) + 6px);gap:6px}
+nav label{position:relative;flex:1;height:52px;border-radius:12px;border:2px solid transparent;display:flex;align-items:center;justify-content:center}
+nav label svg{width:32px;height:32px}
+nav label.on{border-color:#84d8ff;background:var(--eel-p)}
+nav label:not(.on) svg{filter:saturate(.35);opacity:.75}
+body.playing nav{display:none}
+
+/* ===== レッスン ===== */
+#play{padding:calc(var(--st) + 10px) 16px 0;overflow:hidden;touch-action:pan-y}
+.ltop{display:flex;align-items:center;gap:14px;height:40px;flex:none}
+.ltop .x{width:32px;height:32px;color:var(--hare);display:flex;align-items:center;justify-content:center}
+.ltop .x svg{width:22px;height:22px}
+.ltop .bar{flex:1;margin:0}
+.combo{display:flex;align-items:center;gap:2px;font-size:16px;font-weight:900;color:var(--fox);min-width:42px}
+.combo svg{width:24px;height:24px}
+.combo.zero{color:var(--hare)} .combo.zero svg{filter:grayscale(1);opacity:.4}
+.combo.pop{animation:pop .4s var(--back)}
+.lmeta{display:flex;align-items:center;gap:8px;margin:12px 0 4px;min-height:26px}
+.tag{font-size:12px;font-weight:800;letter-spacing:.06em;padding:3px 9px;border-radius:8px}
+.tag.new{background:var(--eel-p);color:var(--eel-d)} .tag.rev{background:#fff4d6;color:var(--bee-d)} .tag.again{background:var(--car-p);color:var(--car-d)}
+.mult{font-size:13px;font-weight:900;color:#fff;background:var(--hare);border-radius:8px;padding:3px 8px}
+.mult.m2{background:var(--eel)} .mult.m3{background:var(--owl)} .mult.m4{background:var(--fox)} .mult.m5{background:var(--car)}
+.mult.up{animation:pop .5s var(--back)}
+.score{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:17px;font-weight:900;color:var(--bee-d);font-variant-numeric:tabular-nums}
+.score svg{width:20px;height:20px}
+.score.bump{animation:pop .35s var(--back)}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:none}}
+.q{font-size:22px;font-weight:800;margin:6px 0 14px;line-height:1.3}
+.prompt{display:flex;align-items:center;gap:14px;margin-bottom:12px;min-height:64px}
+.spk{position:relative;width:56px;height:56px;flex:none;border-radius:16px;background:var(--eel);border-bottom:4px solid var(--eel-d);display:flex;align-items:center;justify-content:center;color:#fff}
+.spk:active{transform:translateY(4px);border-bottom-color:transparent}
+.spk svg{width:30px;height:30px}
+.word{font-size:32px;font-weight:900;line-height:1.1;word-break:break-word}
+.photo{width:min(46vw,180px);aspect-ratio:1;border-radius:16px;object-fit:cover;object-position:50% 22%;border:2px solid var(--swan);border-bottom-width:4px;display:block}
+.prompt.pface{justify-content:center}
+.timer{height:8px;background:var(--swan);border-radius:99px;overflow:hidden;margin:4px 0 16px;flex:none}
+.timer i{display:block;height:100%;width:100%;background:var(--eel);border-radius:99px;transform-origin:left;will-change:transform;transition:background-color .3s}
+.timer i{background:#c9ecfd}
+.timer.warn i{background:#c9ecfd} .timer.danger i{background:#ffb2b2} .timer.off{visibility:hidden}
+.opts{display:grid;gap:10px}
+.opts.two{grid-template-columns:1fr 1fr}
+.opt{position:relative;display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 14px;border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;font-size:16px;font-weight:700;line-height:1.35;text-align:left;transition:transform .1s}
+.opt:active{transform:translateY(2px)}
+.opt .k{width:28px;height:28px;flex:none;border:2px solid var(--swan);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--hare);font-weight:800}
+.opts.two .opt{justify-content:center;text-align:center;min-height:68px;font-size:17px;font-weight:800}
+.opts.two .opt .k{display:none}
+.opt.ok{background:var(--owl-p);border-color:#a5ed6e;color:var(--owl-d)} .opt.ok .k{border-color:#a5ed6e;color:var(--owl-d)}
+.opt.ng{background:var(--car-p);border-color:#ffb2b2;color:var(--car-d);animation:shake .35s}
+.opt.dim{opacity:.4}
+.opts.locked .opt{pointer-events:none}
+@keyframes shake{25%,75%{transform:translateX(-3px)}50%{transform:translateX(3px)}}
+#lesson{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain}
+#lesson.enter{animation:lin .14s linear}
+@keyframes lin{from{opacity:.4}to{opacity:1}}
+.lfoot{margin:auto 0 0;padding:16px 0 calc(var(--sb) + 16px);border-top:2px solid var(--swan);background:#fff}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.seg label{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;height:44px;border:2px solid var(--swan);border-bottom-width:4px;border-radius:12px;font-size:14px;font-weight:800;color:var(--hare)}
+.seg label.on{border-color:#84d8ff;background:var(--eel-p);color:var(--eel-d)}
+.flash{flex:1;display:flex;align-items:center;justify-content:center;perspective:1200px;min-height:260px;margin-bottom:12px}
+.fcard{position:relative;display:block;width:100%;height:min(46vh,380px)}
+.flip{position:absolute;inset:0;will-change:transform}
+/* 表と裏は回転で透かさず、真横になった瞬間に入れ替える */
+.fcard .face.b{display:none}
+.fcard.rev .face.a{display:none}
+.fcard.rev .face.b{display:flex}
+.fcard.out-ok,.fcard.out-ng{transition:opacity .16s linear;opacity:0}
+.face{position:absolute;inset:0;border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:18px;text-align:center;overflow:hidden}
+.face.b{overflow-y:auto;justify-content:center}
+.face.b.pf{justify-content:flex-start;text-align:left;align-items:stretch}
+.face .word{font-size:36px}
+.face .spk{position:absolute;top:14px;right:14px;width:48px;height:48px;border-radius:14px}
+.face .spk svg{width:26px;height:26px}
+.face .mean{font-size:24px;font-weight:800;line-height:1.45}
+.face .en{font-size:15px;color:var(--hare)}
+.face .pbig{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%}
+.fhint{text-align:center;font-size:13px;color:var(--hare);margin-bottom:6px;height:18px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+[hidden]{display:none!important}
+
+/* 判定バナー（下から 200ms） */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:18px 16px calc(var(--sb) + 16px);transform:translateY(105%);transition:transform .2s ease-out;max-height:80vh;overflow-y:auto}
+.sheet.on{transform:none}
+.sheet.ok{background:var(--owl-p)} .sheet.ng{background:var(--car-p)}
+.sheet.ok .btn{--c:var(--owl);--cd:var(--owl-d)} .sheet.ng .btn{--c:var(--car);--cd:var(--car-d)}
+.sh-h{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;margin-bottom:6px}
+.sh-h .ic{width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.sh-h .ic svg{width:18px;height:18px}
+.sheet.ok .sh-h{color:var(--owl-d)} .sheet.ng .sh-h{color:var(--car-d)}
+.sh-pts{margin-left:auto;font-size:17px;display:flex;align-items:center;gap:3px;color:var(--bee-d)}
+.sh-pts svg{width:20px;height:20px}
+.sh-b{font-size:16px;line-height:1.5;margin:4px 0 14px;color:var(--ink)}
+.sheet.ng .sh-b{color:var(--car-d)}
+.sh-b .lb{font-size:13px;font-weight:800;opacity:.8}
+.sh-b .ans{font-size:18px;font-weight:800}
+.prof{display:flex;gap:12px;align-items:flex-start;color:var(--ink)}
+.prof img{width:64px;height:64px;border-radius:12px;object-fit:cover;object-position:50% 22%;flex:none}
+.prof .nm{font-size:20px;font-weight:900;line-height:1.2}
+.prof .kn{font-size:12px;color:var(--wolf);font-weight:700;margin-left:8px}
+.prof .go{font-size:12px;color:var(--wolf);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prof .co{display:inline-block;margin-top:6px;font-size:13px;font-weight:800;color:#fff;background:var(--bet);border-radius:8px;padding:2px 8px}
+.prof .rl{font-size:13px;color:var(--wolf);margin-top:4px;line-height:1.4}
+.works{margin:10px 0 0;padding:0;list-style:none}
+.works li{position:relative;padding:2px 0 2px 22px;font-size:14px;font-weight:700;color:var(--ink);line-height:1.45}
+.works li svg{position:absolute;left:0;top:4px;width:16px;height:16px}
+
+.xp{position:fixed;font-size:20px;font-weight:900;color:var(--bee-d);pointer-events:none;z-index:60;animation:xp .8s ease-out forwards}
+@keyframes xp{0%{transform:translateY(0) scale(.7);opacity:0}25%{transform:translateY(-8px) scale(1.15);opacity:1}100%{transform:translateY(-56px);opacity:0}}
+.praise{position:fixed;left:50%;top:36%;z-index:50;transform:translate(-50%,-50%);font-size:28px;font-weight:900;color:#fff;background:var(--fox);border-bottom:5px solid var(--fox-d);
+  padding:10px 20px;border-radius:16px;pointer-events:none;white-space:nowrap;display:flex;align-items:center;gap:6px;animation:praise 1s var(--back) forwards}
+.praise svg{width:28px;height:28px}
+@keyframes praise{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}25%{transform:translate(-50%,-50%) scale(1.1);opacity:1}40%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-70%);opacity:0}}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
+
+/* 完了 */
+#sDone{align-items:center;text-align:center;padding-top:calc(var(--st) + 20px)}
+#sDone .mascot{width:96px;height:96px}
+.dt{font-size:28px;font-weight:900;color:var(--bee-d);margin:8px 0 2px}
+.ds{font-size:15px;color:var(--wolf)}
+.dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:420px;margin:16px 0 12px}
+.dstat{border:2px solid var(--k);border-radius:16px;overflow:hidden;opacity:0;transform:translateY(16px)}
+.dstat.on{animation:sin .45s var(--back) forwards}
+@keyframes sin{to{opacity:1;transform:none}}
+.dstat .h{background:var(--k);color:#fff;font-size:12px;font-weight:800;padding:5px 0;letter-spacing:.04em}
+.dstat .v{display:flex;align-items:center;justify-content:center;gap:4px;font-size:22px;font-weight:900;padding:12px 0;color:var(--k)}
+.dstat .v svg{width:20px;height:20px}
+.rec{display:none;align-items:center;gap:6px;font-size:15px;font-weight:800;color:#fff;background:var(--car);border-bottom:4px solid var(--car-d);border-radius:12px;padding:6px 14px;margin-top:12px;animation:pop .5s var(--back)}
+.rec.on{display:inline-flex} .rec svg{width:20px;height:20px}
+.sk{display:flex;align-items:center;justify-content:center;gap:6px;font-size:17px;font-weight:900;color:var(--fox);margin-bottom:16px;opacity:0}
+.sk.on{animation:sin .45s var(--back) forwards}
+.sk svg{width:28px;height:28px}
+.dfoot{width:100%;max-width:420px;display:flex;flex-direction:column;gap:12px;margin-top:auto;padding:8px 0 calc(var(--sb) + 8px)}
+#sDone .lvdone{margin-bottom:10px;padding:12px 14px}
+.lvdone{width:100%;max-width:420px;text-align:left}
+
+/* 記録 */
+.streak{display:flex;align-items:center;gap:14px;background:#fff4e5;border:2px solid #ffd9a8;border-bottom-width:4px;border-radius:16px;padding:14px 16px;margin-bottom:16px;color:var(--fox)}
+.streak svg{width:52px;height:52px;flex:none}
+.streak .n{font-size:32px;font-weight:900;line-height:1}
+.streak .r{margin-left:auto;text-align:right;font-size:13px}
+.calnav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:17px;font-weight:800}
+.calnav button{width:36px;height:36px;color:var(--hare);display:flex;align-items:center;justify-content:center}
+.calnav svg{width:20px;height:20px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px 2px;text-align:center}
+.cal .h{font-size:12px;color:var(--hare);font-weight:800}
+.cal .d{width:min(100%,38px);aspect-ratio:1/1;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--hare)}
+.cal .d.has{background:#fff4d6;color:var(--bee-d)}
+.cal .d.goal{background:var(--fox);color:#fff}
+.cal .d.goal svg{width:60%;height:60%;filter:brightness(0) invert(1)}
+.cal .d.today{box-shadow:0 0 0 2px var(--eel)}
+.cal .d.sel{box-shadow:0 0 0 3px var(--eel-p),0 0 0 5px var(--eel)}
+#cDetail{font-size:13px;color:var(--wolf);margin-top:12px;min-height:18px;word-break:break-all}
+.levels{display:flex;height:16px;border-radius:99px;overflow:hidden;background:var(--swan);margin:8px 0 14px}
+.levels i{display:block;height:100%;transition:width .6s ease-out}
+.small{font-size:12px;color:var(--hare);line-height:1.6}
+
+/* 設定 */
+.sec{font-size:13px;color:var(--hare);font-weight:800;letter-spacing:.08em;margin:16px 0 4px}
+.set{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:2px solid var(--polar);gap:10px;font-size:15px}
+.set .v{font-size:14px;color:var(--eel);min-width:48px;text-align:right;font-weight:800}
+.set input[type=range]{flex:1;max-width:44%;accent-color:var(--eel)}
+.set select{background:#fff;border:2px solid var(--swan);border-radius:12px;padding:8px;max-width:55%;font:inherit;font-size:13px;color:var(--ink)}
+.sw{width:52px;height:30px;border-radius:15px;background:var(--swan);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .2s var(--back)}
+.sw.on{background:var(--owl)} .sw.on::after{left:25px}
+.test{position:relative;font-size:12px;font-weight:800;padding:6px 10px;border:2px solid var(--swan);border-bottom-width:4px;border-radius:10px;color:var(--eel)}
+
+#lvup{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;flex-direction:column;background:var(--bee);color:#fff;text-align:center}
+#lvup.on{display:flex}
+#lvup .n{font-size:96px;font-weight:900;line-height:1;text-shadow:0 6px 0 var(--bee-d);animation:pop .5s var(--back)}
+#lvup .t{font-size:22px;font-weight:800;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:calc(96px + var(--sb));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:80}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="i-fire" viewBox="0 0 32 32"><path d="M16 1.5c1.2 5.6 9.8 9.3 9.8 18.6a9.8 9.8 0 0 1-19.6 0c0-5.5 3.4-7.8 4.7-11.7 1.8 2.3 2.4 4.2 2.6 5.7C15.1 10 15.6 5.8 16 1.5z" fill="#ff9600"/><path d="M16 14c.9 3.1 5.2 4.5 5.2 8.8a5.2 5.2 0 0 1-10.4 0c0-2.8 2-3.7 2.8-5.8.9 1 1.2 1.9 1.4 2.7.4-2 .7-3.7 1-5.7z" fill="#ffc800"/><path d="M9.4 17.6c-.7 1.5-.9 3-.5 4.6" stroke="#ffd29b" stroke-width="2" stroke-linecap="round" fill="none"/></symbol>
+ <symbol id="i-bolt" viewBox="0 0 32 32"><path d="M19.8 1.8 6.6 18.6h8.6l-2.8 11.6L25.8 12.8h-8.8z" fill="#ffc800"/><path d="M17 12.8h8.8L12.4 30.2l2.8-11.6z" fill="#f5b100"/><path d="M17.5 5.2 10.6 14.2" stroke="#fff1a8" stroke-width="2" stroke-linecap="round"/></symbol>
+ <symbol id="i-crown" viewBox="0 0 32 32"><path d="M3.5 9.5 10 15.6 16 6l6 9.6 6.5-6.1-2.3 14.6H5.8z" fill="#ffc800"/><rect x="5.6" y="21.4" width="20.8" height="5.2" rx="2" fill="#f5b100"/><circle cx="16" cy="5.6" r="2.6" fill="#ff4b4b"/><circle cx="3.6" cy="9.4" r="2.2" fill="#ffc800"/><circle cx="28.4" cy="9.4" r="2.2" fill="#ffc800"/><circle cx="16" cy="17.2" r="2.2" fill="#1cb0f6"/></symbol>
+ <symbol id="i-book" viewBox="0 0 32 32"><path d="M2.5 7.4c4.2-1.9 8.8-1.7 12.5.8v19.4c-3.7-2.5-8.3-2.7-12.5-.8z" fill="#58cc02"/><path d="M29.5 7.4c-4.2-1.9-8.8-1.7-12.5.8v19.4c3.7-2.5 8.3-2.7 12.5-.8z" fill="#89e219"/><rect x="14.6" y="8" width="2.8" height="19.6" rx="1.2" fill="#58a700"/><path d="M5.6 12.2c2.4-.8 4.7-.6 6.6.4M5.6 16.4c2.4-.8 4.7-.6 6.6.4M19.8 12.6c1.9-1 4.2-1.2 6.6-.4" stroke="#d7ffb8" stroke-width="1.8" stroke-linecap="round" fill="none"/></symbol>
+ <symbol id="i-face" viewBox="0 0 32 32"><rect x="4.5" y="3" width="23" height="26.5" rx="6" fill="#a568cc"/><rect x="4.5" y="2.5" width="23" height="24.5" rx="6" fill="#ce82ff"/><circle cx="16" cy="12" r="5.2" fill="#fff"/><path d="M7.6 25.6c1.3-5 4.6-7.3 8.4-7.3s7.1 2.3 8.4 7.3z" fill="#fff"/></symbol>
+ <symbol id="i-cal" viewBox="0 0 32 32"><rect x="3.5" y="6" width="25" height="23.5" rx="6" fill="#e5e5e5"/><rect x="3.5" y="5" width="25" height="22.5" rx="6" fill="#fff" stroke="#e5e5e5" stroke-width="1.5"/><path d="M3.5 11a6 6 0 0 1 6-6h13a6 6 0 0 1 6 6z" fill="#ff4b4b"/><rect x="9" y="2.2" width="3" height="6" rx="1.5" fill="#ea2b2b"/><rect x="20" y="2.2" width="3" height="6" rx="1.5" fill="#ea2b2b"/><path d="M10.5 18.8l3.6 3.6 7.4-7.4" stroke="#58cc02" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+ <symbol id="i-gear" viewBox="0 0 32 32"><path d="M13.5 2.5h5l.9 3.8 2.6 1.1 3.3-2.1 3.5 3.5-2.1 3.3 1.1 2.6 3.8.9v5l-3.8.9-1.1 2.6 2.1 3.3-3.5 3.5-3.3-2.1-2.6 1.1-.9 3.8h-5l-.9-3.8-2.6-1.1-3.3 2.1-3.5-3.5 2.1-3.3-1.1-2.6-3.8-.9v-5l3.8-.9 1.1-2.6-2.1-3.3 3.5-3.5 3.3 2.1 2.6-1.1z" fill="#afafaf"/><circle cx="16" cy="16" r="6.4" fill="#e5e5e5"/><circle cx="16" cy="16" r="3.6" fill="#fff"/></symbol>
+ <symbol id="i-star" viewBox="0 0 32 32"><path d="M16 2.6l4.1 8.3 9.1 1.3-6.6 6.4 1.6 9.1L16 23.4l-8.2 4.3 1.6-9.1-6.6-6.4 9.1-1.3z" fill="#ffc800" stroke="#f5b100" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+ <symbol id="i-trophy" viewBox="0 0 32 32"><path d="M8 4h16v8a8 8 0 0 1-16 0z" fill="#ffc800"/><path d="M8 7H4.5a4.5 4.5 0 0 0 4.5 7M24 7h3.5a4.5 4.5 0 0 1-4.5 7" stroke="#f5b100" stroke-width="2.6" fill="none" stroke-linecap="round"/><rect x="14" y="19" width="4" height="5" fill="#f5b100"/><rect x="9" y="24" width="14" height="4.5" rx="2" fill="#f5b100"/></symbol>
+ <symbol id="i-target" viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#58cc02"/><circle cx="16" cy="16" r="8.5" fill="#fff"/><circle cx="16" cy="16" r="4.5" fill="#58cc02"/></symbol>
+ <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+ <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></symbol>
+ <symbol id="i-ok" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11" stroke="currentColor" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+ <symbol id="i-spk" viewBox="0 0 24 24"><path d="M3.5 9h4l5-4v14l-5-4h-4z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 010 7M18.3 6a8.5 8.5 0 010 12" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></symbol>
+</svg>
+
+<template id="mascotT">
+<svg class="mascot" viewBox="0 0 120 120" aria-hidden="true">
+  <path d="M60 22c2-9 9-14 17-13-1 8-7 14-17 13z" fill="#58a700"/><path d="M60 22c-2-8-8-12-15-11 1 7 6 12 15 11z" fill="#89e219"/>
+  <ellipse cx="60" cy="112" rx="34" ry="5" fill="#000" opacity=".08"/>
+  <ellipse cx="44" cy="106" rx="11" ry="6" fill="#ff9600"/><ellipse cx="76" cy="106" rx="11" ry="6" fill="#ff9600"/>
+  <ellipse cx="60" cy="68" rx="44" ry="41" fill="var(--c,#58cc02)"/>
+  <ellipse cx="60" cy="82" rx="27" ry="21" fill="#fff" opacity=".35"/>
+  <ellipse cx="22" cy="74" rx="9" ry="14" fill="var(--cd,#58a700)" transform="rotate(20 22 74)"/><ellipse cx="98" cy="74" rx="9" ry="14" fill="var(--cd,#58a700)" transform="rotate(-20 98 74)"/>
+  <g class="eyes"><circle cx="44" cy="58" r="14" fill="#fff"/><circle cx="76" cy="58" r="14" fill="#fff"/><circle cx="47" cy="60" r="7" fill="#3c3c3c"/><circle cx="73" cy="60" r="7" fill="#3c3c3c"/><circle cx="49" cy="57" r="2.4" fill="#fff"/><circle cx="75" cy="57" r="2.4" fill="#fff"/></g>
+  <g class="happy" fill="none" stroke="#3c3c3c" stroke-width="5" stroke-linecap="round"><path d="M34 60q10-12 20 0"/><path d="M66 60q10-12 20 0"/></g>
+  <path d="M53 74q7 7 14 0" fill="#ff9600"/>
+  <circle cx="30" cy="74" r="5" fill="#ff86a0" opacity=".55"/><circle cx="90" cy="74" r="5" fill="#ff86a0" opacity=".55"/>
+</svg>
+</template>
+
+<!-- 単語 -->
+<section class="screen on" id="sWords">
+  <div class="stats"><span class="stat fire" data-streak><svg><use href="#i-fire"/></svg><b>0</b></span><span class="stat bolt" data-xp><svg><use href="#i-bolt"/></svg><b>0</b></span><span class="stat lv" data-lv><svg><use href="#i-crown"/></svg><b>1</b></span></div>
+  <div class="hero"><div class="m"></div><div class="bubble" id="wSay"></div></div>
+  <div class="box" data-lvcard></div>
+  <div class="seg" data-type="w"><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
+  <div class="box">
+    <div class="cap">今日の単語</div>
+    <div class="big"><span id="wDone">0</span><small id="wOf"> / 100</small></div>
+    <div class="bar"><i id="wBar"></i></div>
+    <div class="pills" id="wMix"></div>
+  </div>
+  <label class="btn" id="wStart"><input type="checkbox" switch class="hsw"><span class="tx">スタート</span></label>
+  <label class="btn eel" id="wMore" style="margin-top:12px;display:none"><input type="checkbox" switch class="hsw"><span class="tx">＋100語</span></label>
+  <div class="trio"><div><b id="wLearned">0</b><span>定着</span></div><div><b id="wDue">0</b><span>明日の復習</span></div><div><b id="wNew">0</b><span>未出題</span></div></div>
+</section>
+
+<!-- 顔 -->
+<section class="screen" id="sFaces">
+  <div class="stats"><span class="stat fire" data-streak><svg><use href="#i-fire"/></svg><b>0</b></span><span class="stat bolt" data-xp><svg><use href="#i-bolt"/></svg><b>0</b></span><span class="stat lv" data-lv><svg><use href="#i-crown"/></svg><b>1</b></span></div>
+  <div class="hero"><div class="m"></div><div class="bubble" id="pSay"></div></div>
+  <div class="chips" id="gChips"></div>
+  <div class="box" data-lvcard></div>
+  <div class="seg" data-type="p"><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
+  <div class="box">
+    <div class="cap">今日の顔と名前</div>
+    <div class="big"><span id="pDone">0</span><small id="pOf"> / 40</small></div>
+    <div class="bar"><i id="pBar"></i></div>
+    <div class="pills" id="pMix"></div>
+  </div>
+  <label class="btn" id="pStart"><input type="checkbox" switch class="hsw"><span class="tx">スタート</span></label>
+  <label class="btn eel" id="pMore" style="margin-top:12px;display:none"><input type="checkbox" switch class="hsw"><span class="tx">＋20人</span></label>
+  <div class="trio"><div><b id="pLearned">0</b><span>定着</span></div><div><b id="pDue">0</b><span>明日の復習</span></div><div><b id="pNew">0</b><span>未出題</span></div></div>
+</section>
+
+<!-- 記録 -->
+<section class="screen" id="sLog">
+  <h1>記録</h1>
+  <div class="streak"><svg><use href="#i-fire"/></svg><div><div class="n" id="lStreak">0</div><div>日連続</div></div><div class="r"><div>学習日 <b id="lDays">0</b></div><div>累計 <b id="lTotal">0</b></div></div></div>
+  <div class="box">
+    <div class="calnav"><button id="cPrev"><svg style="transform:scaleX(-1)"><use href="#i-chev"/></svg></button><span id="cTitle"></span><button id="cNext"><svg><use href="#i-chev"/></svg></button></div>
+    <div class="cal" id="cal"></div>
+    <div id="cDetail"></div>
+  </div>
+  <div class="box">
+    <div class="cap">単語の覚え具合</div><div class="levels" id="lvW"></div>
+    <div class="cap">顔の覚え具合</div><div class="levels" id="lvP"></div>
+    <div class="small">赤＝覚えたて → 青・紫＝しっかり定着（1→3→7→14→30→60日）</div>
+  </div>
+</section>
+
+<!-- 設定 -->
+<section class="screen" id="sSet">
+  <h1>設定</h1>
+  <div class="sec">量</div>
+  <div class="set"><span>1日の単語数</span><input type="range" id="stWordGoal" min="50" max="400" step="10"><span class="v" id="vWordGoal"></span></div>
+  <div class="set"><span>1日の人数</span><input type="range" id="stFaceGoal" min="10" max="100" step="5"><span class="v" id="vFaceGoal"></span></div>
+  <div class="set"><span>復習の上限</span><input type="range" id="stRatio" min="30" max="80" step="5"><span class="v" id="vRatio"></span></div>
+  <div class="set"><span>制限時間（1問）</span><input type="range" id="stTimer" min="0" max="15" step="1"><span class="v" id="vTimer"></span></div>
+  <div class="sec">音と振動</div>
+  <div class="set"><span>効果音</span><input type="range" id="stEff" min="0" max="100" step="5"><span class="v" id="vEff"></span><label class="test" id="tEff"><input type="checkbox" switch class="hsw">試す</label></div>
+  <div class="set"><span>発音の音量</span><input type="range" id="stSp" min="0" max="100" step="5"><span class="v" id="vSp"></span><label class="test" id="tSp"><input type="checkbox" switch class="hsw">試す</label></div>
+  <div class="set"><span>発音の速さ</span><input type="range" id="stRate" min="50" max="140" step="5"><span class="v" id="vRate"></span></div>
+  <div class="set"><span>声</span><select id="stVoice"></select></div>
+  <div class="set"><span>振動</span><div class="sw" id="swHap"></div></div>
+  <div class="set"><span>振動テスト（押して確認）</span><input type="checkbox" switch style="width:52px;height:30px"></div>
+  <div class="set"><span>出題時に自動で発音</span><div class="sw" id="swAuto"></div></div>
+  <div class="set"><span>名前を読み上げる</span><div class="sw" id="swName"></div></div>
+  <div class="small" style="padding:16px 0" id="stStore"></div>
+</section>
+
+<!-- レッスン -->
+<section class="screen" id="play">
+  <div class="ltop">
+    <button class="x" id="xClose" aria-label="閉じる"><svg><use href="#i-x"/></svg></button>
+    <div class="bar"><i id="pbar"></i></div>
+    <div class="combo zero" id="combo"><svg><use href="#i-fire"/></svg><span>0</span></div>
+  </div>
+  <div id="lesson">
+    <div class="lmeta"><span class="tag new" id="tag">NEW</span><span class="mult" id="mult">×1</span><span class="score" id="score"><svg><use href="#i-bolt"/></svg><b>0</b></span></div>
+    <div class="q" id="qText">この単語の意味は？</div>
+    <div class="prompt" id="prompt"></div>
+    <div class="timer" id="timer"><i id="tbar"></i></div>
+    <div class="opts" id="opts"></div>
+    <div class="flash" id="flash" hidden><label class="fcard" id="fcard"><input type="checkbox" switch class="hsw"><div class="flip"><div class="face a" id="fa"></div><div class="face b" id="fb"></div></div></label></div>
+    <div class="fhint" id="fhint" hidden>カードをタップでめくる</div>
+    <div class="lfoot">
+      <label class="btn sec gray" id="bSkip"><input type="checkbox" switch class="hsw"><span class="tx">わからない</span></label>
+      <label class="btn eel" id="bFlip" hidden><input type="checkbox" switch class="hsw"><span class="tx">めくる</span></label>
+      <div class="duo" id="bDuo" hidden><label class="btn car" id="bNg"><input type="checkbox" switch class="hsw"><span class="tx">まだ</span></label><label class="btn owl" id="bOk"><input type="checkbox" switch class="hsw"><span class="tx">覚えた</span></label></div>
+    </div>
+  </div>
+</section>
+<div class="sheet" id="sheet">
+  <div class="sh-h"><span class="ic" id="shIc"></span><span id="shT"></span><span class="sh-pts" id="shPts"></span></div>
+  <div class="sh-b" id="shB"></div>
+  <label class="btn" id="bNext"><input type="checkbox" switch class="hsw"><span class="tx">つぎへ</span></label>
+</div>
+
+<!-- 完了 -->
+<section class="screen" id="sDone">
+  <div class="m"></div>
+  <div class="dt" id="dTitle">レッスン完了！</div>
+  <div class="ds" id="dSub"></div>
+  <div class="rec" id="dRec"><svg><use href="#i-trophy"/></svg>ハイスコア更新！</div>
+  <div class="dstats">
+    <div class="dstat" style="--k:var(--bee)"><div class="h">スコア</div><div class="v"><svg><use href="#i-bolt"/></svg><span id="dXp">0</span></div></div>
+    <div class="dstat" style="--k:var(--owl)"><div class="h">正答率</div><div class="v"><svg><use href="#i-target"/></svg><span id="dAcc">0%</span></div></div>
+    <div class="dstat" style="--k:var(--fox)"><div class="h">最大コンボ</div><div class="v"><svg><use href="#i-fire"/></svg><span id="dCombo">0</span></div></div>
+  </div>
+  <div class="box lvdone" data-lvcard-done></div>
+  <div class="sk" id="dStreak"></div>
+  <div class="dfoot">
+    <label class="btn" id="dMore"><input type="checkbox" switch class="hsw"><span class="tx">＋100語</span></label>
+    <label class="btn sec" id="dHome"><input type="checkbox" switch class="hsw"><span class="tx">ホームへ</span></label>
+  </div>
+</section>
+
+<nav id="nav">
+  <label data-t="sWords" class="on"><input type="checkbox" switch class="hsw"><svg><use href="#i-book"/></svg></label>
+  <label data-t="sFaces"><input type="checkbox" switch class="hsw"><svg><use href="#i-face"/></svg></label>
+  <label data-t="sLog"><input type="checkbox" switch class="hsw"><svg><use href="#i-cal"/></svg></label>
+  <label data-t="sSet"><input type="checkbox" switch class="hsw"><svg><use href="#i-gear"/></svg></label>
+</nav>
+<canvas id="fx"></canvas>
+<div id="lvup"><div style="font-size:20px;font-weight:900">LEVEL UP!</div><div class="n" id="lvN">2</div><div class="t" id="lvT"></div><div style="margin-top:28px;font-size:14px;opacity:.85">タップで続ける</div></div>
+<div id="toast"></div>
+
+<script src="words.js?v=9"></script>
+<script src="people.js?v=11"></script>
+<script>
