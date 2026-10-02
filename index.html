@@ -32,7 +32,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#fff;color:var(--ink);overflow:hidden;overscroll-behavior:none;
   font-family:"Nunito","Hiragino Maru Gothic ProN","M PLUS Rounded 1c",system-ui,sans-serif;font-weight:700;font-size:15px;-webkit-font-smoothing:antialiased}
-body{display:flex;flex-direction:column;-webkit-user-select:none;user-select:none}
+body{display:flex;flex-direction:column;-webkit-user-select:none;user-select:none;position:fixed;inset:0;width:100%;touch-action:pan-y}
 button,label{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 .hsw{position:absolute;left:0;top:0;width:1px;height:1px;margin:0;visibility:hidden}
 label{touch-action:manipulation}
@@ -42,7 +42,6 @@ label{touch-action:manipulation}
 @media (min-width:640px){
   .screen{padding-left:max(16px,calc(50vw - 300px));padding-right:max(16px,calc(50vw - 300px))}
   .stats{margin-left:calc(-1 * max(16px,calc(50vw - 300px)) - 0px);margin-right:calc(-1 * max(16px,calc(50vw - 300px)));padding-left:max(18px,calc(50vw - 298px));padding-right:max(18px,calc(50vw - 298px))}
-  .lfoot{margin-left:calc(-1 * max(16px,calc(50vw - 300px)));margin-right:calc(-1 * max(16px,calc(50vw - 300px)));padding-left:max(16px,calc(50vw - 300px));padding-right:max(16px,calc(50vw - 300px))}
   .sheet{padding-left:max(16px,calc(50vw - 300px))!important;padding-right:max(16px,calc(50vw - 300px))!important}
   nav{justify-content:center} nav label{max-width:140px}
   #play,#sDone{padding-left:max(16px,calc(50vw - 300px))!important;padding-right:max(16px,calc(50vw - 300px))!important}
@@ -112,7 +111,7 @@ nav label:not(.on) svg{filter:saturate(.35);opacity:.75}
 body.playing nav{display:none}
 
 /* ===== レッスン ===== */
-#play{padding:calc(var(--st) + 10px) 16px 0;overflow:hidden}
+#play{padding:calc(var(--st) + 10px) 16px 0;overflow:hidden;touch-action:pan-y}
 .ltop{display:flex;align-items:center;gap:14px;height:40px;flex:none}
 .ltop .x{width:32px;height:32px;color:var(--hare);display:flex;align-items:center;justify-content:center}
 .ltop .x svg{width:22px;height:22px}
@@ -155,10 +154,10 @@ body.playing nav{display:none}
 .opt.dim{opacity:.4}
 .opts.locked .opt{pointer-events:none}
 @keyframes shake{25%,75%{transform:translateX(-3px)}50%{transform:translateX(3px)}}
-#lesson{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
+#lesson{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain}
 #lesson.enter{animation:lin .14s linear}
 @keyframes lin{from{opacity:.4}to{opacity:1}}
-.lfoot{margin:auto -16px 0;padding:16px 16px calc(var(--sb) + 16px);border-top:2px solid var(--swan);background:#fff}
+.lfoot{margin:auto 0 0;padding:16px 0 calc(var(--sb) + 16px);border-top:2px solid var(--swan);background:#fff}
 
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .seg label{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;height:44px;border:2px solid var(--swan);border-bottom-width:4px;border-radius:12px;font-size:14px;font-weight:800;color:var(--hare)}
