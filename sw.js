@@ -1,5 +1,5 @@
 // TOEIC Daily Master — Service Worker (network-first)
-const CACHE = 'tdm-v6';
+const CACHE = 'tdm-v7';
 const ASSETS = [
   './',
   './index.html',

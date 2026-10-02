@@ -53,8 +53,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;paddin
 .hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .hud .pill{display:flex;align-items:center;gap:5px;font-size:17px;font-weight:900}
 .hud .pill.fire{color:var(--orange)} .hud .pill.bolt{color:var(--gold-d)} .hud .pill.gem{color:var(--blue)}
-.hud .pill.off{color:var(--dim);filter:grayscale(1)}
-.hud .ico{font-size:20px;display:inline-block}
+.hud .pill.off{color:var(--dim)} .hud .pill.off .ico{filter:grayscale(1) opacity(.5)}
+.hud .ico{width:26px;height:26px;display:inline-block}
+svg.ii{width:1.05em;height:1.05em;vertical-align:-.15em;margin-right:6px}
+svg.flipx{transform:scaleX(-1);margin:0}
 .hud .pill.fire .ico{animation:flick 1.6s ease-in-out infinite}
 @keyframes flick{0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.12) rotate(3deg)}}
 
@@ -109,7 +111,7 @@ h1{font-size:22px;font-weight:900;margin:6px 0 10px}
 /* ---------- タブバー ---------- */
 nav{display:flex;border-top:2px solid var(--line);background:#fff;padding:6px 8px calc(var(--safe-b) + 6px);gap:4px}
 nav button{flex:1;padding:6px 0;border-radius:14px;border:2px solid transparent;font-size:11px;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .15s var(--spring)}
-nav button .e{font-size:24px;filter:grayscale(1) opacity(.55);transition:filter .2s,transform .3s var(--spring)}
+nav button .e{width:30px;height:30px;filter:saturate(.25) opacity(.6);transition:filter .2s,transform .3s var(--spring)}
 nav button.on{border-color:#84d8ff;background:var(--blue-l);color:var(--blue-d)}
 nav button.on .e{filter:none;transform:scale(1.12)}
 nav button:active{transform:scale(.9)}
@@ -182,7 +184,7 @@ body.playing nav{display:none}
 .pworks{margin-top:14px;width:100%;text-align:left;border-top:2px dashed var(--line);padding-top:10px}
 .pworks .h{font-size:11px;color:var(--dim);letter-spacing:.12em;margin-bottom:6px}
 .pworks li{list-style:none;font-size:14px;line-height:1.45;padding:3px 0 3px 22px;position:relative;font-weight:700}
-.pworks li::before{content:'★';position:absolute;left:2px;color:var(--gold)}
+.pworks li svg{position:absolute;left:0;top:5px;width:16px;height:16px}
 .pworks ul{margin:0;padding:0}
 .face.b{justify-content:flex-start;overflow-y:auto;padding-top:26px}
 .answer{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;transition:opacity .2s,transform .3s var(--spring)}
@@ -211,14 +213,22 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 .dbtns{width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px}
 
 /* ---------- 記録 ---------- */
-.streakcard{display:flex;min-width:0;align-items:center;gap:14px;background:linear-gradient(135deg,#ff9600,#ffc800);color:#fff;border-radius:20px;padding:16px 18px;box-shadow:0 5px 0 #e08600;margin-bottom:16px}
+.streakcard{display:flex;min-width:0;align-items:center;gap:14px;background:#fff4e5;color:var(--orange);border:2px solid #ffd9a8;border-radius:20px;padding:16px 18px;box-shadow:0 5px 0 #ffd9a8;margin-bottom:16px}
 .streakcard .big{font-size:46px;font-weight:900;line-height:1}
-.streakcard .fl{font-size:52px;animation:flick 1.6s ease-in-out infinite}
+.streakcard .fl{width:54px;height:54px;flex:none;animation:flick 1.6s ease-in-out infinite;filter:drop-shadow(0 2px 0 rgba(0,0,0,.12))}
+.streakcard .fl use{}
+#combo{display:flex;align-items:center;gap:3px}
+#combo svg{width:22px;height:22px}
+.cal .d svg{width:70%;height:70%}
+.streakpop{display:flex;align-items:center;gap:6px;justify-content:center}
+.streakpop svg{width:28px;height:28px}
+.newrec svg.ii{width:22px;height:22px;vertical-align:-5px}
+.praise svg{width:34px;height:34px;vertical-align:-6px;margin-right:4px}
 .box{border:2px solid var(--line);border-radius:20px;padding:14px;margin-bottom:14px}
 .calnav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:17px}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;text-align:center}
 .cal .h{font-size:11px;color:var(--dim);padding:2px 0}
-.cal .d{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--dim);position:relative;transition:transform .15s var(--spring)}
+.cal .d{width:min(100%,40px);height:auto;aspect-ratio:1/1;margin:0 auto;align-self:center;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--dim);position:relative;transition:transform .15s var(--spring)}
 .cal .d:active{transform:scale(.85)}
 .cal .d.has{background:#fff4d6;color:var(--gold-d)}
 .cal .d.goal{background:var(--orange);color:#fff;box-shadow:0 3px 0 #e08600}
@@ -248,6 +258,20 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="i-fire" viewBox="0 0 32 32"><path d="M16 1.5c1.2 5.6 9.8 9.3 9.8 18.6a9.8 9.8 0 0 1-19.6 0c0-5.5 3.4-7.8 4.7-11.7 1.8 2.3 2.4 4.2 2.6 5.7C15.1 10 15.6 5.8 16 1.5z" fill="#ff9600"/><path d="M16 14c.9 3.1 5.2 4.5 5.2 8.8a5.2 5.2 0 0 1-10.4 0c0-2.8 2-3.7 2.8-5.8.9 1 1.2 1.9 1.4 2.7.4-2 .7-3.7 1-5.7z" fill="#ffc800"/><path d="M9.4 17.6c-.7 1.5-.9 3-.5 4.6" stroke="#ffd29b" stroke-width="2" stroke-linecap="round" fill="none"/></symbol>
+ <symbol id="i-bolt" viewBox="0 0 32 32"><path d="M19.8 1.8 6.6 18.6h8.6l-2.8 11.6L25.8 12.8h-8.8z" fill="#ffc800"/><path d="M17 12.8h8.8L12.4 30.2l2.8-11.6z" fill="#f5b100"/><path d="M17.5 5.2 10.6 14.2" stroke="#fff1a8" stroke-width="2" stroke-linecap="round"/></symbol>
+ <symbol id="i-crown" viewBox="0 0 32 32"><path d="M3.5 9.5 10 15.6 16 6l6 9.6 6.5-6.1-2.3 14.6H5.8z" fill="#ffc800"/><rect x="5.6" y="21.4" width="20.8" height="5.2" rx="2" fill="#f5b100"/><circle cx="16" cy="5.6" r="2.6" fill="#ff4b4b"/><circle cx="3.6" cy="9.4" r="2.2" fill="#ffc800"/><circle cx="28.4" cy="9.4" r="2.2" fill="#ffc800"/><circle cx="16" cy="17.2" r="2.2" fill="#1cb0f6"/><path d="M8 12.6 9.4 19" stroke="#fff1a8" stroke-width="1.8" stroke-linecap="round"/></symbol>
+ <symbol id="i-book" viewBox="0 0 32 32"><path d="M2.5 7.4c4.2-1.9 8.8-1.7 12.5.8v19.4c-3.7-2.5-8.3-2.7-12.5-.8z" fill="#58cc02"/><path d="M29.5 7.4c-4.2-1.9-8.8-1.7-12.5.8v19.4c3.7-2.5 8.3-2.7 12.5-.8z" fill="#89e219"/><rect x="14.6" y="8" width="2.8" height="19.6" rx="1.2" fill="#58a700"/><path d="M5.6 12.2c2.4-.8 4.7-.6 6.6.4M5.6 16.4c2.4-.8 4.7-.6 6.6.4M19.8 12.6c1.9-1 4.2-1.2 6.6-.4" stroke="#d7ffb8" stroke-width="1.8" stroke-linecap="round" fill="none"/></symbol>
+ <symbol id="i-face" viewBox="0 0 32 32"><rect x="4.5" y="3" width="23" height="26.5" rx="6" fill="#a568cc"/><rect x="4.5" y="2.5" width="23" height="24.5" rx="6" fill="#ce82ff"/><circle cx="16" cy="12" r="5.2" fill="#fff"/><path d="M7.6 25.6c1.3-5 4.6-7.3 8.4-7.3s7.1 2.3 8.4 7.3z" fill="#fff"/><path d="M8 6.4h4" stroke="#ecc8ff" stroke-width="2" stroke-linecap="round"/></symbol>
+ <symbol id="i-cal" viewBox="0 0 32 32"><rect x="3.5" y="6" width="25" height="23.5" rx="6" fill="#e5e5e5"/><rect x="3.5" y="5" width="25" height="22.5" rx="6" fill="#fff" stroke="#e5e5e5" stroke-width="1.5"/><path d="M3.5 11V11a6 6 0 0 1 6-6h13a6 6 0 0 1 6 6z" fill="#ff4b4b"/><rect x="9" y="2.2" width="3" height="6" rx="1.5" fill="#ea2b2b"/><rect x="20" y="2.2" width="3" height="6" rx="1.5" fill="#ea2b2b"/><path d="M10.5 18.8l3.6 3.6 7.4-7.4" stroke="#58cc02" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+ <symbol id="i-gear" viewBox="0 0 32 32"><path d="M13.5 2.5h5l.9 3.8 2.6 1.1 3.3-2.1 3.5 3.5-2.1 3.3 1.1 2.6 3.8.9v5l-3.8.9-1.1 2.6 2.1 3.3-3.5 3.5-3.3-2.1-2.6 1.1-.9 3.8h-5l-.9-3.8-2.6-1.1-3.3 2.1-3.5-3.5 2.1-3.3-1.1-2.6-3.8-.9v-5l3.8-.9 1.1-2.6-2.1-3.3 3.5-3.5 3.3 2.1 2.6-1.1z" fill="#afafaf"/><circle cx="16" cy="16" r="6.4" fill="#e5e5e5"/><circle cx="16" cy="16" r="3.6" fill="#fff"/></symbol>
+ <symbol id="i-star" viewBox="0 0 32 32"><path d="M16 2.6l4.1 8.3 9.1 1.3-6.6 6.4 1.6 9.1L16 23.4l-8.2 4.3 1.6-9.1-6.6-6.4 9.1-1.3z" fill="#ffc800" stroke="#f5b100" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 12.6l1.6-3" stroke="#fff1a8" stroke-width="2" stroke-linecap="round"/></symbol>
+ <symbol id="i-trophy" viewBox="0 0 32 32"><path d="M8 4h16v8a8 8 0 0 1-16 0z" fill="#ffc800"/><path d="M8 7H4.5a4.5 4.5 0 0 0 4.5 7M24 7h3.5a4.5 4.5 0 0 1-4.5 7" stroke="#f5b100" stroke-width="2.6" fill="none" stroke-linecap="round"/><rect x="14" y="19" width="4" height="5" fill="#f5b100"/><rect x="9" y="24" width="14" height="4.5" rx="2" fill="#f5b100"/><path d="M11.4 7v4.6" stroke="#fff1a8" stroke-width="2.2" stroke-linecap="round"/></symbol>
+ <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+ <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></symbol>
+ <symbol id="i-ok" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11" stroke="currentColor" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
 
 <template id="mascotT">
 <svg class="mascot" viewBox="0 0 120 120" aria-hidden="true">
@@ -274,7 +298,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 
 <!-- 単語 -->
 <section class="screen on" id="sWords">
-  <div class="hud"><span class="pill fire" data-streak><span class="ico">🔥</span><b>0</b></span><span class="pill bolt" data-xp><span class="ico">⚡</span><b>0</b></span><span class="pill gem" data-lv><span class="ico">👑</span><b>Lv1</b></span></div>
+  <div class="hud"><span class="pill fire" data-streak><svg class="ico"><use href="#i-fire"/></svg><b>0</b></span><span class="pill bolt" data-xp><svg class="ico"><use href="#i-bolt"/></svg><b>0</b></span><span class="pill gem" data-lv><svg class="ico"><use href="#i-crown"/></svg><b>Lv1</b></span></div>
   <div class="hero"><div class="m"></div><div class="bubble jp" id="wSay">今日もやろう！</div></div>
   <div class="lvcard jp" data-lvcard></div>
   <div class="today">
@@ -290,7 +314,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 
 <!-- 顔 -->
 <section class="screen" id="sFaces">
-  <div class="hud"><span class="pill fire" data-streak><span class="ico">🔥</span><b>0</b></span><span class="pill bolt" data-xp><span class="ico">⚡</span><b>0</b></span><span class="pill gem" data-lv><span class="ico">👑</span><b>Lv1</b></span></div>
+  <div class="hud"><span class="pill fire" data-streak><svg class="ico"><use href="#i-fire"/></svg><b>0</b></span><span class="pill bolt" data-xp><svg class="ico"><use href="#i-bolt"/></svg><b>0</b></span><span class="pill gem" data-lv><svg class="ico"><use href="#i-crown"/></svg><b>Lv1</b></span></div>
   <div class="hero"><div class="m"></div><div class="bubble jp" id="pSay">顔と名前、覚えよう！</div></div>
   <div class="chips jp" id="gChips"></div>
   <div class="lvcard jp" data-lvcard></div>
@@ -308,9 +332,9 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 <!-- 記録 -->
 <section class="screen jp" id="sLog">
   <h1>記録</h1>
-  <div class="streakcard"><span class="fl">🔥</span><div><div class="big" id="lStreak">0</div><div>日連続</div></div><div style="margin-left:auto;text-align:right;font-size:13px"><div>学習日 <b id="lDays">0</b></div><div>累計 <b id="lTotal">0</b></div></div></div>
+  <div class="streakcard"><svg class="fl"><use href="#i-fire"/></svg><div><div class="big" id="lStreak">0</div><div>日連続</div></div><div style="margin-left:auto;text-align:right;font-size:13px"><div>学習日 <b id="lDays">0</b></div><div>累計 <b id="lTotal">0</b></div></div></div>
   <div class="box">
-    <div class="calnav"><button class="iconbtn" id="cPrev">◀</button><b id="cTitle"></b><button class="iconbtn" id="cNext">▶</button></div>
+    <div class="calnav"><button class="iconbtn" id="cPrev"><svg class="ii flipx"><use href="#i-chev"/></svg></button><b id="cTitle"></b><button class="iconbtn" id="cNext"><svg class="ii"><use href="#i-chev"/></svg></button></div>
     <div class="cal" id="cal"></div>
     <div id="cDetail"></div>
   </div>
@@ -351,7 +375,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
   </div>
   <div class="sub-hud">
     <span class="tag new jp" id="tag">NEW</span>
-    <span id="combo">🔥 0</span>
+    <span id="combo"></span>
     <span class="mult" id="mult">×1</span>
     <span class="score" id="score">0</span>
   </div>
@@ -367,8 +391,8 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
   <div class="timer" id="timer"><i id="tbar"></i></div>
   <div id="hint" class="jp">タップでめくる</div>
   <div class="answer wait jp" id="ans">
-    <button class="b3 red" id="bNg">✕ まだ</button>
-    <button class="b3 green" id="bOk">○ 覚えた</button>
+    <button class="b3 red" id="bNg"><svg class="ii"><use href="#i-x"/></svg>まだ</button>
+    <button class="b3 green" id="bOk"><svg class="ii"><use href="#i-ok"/></svg>覚えた</button>
   </div>
 </section>
 
@@ -377,14 +401,14 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
   <div class="m"></div>
   <div class="dtitle" id="dTitle">レッスン完了！</div>
   <div class="dsub" id="dSub"></div>
-  <div class="newrec" id="dRec">🏆 ハイスコア更新！</div>
+  <div class="newrec" id="dRec"><svg class="ii"><use href="#i-trophy"/></svg>ハイスコア更新！</div>
   <div class="dstats">
     <div class="dstat" style="--k:var(--gold)"><div class="h">スコア</div><div class="v" id="dXp">0</div></div>
     <div class="dstat" style="--k:var(--green)"><div class="h">正答率</div><div class="v" id="dAcc">0%</div></div>
     <div class="dstat" style="--k:var(--blue)"><div class="h">最大コンボ</div><div class="v" id="dTime">0</div></div>
   </div>
   <div class="lvdone" data-lvcard-done></div>
-  <div class="streakpop" id="dStreak">🔥 3日連続！</div>
+  <div class="streakpop" id="dStreak"></div>
   <div class="dbtns">
     <button class="b3 shine" id="dMore">＋100語</button>
     <button class="b3 ghost" id="dHome">ホームへ</button>
@@ -392,10 +416,10 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
 </section>
 
 <nav id="nav" class="jp">
-  <button data-t="sWords" class="on"><span class="e">📖</span>単語</button>
-  <button data-t="sFaces"><span class="e">🎨</span>クリエイティブ</button>
-  <button data-t="sLog"><span class="e">🔥</span>記録</button>
-  <button data-t="sSet"><span class="e">⚙️</span>設定</button>
+  <button data-t="sWords" class="on"><svg class="e"><use href="#i-book"/></svg>単語</button>
+  <button data-t="sFaces"><svg class="e"><use href="#i-face"/></svg>クリエイティブ</button>
+  <button data-t="sLog"><svg class="e"><use href="#i-cal"/></svg>記録</button>
+  <button data-t="sSet"><svg class="e"><use href="#i-gear"/></svg>設定</button>
 </nav>
 <canvas id="fx"></canvas>
 <div id="lvup" class="jp"><div style="font-size:20px">LEVEL UP!</div><div class="n" id="lvN">2</div><div class="t" id="lvT"></div><div style="margin-top:28px;font-size:14px;opacity:.85">タップで続ける</div></div>
@@ -559,23 +583,27 @@ function dayLog() {
 // =========================================================
 // 振動（Android＝vibrate／iPhone＝Safari 18 のスイッチ触覚）
 // =========================================================
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const Haptic = {
-  lab: null,
-  one() {
-    if (!S || !S.settings.hap) return;
-    try { (this.lab || (this.lab = document.getElementById('hap'))).click(); } catch {}
+  // iPhone：Safari 18 以降はスイッチ（checkbox switch）を押すと本体が「コツッ」と鳴る。毎回作って押して捨てる
+  ios() {
+    try {
+      const l = document.createElement('label'); l.ariaHidden = 'true'; l.style.display = 'none';
+      const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', '');
+      l.appendChild(i); document.head.appendChild(l); l.click(); document.head.removeChild(l);
+    } catch {}
   },
-  // ms＝[振動, 間, 振動, ...]（Android）／iPhoneは間隔ぶんタップを刻む
+  // ms＝[振動, 間, 振動, ...]
   run(ms) {
     if (!S || !S.settings.hap) return;
-    if (navigator.vibrate && navigator.userActivation?.hasBeenActive !== false) { try { navigator.vibrate(ms); return; } catch {} }
-    let t = 0; ms.forEach((d, i) => { if (i % 2 === 0) setTimeout(() => this.one(), t); t += d; });
+    if (!isIOS && navigator.vibrate) { try { navigator.vibrate(ms); } catch {} return; }
+    let t = 0; ms.forEach((d, i) => { if (i % 2 === 0) { if (t === 0) this.ios(); else setTimeout(() => this.ios(), t); } t += d; });
   },
-  tap() { this.run([12]); },
-  ok(m = 1) { const a = [28]; for (let i = 1; i < m; i++) a.push(45, 22); this.run(a); },
-  ng() { this.run([70, 60, 70]); },
-  up() { this.run([30, 40, 30, 40, 30, 40, 90]); },
-  big() { this.run([40, 60, 40, 60, 40, 120, 160]); },
+  tap() { this.run([14]); },
+  ok(m = 1) { const a = [30]; for (let i = 1; i < Math.min(m, 4); i++) a.push(90, 24); this.run(a); },
+  ng() { this.run([60, 110, 60, 110, 60]); },
+  up() { this.run([30, 90, 30, 90, 30, 90, 80]); },
+  big() { this.run([40, 100, 40, 100, 40, 140, 120]); },
 };
 
 // =========================================================
@@ -583,9 +611,24 @@ const Haptic = {
 // =========================================================
 const Sound = {
   ctx: null, voices: [],
+  // iPhoneはマナーモードだとWeb Audioが無音になる → 再生用セッションに切り替える
   init() {
-    if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch {}
+    if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' }); } catch {} }
+    if (this.ctx && this.ctx.state !== 'running') { try { this.ctx.resume(); } catch {} }
+    if (isIOS && !navigator.audioSession) this.unlock();
+    if (this.ctx && !this.primed) { this.primed = true; const b = this.ctx.createBuffer(1, 1, 22050), s = this.ctx.createBufferSource(); s.buffer = b; s.connect(this.ctx.destination); s.start(0); }
+  },
+  // 古いiOS向け：無音の<audio>を鳴らしておくと、マナーモードでも効果音が出る
+  unlock() {
+    if (!this.el) {
+      const sr = 8000, n = sr / 2, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+      const w = (o, str) => [...str].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+      w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+      this.el = new Audio(URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }))); this.el.loop = true; this.el.setAttribute('playsinline', '');
+    }
+    this.el.play().catch(() => {});
   },
   note(f, at, dur, type = 'sine', gain = 0.28) {
     const vol = S.settings.eff / 100; if (!this.ctx || vol <= 0) return;
@@ -598,7 +641,12 @@ const Sound = {
   },
   bell(f, at, dur = .45, g = .22) { this.note(f, at, dur, 'sine', g); this.note(f * 2.01, at, dur * .6, 'sine', g * .35); this.note(f * 3.02, at, dur * .3, 'sine', g * .12); },
   // 正解＝上がる2音のベル。コンボが続くほど半音ずつ高くなる
-  ok(combo = 0) { const k = Math.pow(2, Math.min(combo, 16) / 12 / 2); this.bell(1047 * k, 0, .22, .2); this.bell(1568 * k, .075, .5, .24); },
+  chirp(f0, f1, at, dur, g) { const vol = S.settings.eff / 100; if (!this.ctx || vol <= 0) return; const t = this.ctx.currentTime + at, o = this.ctx.createOscillator(), gg = this.ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * .7);
+    gg.gain.setValueAtTime(.0001, t); gg.gain.exponentialRampToValueAtTime(g * vol, t + .01); gg.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(gg).connect(this.ctx.destination); o.start(t); o.stop(t + dur + .02); },
+  // 正解＝「キュン」と上がるチャープ＋2音のベル。コンボが続くほど高くなる
+  ok(combo = 0) { const k = Math.pow(2, Math.min(combo, 16) / 24); this.chirp(700 * k, 1500 * k, 0, .09, .16); this.bell(1175 * k, .05, .22, .2); this.bell(1760 * k, .12, .55, .24); },
   ng() { const t = this.ctx && this.ctx.currentTime; if (!t) return; const vol = S.settings.eff / 100; if (vol <= 0) return;
     const o = this.ctx.createOscillator(), g = this.ctx.createGain(); o.type = 'triangle';
     o.frequency.setValueAtTime(330, t); o.frequency.exponentialRampToValueAtTime(140, t + .32);
@@ -682,8 +730,8 @@ const FX = {
     e.style.left = (x - 20) + 'px'; e.style.top = (y - 30) + 'px';
     document.body.appendChild(e); setTimeout(() => e.remove(), 950);
   },
-  praise(text) {
-    const e = document.createElement('div'); e.className = 'praise jp'; e.textContent = text;
+  praise(text, fire) {
+    const e = document.createElement('div'); e.className = 'praise jp'; e.innerHTML = (fire ? '<svg><use href="#i-fire"/></svg>' : '') + esc(text);
     document.getElementById('play').appendChild(e); setTimeout(() => e.remove(), 1150);
   },
 };
@@ -753,7 +801,7 @@ function renderHome(type) {
   $(pre + 'Say').textContent = say(type, done, t.goal, fin);
   const m = document.querySelector(`#${type === 'w' ? 'sWords' : 'sFaces'} .mascot`);
   m.classList.toggle('joy', fin);
-  $(pre + 'Start').textContent = fin ? '今日はクリア ✓' : done > 0 ? '続きから' : 'スタート';
+  $(pre + 'Start').textContent = fin ? '今日はクリア' : done > 0 ? '続きから' : 'スタート';
   $(pre + 'Start').disabled = fin;
   $(pre + 'Start').classList.toggle('shine', !fin);
   $(pre + 'More').style.display = fin ? 'block' : 'none';
@@ -826,7 +874,7 @@ function load(first) {
       (p.co ? `<div class="pco">${esc(p.co)}</div>` : '') +
       (p.role ? `<div class="prole">${esc(p.role)}</div>` : '') +
       (p.tagline ? `<div class="prole">${esc(p.tagline)}</div>` : '') +
-      (p.works && p.works.length ? `<div class="pworks"><div class="h">代表作</div><ul>${p.works.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : '');
+      (p.works && p.works.length ? `<div class="pworks"><div class="h">代表作</div><ul>${p.works.map(w => `<li><svg><use href="#i-star"/></svg>${esc(w)}</li>`).join('')}</ul></div>` : '');
     const nk = t.q[t.pos + 1]; if (nk) { const np = pById[nk.replace(/^!/, '').slice(2)]; if (np) new Image().src = np.img; }
   }
   $('ans').classList.add('wait');
@@ -837,7 +885,7 @@ function load(first) {
   $('pbar').style.width = (done / Math.max(1, t.goal) * 100) + '%';
   $('pbarW').classList.toggle('hot', G.combo >= 5);
   $('xUndo').disabled = G.undo.length === 0;
-  const cb = $('combo'); cb.textContent = `🔥 ${G.combo}連続`; cb.classList.toggle('on', G.combo >= 3);
+  const cb = $('combo'); cb.innerHTML = `<svg><use href="#i-fire"/></svg>${G.combo}`; cb.classList.toggle('on', G.combo >= 3);
 }
 function speakWord() {
   if (!G || G.type !== 'w') return;
@@ -846,6 +894,7 @@ function speakWord() {
 }
 function reveal() {
   if (!G || G.revealed || G.busy) return;
+  Sound.init();
   G.revealed = true; stopTimer(); $('timer').classList.add('off');
   Haptic.tap(); Sound.flip();
   $('hint').classList.add('off');
@@ -870,6 +919,7 @@ function addScore(pts) {
 }
 function grade(ok, timeout = false) {
   if (!G || !G.revealed || G.busy) return;
+  Sound.init();
   G.busy = true; stopTimer();
   const t = S.today[G.type], raw = curKey(), again = raw[0] === '!', key = raw.replace(/^!/, '');
   const log = dayLog();
@@ -905,9 +955,9 @@ function grade(ok, timeout = false) {
   if (ok) {
     Sound.ok(G.combo); Haptic.ok(m);
     FX.burst(btn.left + btn.width / 2, btn.top + 10, 10 + m * 6, 5 + m);
-    FX.float(`+${pts}${fast ? ' ⚡' : ''}`, btn.left + btn.width / 2, btn.top);
+    FX.float(`+${pts}`, btn.left + btn.width / 2, btn.top);
     if (m > m0) { setTimeout(() => { Sound.multUp(m); Haptic.up(); FX.praise(`×${m} コンボ！`); FX.burst(innerWidth / 2, innerHeight * .42, 30 + m * 10, 9 + m); }, 140); setMult(true); }
-    else { setMult(false); if (G.combo > 0 && G.combo % 25 === 0) { Sound.combo(); FX.praise(`🔥 ${G.combo}連続！`); } else if (Math.random() < .06 * m) FX.praise(PRAISE[Math.random() * PRAISE.length | 0]); }
+    else { setMult(false); if (G.combo > 0 && G.combo % 25 === 0) { Sound.combo(); FX.praise(`${G.combo}連続！`, true); } else if (Math.random() < .06 * m) FX.praise(PRAISE[Math.random() * PRAISE.length | 0]); }
   } else {
     Sound.ng(); Haptic.ng(); setMult(false);
     if (!timeout) card.classList.add('shake');
@@ -987,7 +1037,7 @@ function finish() {
   $('dRec').classList.remove('on'); if (rec) setTimeout(() => { $('dRec').classList.add('on'); Sound.combo(); Haptic.up(); }, 1250);
   const lc = d.querySelector('[data-lvcard-done]'); const xpNow = S.xp || 0; lc.innerHTML = lvHTML(Math.max(0, xpNow - xp)); lc.className = 'lvdone lvcard';
   setTimeout(() => { lc.innerHTML = lvHTML(xpNow); }, 1100);
-  const st = streak(), sp = $('dStreak'); sp.classList.remove('on'); sp.textContent = `🔥 ${st}日連続！`;
+  const st = streak(), sp = $('dStreak'); sp.classList.remove('on'); sp.innerHTML = `<svg><use href="#i-fire"/></svg>${st}日連続！`;
   Sound.fanfare(); Haptic.big(); FX.confetti();
   [[0, () => countUp($('dXp'), xp)], [1, () => countUp($('dAcc'), acc, v => v + '%')], [2, () => countUp($('dTime'), G ? G.maxCombo : 0)]]
     .forEach(([i, f]) => setTimeout(() => { d.querySelectorAll('.dstat')[i].classList.add('on'); Sound.tap(); Haptic.tap(); f(); }, 500 + i * 260));
@@ -1045,7 +1095,7 @@ function renderLog() {
     const ds = `${cal.y}-${String(cal.m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const x = S.days[ds], e = document.createElement('div');
     e.className = 'd' + (x && x.w + x.p > 0 ? ' has' : '') + (x && x.goalW ? ' goal' : '') + (ds === td ? ' today' : '');
-    e.textContent = x && x.goalW ? '🔥' : d;
+    if (x && x.goalW) e.innerHTML = '<svg><use href="#i-fire"/></svg>'; else e.textContent = d;
     e.onclick = () => {
       Haptic.tap(); g.querySelectorAll('.sel').forEach(s => s.classList.remove('sel')); e.classList.add('sel');
       if (!x || x.w + x.p === 0) { $('cDetail').textContent = `${ds}　記録なし`; return; }
@@ -1157,7 +1207,8 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Shift' || e.key === 'ArrowLeft') { if (G.revealed) grade(false); }
   else if (e.key === 'Backspace' || (e.key === 'z' && (e.metaKey || e.ctrlKey))) undo();
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden && S) IDB.put(JSON.stringify(S)); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { if (S) IDB.put(JSON.stringify(S)); if (Sound.el) Sound.el.pause(); } });
+document.addEventListener('touchstart', () => Sound.init(), { passive: true });
 setInterval(() => { if (S && S.today && S.today.date !== dayStr() && !G) show(tab); }, 60000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 boot().then(() => {
