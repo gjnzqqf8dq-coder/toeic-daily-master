@@ -31,7 +31,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#fff;color:var(--ink);overflow:hidden;overscroll-behavior:none;
-  font-family:"Nunito","M PLUS Rounded 1c","Hiragino Maru Gothic ProN",system-ui,sans-serif;font-weight:700;font-size:15px;-webkit-font-smoothing:antialiased}
+  font-family:"Nunito","Hiragino Maru Gothic ProN","M PLUS Rounded 1c",system-ui,sans-serif;font-weight:700;font-size:15px;-webkit-font-smoothing:antialiased}
 body{display:flex;flex-direction:column;-webkit-user-select:none;user-select:none}
 button,label{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 .hsw{position:absolute;left:0;top:0;width:1px;height:1px;margin:0;visibility:hidden}
@@ -68,7 +68,7 @@ h1{font-size:24px;font-weight:800;margin:4px 0 16px}
 
 /* マスコット＋吹き出し */
 .hero{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.mascot{width:84px;height:84px;flex:none;animation:bob 2.6s ease-in-out infinite;transform-origin:50% 100%}
+.mascot{width:84px;height:84px;flex:none;animation:bob 2.6s ease-in-out infinite;transform-origin:50% 100%;will-change:transform}
 .mascot.jump{animation:jump .48s var(--back) 3}
 @keyframes bob{0%,100%{transform:none}50%{transform:translateY(-3px)}}
 @keyframes jump{0%{transform:scale(1.08,.92)}45%{transform:translateY(-22px) scale(.96,1.04)}100%{transform:none}}
@@ -140,7 +140,7 @@ body.playing nav{display:none}
 .photo{width:min(46vw,180px);aspect-ratio:1;border-radius:16px;object-fit:cover;object-position:50% 22%;border:2px solid var(--swan);border-bottom-width:4px;display:block}
 .prompt.pface{justify-content:center}
 .timer{height:8px;background:var(--swan);border-radius:99px;overflow:hidden;margin:4px 0 16px;flex:none}
-.timer i{display:block;height:100%;width:100%;background:var(--eel);border-radius:99px;transform-origin:left;will-change:transform}
+.timer i{display:block;height:100%;width:100%;background:var(--eel);border-radius:99px;transform-origin:left;will-change:transform;transition:background-color .3s}
 .timer i{background:#c9ecfd}
 .timer.warn i{background:#c9ecfd} .timer.danger i{background:#ffb2b2} .timer.off{visibility:hidden}
 .opts{display:grid;gap:10px}
@@ -493,11 +493,18 @@ const IDB = {
 let idbTimer = null;
 function save() {
   S.updatedAt = Date.now();
+  clearTimeout(idbTimer);
+  idbTimer = setTimeout(flush, 250); // 連続回答の書き込みをまとめる
+}
+function flush() {
+  clearTimeout(idbTimer); idbTimer = null;
+  if (!S) return;
   const json = JSON.stringify(S);
   try { localStorage.setItem(LS, json); } catch {}
-  clearTimeout(idbTimer);
-  idbTimer = setTimeout(() => IDB.put(json), 200);
+  IDB.put(json);
 }
+addEventListener('pagehide', () => flush());
+document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
 function loadLocal() {
   try { const v = localStorage.getItem(LS); return v ? JSON.parse(v) : null; } catch { return null; }
 }
@@ -601,6 +608,8 @@ const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ICON = n => `<svg><use href="#i-${n}"/></svg>`;
+const POP = [{ transform: 'scale(.6)' }, { transform: 'scale(1.18)', offset: .6 }, { transform: 'none' }];
+function pop(el, ms = 350) { try { el.animate(POP, { duration: ms, easing: 'cubic-bezier(.34,1.56,.64,1)' }); } catch {} }
 // ボタンは <label> の中に <input type=checkbox switch> を入れてある。
 // iPhoneでは「指で直接押したスイッチ」だけが本体を振動させるため、押した瞬間に Safari が触覚を返す。
 function onTap(el, fn) { el.addEventListener('click', e => { if (e.target.classList && e.target.classList.contains('hsw')) return; fn(e); }); }
@@ -676,9 +685,11 @@ const SFX = {
         const oc = new O(1, Math.ceil(this.SR * dur), this.SR); draw(oc, vol);
         const b = await oc.startRendering();
         this.buf[name] = b;
+        if (!isIOS) continue;
         if (this.url[name]) URL.revokeObjectURL(this.url[name]);
         this.url[name] = this.wav(b);
-        if (this.pool[name]) this.pool[name].forEach(a => { if (a._u) a.src = this.url[name]; });
+        const a = this.pool[name]; if (a && a._u) a.src = this.url[name];
+        await new Promise(r => setTimeout(r, 0)); // 1音ずつ間を空けて画面を止めない
       } catch (e) { console.warn('sfx', name, e); }
     }
   },
@@ -688,22 +699,27 @@ const SFX = {
     const fake = { getChannelData: () => new Float32Array(1600), sampleRate: 16000 };
     return (this.silent = this.wav(fake));
   },
-  // 最初のタップで呼ぶ：iPhone は全部の <audio> を無音で一度再生して「鳴らしてよい」状態にする
+  // 操作の外（タイマー・自動送り）で鳴る音だけ、タップのたびに数個ずつ鳴らせる状態にしておく
+  EAGER: ['ng', 'tick', 'tickHi', 'fanfare', 'mult2', 'mult3', 'sheet', 'flip', 'mult4', 'mult5', 'levelUp'],
+  el(name) {
+    let a = this.pool[name];
+    if (!a) { a = this.pool[name] = new Audio(); a.preload = 'auto'; a.setAttribute('playsinline', ''); }
+    return a;
+  },
   unlock() {
     if (!isIOS) {
       if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
       if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
       return;
     }
-    for (const name of Object.keys(this.url)) {
-      const n = name.startsWith('ok') ? 2 : 3;
-      const arr = this.pool[name] || (this.pool[name] = []);
-      while (arr.length < n) { const a = new Audio(); a.preload = 'auto'; a.setAttribute('playsinline', ''); arr.push(a); }
-      arr.forEach(a => {
-        if (a._u || a._p) return;
-        a._p = true; a.src = this.silentURL();
-        a.play().then(() => { a.pause(); a._u = true; a._p = false; a.src = this.url[name]; a.load(); }).catch(() => { a._p = false; });
-      });
+    let n = 0;
+    for (const name of this.EAGER) {
+      if (!this.url[name]) continue;
+      const a = this.el(name);
+      if (a._u || a._p) continue;
+      if (n++ >= 3) break;
+      a._p = true; a.src = this.silentURL();
+      a.play().then(() => { a.pause(); a._u = true; a._p = false; a.src = this.url[name]; }).catch(() => { a._p = false; });
     }
   },
   play(name) {
@@ -714,8 +730,10 @@ const SFX = {
       const s = this.ctx.createBufferSource(); s.buffer = this.buf[name]; s.connect(this.ctx.destination); s.start();
       return;
     }
-    const arr = (this.pool[name] || []).filter(a => a._u); if (!arr.length) return;
-    const i = (this.idx[name] = ((this.idx[name] || 0) + 1) % arr.length), a = arr[i];
+    if (!this.url[name]) return;
+    const a = this.el(name);
+    if (a._p) return;
+    if (!a._u) { a.src = this.url[name]; a._u = true; } // タップの中なら初回でもそのまま鳴る
     try { a.currentTime = 0; } catch {}
     a.play().then(() => { this.last = name + ' ok'; }).catch(e => { this.last = name + ' ' + e.name; });
   },
@@ -754,7 +772,7 @@ const FX = {
   cv: null, cx: null, parts: [], raf: 0,
   setup() {
     this.cv = $('fx'); this.cx = this.cv.getContext('2d');
-    const r = () => { const d = devicePixelRatio || 1; this.cv.width = innerWidth * d; this.cv.height = innerHeight * d; this.cx.setTransform(d, 0, 0, d, 0, 0); };
+    const r = () => { const d = Math.min(2, devicePixelRatio || 1); this.cv.width = innerWidth * d; this.cv.height = innerHeight * d; this.cx.setTransform(d, 0, 0, d, 0, 0); };
     r(); addEventListener('resize', r);
   },
   C: ['#58cc02', '#1cb0f6', '#ff4b4b', '#ffc800', '#ce82ff', '#ff9600'],
@@ -953,7 +971,7 @@ function load() {
   $('bSkip').classList.remove('dis');
   const done = doneCount(t);
   $('pbar').style.width = (done / Math.max(1, t.goal) * 100) + '%';
-  const L = $('lesson'); L.classList.remove('enter'); void L.offsetWidth; L.classList.add('enter'); L.scrollTop = 0;
+  const L = $('lesson'); L.scrollTop = 0; try { L.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 140 }); } catch {}
   startTimer();
 }
 function loadCard(t, key) {
@@ -975,7 +993,7 @@ function loadCard(t, key) {
   }
   $('fhint').textContent = 'カードをタップでめくる';
   $('pbar').style.width = (doneCount(t) / Math.max(1, t.goal) * 100) + '%';
-  const L = $('lesson'); L.classList.remove('enter'); void L.offsetWidth; L.classList.add('enter'); L.scrollTop = 0;
+  const L = $('lesson'); L.scrollTop = 0; try { L.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 140 }); } catch {}
   startTimer();
 }
 function flipCard(auto) {
@@ -996,17 +1014,17 @@ function speakWord() { if (G && G.type === 'w' && G.ans) Sound.say(G.ans.en); }
 function setMult(anim) {
   const m = MULT(G.combo), e = $('mult');
   e.textContent = '×' + m; e.className = 'mult m' + m;
-  if (anim) { void e.offsetWidth; e.classList.add('up'); }
+  if (anim) pop(e, 500);
 }
 function setCombo(anim) {
   const e = $('combo'); e.querySelector('span').textContent = G.combo; e.classList.toggle('zero', G.combo === 0);
-  if (anim) { e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); }
+  if (anim) pop(e, 400);
 }
 function addScore(pts) {
   if (!pts) return;
   G.score += pts; S.xp = (S.xp || 0) + pts;
   const log = dayLog(); log.xp = (log.xp || 0) + pts;
-  const e = $('score'); e.querySelector('b').textContent = G.score.toLocaleString(); e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump');
+  const e = $('score'); e.querySelector('b').textContent = G.score.toLocaleString(); pop(e);
 }
 function choose(el, reason) {
   if (!G || G.answered) return;
@@ -1097,25 +1115,29 @@ $('lvup').onclick = () => { wake(); $('lvup').classList.remove('on'); if (G) loa
 function startTimer() {
   stopTimer();
   const sec = S.settings.timer, el = $('timer'), bar = $('tbar');
-  G.left = null;
+  G.left = null; G.tStart = 0;
   if (!sec) { el.classList.add('off'); return; }
-  el.classList.remove('off', 'warn', 'danger');
-  G.tEnd = performance.now() + sec * 1000; G.tLen = sec * 1000; G.lastTick = Math.ceil(sec);
-  bar.style.transform = 'scaleX(1)';
-  const step = now => {
+  el.classList.remove('off', 'danger');
+  bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)';
+  G.tLen = sec * 1000; G.tPaused = 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     if (!G || G.answered) return;
-    if (document.hidden) { G.tEnd += 16; G.raf = requestAnimationFrame(step); return; }
-    const rem = Math.max(0, G.tEnd - now), f = rem / G.tLen;
-    G.left = f; bar.style.transform = `scaleX(${f})`;
-    el.classList.toggle('warn', f < .5 && f >= .25); el.classList.toggle('danger', f < .25);
-    const s = Math.ceil(rem / 1000);
-    if (s < G.lastTick) { G.lastTick = s; if (s <= 3 && s > 0) Sound.tick(s === 1); }
-    if (rem <= 0) { G.left = 0; return G.mode === 'card' ? flipCard(true) : choose(null, 'time'); }
-    G.raf = requestAnimationFrame(step);
-  };
-  G.raf = requestAnimationFrame(step);
+    G.tStart = performance.now();
+    bar.style.transition = `transform ${sec}s linear, background-color .3s`; bar.style.transform = 'scaleX(0)';
+    const at = (ms, fn) => G.tids.push(setTimeout(fn, ms));
+    G.tids = [];
+    at(G.tLen * .8, () => el.classList.add('danger'));
+    [3, 2, 1].forEach(s2 => { if (sec > s2) at(G.tLen - s2 * 1000, () => { if (!document.hidden) Sound.tick(s2 === 1); }); });
+    at(G.tLen, () => { if (!G || G.answered) return; G.left = 0; G.mode === 'card' ? flipCard(true) : choose(null, 'time'); });
+  }));
 }
-function stopTimer() { if (G && G.raf) { cancelAnimationFrame(G.raf); G.raf = 0; } }
+function timeLeft() { return G && G.tStart ? Math.max(0, 1 - (performance.now() - G.tStart) / G.tLen) : null; }
+function stopTimer() {
+  if (!G) return;
+  if (G.tStart) G.left = timeLeft();
+  (G.tids || []).forEach(clearTimeout); G.tids = [];
+  const bar = $('tbar'), cs = getComputedStyle(bar).transform; bar.style.transition = 'none'; if (cs && cs !== 'none') bar.style.transform = cs;
+}
 
 function finish() {
   stopTimer();
@@ -1257,7 +1279,7 @@ async function boot() {
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
   applyHap();
   show(tab);
-  SFX.render();
+  setTimeout(() => SFX.render(), 700); // 最初の表示を優先
 }
 
 FX.setup();
@@ -1295,12 +1317,11 @@ document.addEventListener('keydown', e => {
   if (!G.answered && /^[1-4]$/.test(e.key)) { const el = $('opts').children[+e.key - 1]; if (el) choose(el); }
   else if (e.key === 'Enter') { if (G.answered) next(); }
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden && S) IDB.put(JSON.stringify(S)); });
 setInterval(() => { if (S && S.today && S.today.date !== dayStr() && !G) show(tab); }, 60000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 boot().then(() => { if ('speechSynthesis' in window) { Sound.loadVoices(); speechSynthesis.onvoiceschanged = () => Sound.loadVoices(); } });
 if (/debug/.test(location.search)) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99;background:#000;color:#0f0;font:11px monospace;padding:4px;pointer-events:none;white-space:pre-wrap';
-  document.body.appendChild(d); setInterval(() => { const pools = Object.values(SFX.pool); d.textContent = `iOS:${isIOS} rendered:${Object.keys(SFX.url).length} pools:${pools.length} unlocked:${pools.flat().filter(a => a._u).length}/${pools.flat().length} last:${SFX.last || '-'} ctx:${SFX.ctx ? SFX.ctx.state : '-'}`; }, 300); }
+  document.body.appendChild(d); setInterval(() => { const pools = Object.values(SFX.pool); d.textContent = `iOS:${isIOS} rendered:${Object.keys(SFX.buf).length} pools:${pools.length} unlocked:${pools.filter(a => a._u).length}/${pools.length} last:${SFX.last || '-'} ctx:${SFX.ctx ? SFX.ctx.state : '-'}`; }, 300); }
 window.__app = { get S() { return S; }, get G() { return G; }, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
 </script>
 </body>
