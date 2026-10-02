@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Daily Master">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
@@ -38,6 +39,15 @@ label{touch-action:manipulation}
 .screen{flex:1;display:none;flex-direction:column;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;padding:calc(var(--st) + 10px) 16px 24px;min-height:0;width:100%}
 .screen.on{display:flex}
 #sFaces{--c:var(--bet);--cd:var(--bet-d);--cp:var(--bet-p)}
+@media (min-width:640px){
+  .screen{padding-left:max(16px,calc(50vw - 300px));padding-right:max(16px,calc(50vw - 300px))}
+  .stats{margin-left:calc(-1 * max(16px,calc(50vw - 300px)) - 0px);margin-right:calc(-1 * max(16px,calc(50vw - 300px)));padding-left:max(18px,calc(50vw - 298px));padding-right:max(18px,calc(50vw - 298px))}
+  .lfoot{margin-left:calc(-1 * max(16px,calc(50vw - 300px)));margin-right:calc(-1 * max(16px,calc(50vw - 300px)));padding-left:max(16px,calc(50vw - 300px));padding-right:max(16px,calc(50vw - 300px))}
+  .sheet{padding-left:max(16px,calc(50vw - 300px))!important;padding-right:max(16px,calc(50vw - 300px))!important}
+  nav{justify-content:center} nav label{max-width:140px}
+  #play,#sDone{padding-left:max(16px,calc(50vw - 300px))!important;padding-right:max(16px,calc(50vw - 300px))!important}
+  .fcard{height:min(46vh,420px)}
+}
 h1{font-size:24px;font-weight:800;margin:4px 0 16px}
 
 /* ボタン：4pxの下リップ・角16px・16px/800・大文字 */
@@ -128,7 +138,7 @@ body.playing nav{display:none}
 .spk svg{width:30px;height:30px}
 .word{font-size:32px;font-weight:900;line-height:1.1;word-break:break-word}
 .photo{width:min(46vw,180px);aspect-ratio:1;border-radius:16px;object-fit:cover;object-position:50% 22%;border:2px solid var(--swan);border-bottom-width:4px;display:block}
-.prompt.face{justify-content:center}
+.prompt.pface{justify-content:center}
 .timer{height:8px;background:var(--swan);border-radius:99px;overflow:hidden;margin:4px 0 16px;flex:none}
 .timer i{display:block;height:100%;width:100%;background:var(--eel);border-radius:99px;transform-origin:left;will-change:transform}
 .timer i{background:#c9ecfd}
@@ -157,11 +167,17 @@ body.playing nav{display:none}
 .fcard{position:relative;display:block;width:100%;height:min(46vh,380px)}
 .flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .38s cubic-bezier(.2,.7,.2,1)}
 .fcard.rev .flip{transform:rotateY(180deg)}
+.fcard .face.b{visibility:hidden;transition:visibility 0s .16s}
+.fcard.rev .face.b{visibility:visible}
+.fcard .face.a{visibility:visible;transition:visibility 0s .16s}
+.fcard.rev .face.a{visibility:hidden}
 .fcard.out-ok,.fcard.out-ng{transition:opacity .16s linear;opacity:0}
 .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:18px;text-align:center;overflow:hidden}
 .face.b{transform:rotateY(180deg);overflow-y:auto;justify-content:center}
 .face.b.pf{justify-content:flex-start;text-align:left;align-items:stretch}
 .face .word{font-size:36px}
+.face .spk{position:absolute;top:14px;right:14px;width:48px;height:48px;border-radius:14px}
+.face .spk svg{width:26px;height:26px}
 .face .mean{font-size:24px;font-weight:800;line-height:1.45}
 .face .en{font-size:15px;color:var(--hare)}
 .face .pbig{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%}
@@ -203,11 +219,11 @@ body.playing nav{display:none}
 canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 
 /* 完了 */
-#sDone{align-items:center;text-align:center;padding-top:calc(var(--st) + 36px)}
-#sDone .mascot{width:128px;height:128px}
-.dt{font-size:32px;font-weight:900;color:var(--bee-d);margin:14px 0 4px}
+#sDone{align-items:center;text-align:center;padding-top:calc(var(--st) + 20px)}
+#sDone .mascot{width:96px;height:96px}
+.dt{font-size:28px;font-weight:900;color:var(--bee-d);margin:8px 0 2px}
 .ds{font-size:15px;color:var(--wolf)}
-.dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:420px;margin:22px 0 16px}
+.dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:420px;margin:16px 0 12px}
 .dstat{border:2px solid var(--k);border-radius:16px;overflow:hidden;opacity:0;transform:translateY(16px)}
 .dstat.on{animation:sin .45s var(--back) forwards}
 @keyframes sin{to{opacity:1;transform:none}}
@@ -219,7 +235,8 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 .sk{display:flex;align-items:center;justify-content:center;gap:6px;font-size:17px;font-weight:900;color:var(--fox);margin-bottom:16px;opacity:0}
 .sk.on{animation:sin .45s var(--back) forwards}
 .sk svg{width:28px;height:28px}
-.dfoot{width:100%;max-width:420px;display:flex;flex-direction:column;gap:12px;margin-top:auto;padding-bottom:calc(var(--sb) + 8px)}
+.dfoot{width:100%;max-width:420px;display:flex;flex-direction:column;gap:12px;margin-top:auto;padding:8px 0 calc(var(--sb) + 8px)}
+#sDone .lvdone{margin-bottom:10px;padding:12px 14px}
 .lvdone{width:100%;max-width:420px;text-align:left}
 
 /* 記録 */
@@ -921,7 +938,7 @@ function load() {
     const p = pById[key.slice(2)];
     G.ans = p;
     $('qText').textContent = 'この人はだれ？';
-    prompt.className = 'prompt face';
+    prompt.className = 'prompt pface';
     prompt.innerHTML = `<img class="photo" src="${p.img}" alt="">`;
     opts.classList.add('two');
     list = shuffle([{ t: p.name, ok: true }, ...pickFaceOpts(p).map(x => ({ t: x.name }))]);
@@ -945,7 +962,7 @@ function loadCard(t, key) {
   if (G.type === 'w') {
     const w = wByEn[key.slice(2)]; G.ans = w;
     $('qText').textContent = '意味、覚えてる？';
-    fa.innerHTML = `<div class="word" style="font-size:${w.en.length > 14 ? 28 : 36}px">${esc(w.en)}</div><button class="spk" id="spk">${ICON('spk')}</button>`;
+    fa.innerHTML = `<button class="spk" id="spk">${ICON('spk')}</button><div class="word" style="font-size:${w.en.length > 14 ? 28 : 36}px">${esc(w.en)}</div>`;
     $('spk').onclick = e => { e.preventDefault(); e.stopPropagation(); wake(); speakWord(); };
     fb.innerHTML = `<div class="en">${esc(w.en)}</div><div class="mean">${esc(w.jp)}</div>`;
     if (S.settings.auto) setTimeout(speakWord, 120);
@@ -1284,7 +1301,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 boot().then(() => { if ('speechSynthesis' in window) { Sound.loadVoices(); speechSynthesis.onvoiceschanged = () => Sound.loadVoices(); } });
 if (/debug/.test(location.search)) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99;background:#000;color:#0f0;font:11px monospace;padding:4px;pointer-events:none;white-space:pre-wrap';
   document.body.appendChild(d); setInterval(() => { const pools = Object.values(SFX.pool); d.textContent = `iOS:${isIOS} rendered:${Object.keys(SFX.url).length} pools:${pools.length} unlocked:${pools.flat().filter(a => a._u).length}/${pools.flat().length} last:${SFX.last || '-'} ctx:${SFX.ctx ? SFX.ctx.state : '-'}`; }, 300); }
-window.__app = { get S() { return S; }, get G() { return G; }, SFX, start, flipCard, cardGrade, choose, next, doneCount, dayStr, show, levelUp };
+window.__app = { get S() { return S; }, get G() { return G; }, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
 </script>
 </body>
 </html>
