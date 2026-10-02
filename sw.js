@@ -1,13 +1,13 @@
 // TOEIC Daily Master — Service Worker (network-first)
-const CACHE = 'tdm-v5';
+const CACHE = 'tdm-v6';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './words.js',
-  './people.js',
+  './words.js?v=6',
+  './people.js?v=6',
 ];
 
 self.addEventListener('install', (e) => {
