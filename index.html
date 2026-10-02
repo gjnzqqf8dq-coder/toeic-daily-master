@@ -33,7 +33,8 @@ html,body{margin:0;height:100%;background:#fff;color:var(--ink);overflow:hidden;
   font-family:"Nunito","M PLUS Rounded 1c","Hiragino Maru Gothic ProN",system-ui,sans-serif;font-weight:700;font-size:15px;-webkit-font-smoothing:antialiased}
 body{display:flex;flex-direction:column;-webkit-user-select:none;user-select:none}
 button,label{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
-.hsw{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;margin:0}
+.hsw{position:absolute;left:0;top:0;width:1px;height:1px;margin:0;visibility:hidden}
+label{touch-action:manipulation}
 .screen{flex:1;display:none;flex-direction:column;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;padding:calc(var(--st) + 10px) 16px 24px;min-height:0;width:100%}
 .screen.on{display:flex}
 #sFaces{--c:var(--bet);--cd:var(--bet-d);--cp:var(--bet-p)}
@@ -147,6 +148,26 @@ body.playing nav{display:none}
 #lesson.enter{animation:lin .26s ease-out}
 @keyframes lin{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
 .lfoot{margin:auto -16px 0;padding:16px 16px calc(var(--sb) + 16px);border-top:2px solid var(--swan);background:#fff}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.seg label{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;height:44px;border:2px solid var(--swan);border-bottom-width:4px;border-radius:12px;font-size:14px;font-weight:800;color:var(--hare)}
+.seg label.on{border-color:#84d8ff;background:var(--eel-p);color:var(--eel-d)}
+.flash{flex:1;display:flex;align-items:center;justify-content:center;perspective:1200px;min-height:260px;margin-bottom:12px}
+.fcard{position:relative;display:block;width:100%;height:min(46vh,380px)}
+.flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .45s var(--back)}
+.fcard.rev .flip{transform:rotateY(180deg)}
+.fcard.out-ok{transition:transform .3s ease-in,opacity .3s;transform:translateX(120%) rotate(14deg);opacity:0}
+.fcard.out-ng{transition:transform .3s ease-in,opacity .3s;transform:translateX(-120%) rotate(-14deg);opacity:0}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:18px;text-align:center;overflow:hidden}
+.face.b{transform:rotateY(180deg);overflow-y:auto;justify-content:center}
+.face.b.pf{justify-content:flex-start;text-align:left;align-items:stretch}
+.face .word{font-size:36px}
+.face .mean{font-size:24px;font-weight:800;line-height:1.45}
+.face .en{font-size:15px;color:var(--hare)}
+.face .pbig{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%}
+.fhint{text-align:center;font-size:13px;color:var(--hare);margin-bottom:6px;height:18px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+[hidden]{display:none!important}
 
 /* 判定バナー（下から 200ms） */
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:18px 16px calc(var(--sb) + 16px);transform:translateY(105%);transition:transform .2s ease-out;max-height:80vh;overflow-y:auto}
@@ -279,6 +300,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="stats"><span class="stat fire" data-streak><svg><use href="#i-fire"/></svg><b>0</b></span><span class="stat bolt" data-xp><svg><use href="#i-bolt"/></svg><b>0</b></span><span class="stat lv" data-lv><svg><use href="#i-crown"/></svg><b>1</b></span></div>
   <div class="hero"><div class="m"></div><div class="bubble" id="wSay"></div></div>
   <div class="box" data-lvcard></div>
+  <div class="seg" data-type="w"><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
   <div class="box">
     <div class="cap">今日の単語</div>
     <div class="big"><span id="wDone">0</span><small id="wOf"> / 100</small></div>
@@ -296,6 +318,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="hero"><div class="m"></div><div class="bubble" id="pSay"></div></div>
   <div class="chips" id="gChips"></div>
   <div class="box" data-lvcard></div>
+  <div class="seg" data-type="p"><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
   <div class="box">
     <div class="cap">今日の顔と名前</div>
     <div class="big"><span id="pDone">0</span><small id="pOf"> / 40</small></div>
@@ -337,6 +360,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="set"><span>発音の速さ</span><input type="range" id="stRate" min="50" max="140" step="5"><span class="v" id="vRate"></span></div>
   <div class="set"><span>声</span><select id="stVoice"></select></div>
   <div class="set"><span>振動</span><div class="sw" id="swHap"></div></div>
+  <div class="set"><span>振動テスト（押して確認）</span><input type="checkbox" switch style="width:52px;height:30px"></div>
   <div class="set"><span>出題時に自動で発音</span><div class="sw" id="swAuto"></div></div>
   <div class="set"><span>名前を読み上げる</span><div class="sw" id="swName"></div></div>
   <div class="small" style="padding:16px 0" id="stStore"></div>
@@ -355,7 +379,13 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
     <div class="prompt" id="prompt"></div>
     <div class="timer" id="timer"><i id="tbar"></i></div>
     <div class="opts" id="opts"></div>
-    <div class="lfoot"><label class="btn sec gray" id="bSkip"><input type="checkbox" switch class="hsw"><span class="tx">わからない</span></label></div>
+    <div class="flash" id="flash" hidden><label class="fcard" id="fcard"><input type="checkbox" switch class="hsw"><div class="flip"><div class="face a" id="fa"></div><div class="face b" id="fb"></div></div></label></div>
+    <div class="fhint" id="fhint" hidden>カードをタップでめくる</div>
+    <div class="lfoot">
+      <label class="btn sec gray" id="bSkip"><input type="checkbox" switch class="hsw"><span class="tx">わからない</span></label>
+      <label class="btn eel" id="bFlip" hidden><input type="checkbox" switch class="hsw"><span class="tx">めくる</span></label>
+      <div class="duo" id="bDuo" hidden><label class="btn car" id="bNg"><input type="checkbox" switch class="hsw"><span class="tx">まだ</span></label><label class="btn owl" id="bOk"><input type="checkbox" switch class="hsw"><span class="tx">覚えた</span></label></div>
+    </div>
   </div>
 </section>
 <div class="sheet" id="sheet">
@@ -393,8 +423,8 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 <div id="lvup"><div style="font-size:20px;font-weight:900">LEVEL UP!</div><div class="n" id="lvN">2</div><div class="t" id="lvT"></div><div style="margin-top:28px;font-size:14px;opacity:.85">タップで続ける</div></div>
 <div id="toast"></div>
 
-<script src="words.js?v=8"></script>
-<script src="people.js?v=8"></script>
+<script src="words.js?v=9"></script>
+<script src="people.js?v=9"></script>
 <script>
 'use strict';
 // =========================================================
@@ -417,7 +447,7 @@ function pgroup(p) { return p.g === 'tora' ? 'tora' + p.tier : p.g; }
 // =========================================================
 // 保存（localStorage ＋ IndexedDB の二重化・1問ごとに即保存）
 // =========================================================
-const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, ja: false, name: false, groups: { idea: true, peer: true, toraA: true, toraB: false } };
+const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { idea: true, peer: true, toraA: true, toraB: false } };
 let S;
 function fresh() {
   return { v: 2, updatedAt: 0, cards: {}, days: {}, today: {}, order: shuffle(W.map(w => w.en)), settings: structuredClone(DEF_SETTINGS) };
@@ -582,11 +612,25 @@ const SFX = {
     const tone = (c, f, t, d, type, a) => { const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); env(c, t, g, a, d); o.connect(g).connect(c.destination); o.start(t); o.stop(t + d + .02); return o; };
     const bell = (c, f, t, d, a) => { tone(c, f, t, d, 'sine', a); tone(c, f * 2.01, t, d * .6, 'sine', a * .3); tone(c, f * 3.02, t, d * .3, 'sine', a * .1); };
     const chirp = (c, f0, f1, t, d, a) => { const o = tone(c, f0, t, d, 'sine', a); o.frequency.exponentialRampToValueAtTime(f1, t + d * .7); };
+    // アイテムを拾った時のような2段の「ピロリン」：明るい矩形波＋三角波を少しこもらせ、最後に高い粒をのせる
+    const coin = (c, p, v) => {
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6500; lp.connect(c.destination);
+      const n = (f, t, d, a) => ['square', 'triangle'].forEach((ty, j) => { const o = c.createOscillator(), g = c.createGain(); o.type = ty; o.frequency.setValueAtTime(f, t);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(a * (j ? 1 : .35), t + .006); g.gain.setValueAtTime(a * (j ? 1 : .35), t + d * .35); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+        o.connect(g).connect(lp); o.start(t); o.stop(t + d + .02); });
+      n(1318.5 * p, 0, .085, .22 * v);       // E6
+      n(1760 * p, .07, .42, .24 * v);        // A6
+      tone(c, 3520 * p, .07, .18, 'sine', .05 * v);
+      tone(c, 2637 * p, .14, .3, 'sine', .04 * v);
+    };
     for (let k = 0; k <= 12; k++) {
       const p = Math.pow(2, k / 24);
-      D['ok' + k] = [.8, (c, v) => { chirp(c, 700 * p, 1500 * p, 0, .09, .16 * v); bell(c, 1175 * p, .05, .25, .2 * v); bell(c, 1760 * p, .12, .6, .26 * v); }];
+      D['ok' + k] = [.7, (c, v) => coin(c, p, v)];
     }
-    D.ng = [.5, (c, v) => { const o = tone(c, 330, 0, .42, 'triangle', .34 * v); o.frequency.exponentialRampToValueAtTime(140, .32); tone(c, 110, .02, .28, 'sine', .3 * v); }];
+    D.ng = [.55, (c, v) => { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(c.destination);
+      [[311, 0, .16], [233, .13, .34]].forEach(([f, t, d]) => { const o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(.32 * v, t + .01); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(g).connect(lp); o.start(t); o.stop(t + d + .02); }); }];
+    D.flip = [.18, (c, v) => { const o = tone(c, 420, 0, .12, 'sine', .12 * v); o.frequency.exponentialRampToValueAtTime(880, .1); }];
     D.tap = [.08, (c, v) => tone(c, 680, 0, .05, 'sine', .08 * v)];
     D.tick = [.07, (c, v) => tone(c, 1000, 0, .04, 'square', .05 * v)];
     D.tickHi = [.07, (c, v) => tone(c, 1500, 0, .05, 'square', .06 * v)];
@@ -660,7 +704,7 @@ const SFX = {
 const Sound = {
   ok(combo) { SFX.play('ok' + Math.min(12, combo)); },
   ng() { SFX.play('ng'); }, tap() { SFX.play('tap'); }, tick(hi) { SFX.play(hi ? 'tickHi' : 'tick'); },
-  sheet() { SFX.play('sheet'); }, multUp(m) { SFX.play('mult' + Math.min(5, m)); },
+  sheet() { SFX.play('sheet'); }, flip() { SFX.play('flip'); }, multUp(m) { SFX.play('mult' + Math.min(5, m)); },
   levelUp() { SFX.play('levelUp'); }, fanfare() { SFX.play('fanfare'); },
   voices: [],
   loadVoices() { if (!('speechSynthesis' in window)) return; this.voices = speechSynthesis.getVoices(); renderVoices(); },
@@ -794,6 +838,8 @@ function renderHome(type) {
   const c = counts(type);
   $(pre + 'Learned').textContent = c.learned; $(pre + 'Due').textContent = c.dueTomorrow; $(pre + 'New').textContent = c.unseen;
   if (type === 'p') renderChips();
+  const md = (S.settings.mode && S.settings.mode[type]) || 'quiz';
+  document.querySelectorAll(`.seg[data-type="${type}"] label`).forEach(l => l.classList.toggle('on', l.dataset.m === md));
 }
 function renderChips() {
   const box = $('gChips'); box.innerHTML = '';
@@ -822,7 +868,7 @@ function start(type) {
   wake(); clearTimeout(autoT);
   const t = getToday(type);
   if (t.pos >= t.q.length) return;
-  G = { type, combo: 0, maxCombo: 0, ok: 0, n: 0, score: 0, answered: false };
+  G = { type, mode: (S.settings.mode && S.settings.mode[type]) || 'quiz', combo: 0, maxCombo: 0, ok: 0, n: 0, score: 0, answered: false };
   const c = type === 'w' ? ['var(--owl)', 'var(--owl-d)'] : ['var(--bet)', 'var(--bet-d)'];
   $('play').style.setProperty('--c', c[0]); $('play').style.setProperty('--cd', c[1]);
   $('score').querySelector('b').textContent = 0; setMult(false); setCombo(false);
@@ -854,6 +900,11 @@ function load() {
   else { tag.textContent = '復習'; tag.className = 'tag rev'; }
   const opts = $('opts'), prompt = $('prompt');
   opts.className = 'opts'; opts.innerHTML = '';
+  const card = G.mode === 'card';
+  G.flipped = false;
+  prompt.hidden = card; opts.hidden = card; $('bSkip').hidden = card;
+  $('flash').hidden = !card; $('fhint').hidden = !card; $('bFlip').hidden = !card; $('bDuo').hidden = true;
+  if (card) return loadCard(t, key);
   let list;
   if (G.type === 'w') {
     const w = wByEn[key.slice(2)];
@@ -885,6 +936,42 @@ function load() {
   $('pbar').style.width = (done / Math.max(1, t.goal) * 100) + '%';
   const L = $('lesson'); L.classList.remove('enter'); void L.offsetWidth; L.classList.add('enter'); L.scrollTop = 0;
   startTimer();
+}
+function loadCard(t, key) {
+  const fc = $('fcard'), fa = $('fa'), fb = $('fb');
+  fc.className = 'fcard'; fb.className = 'face b';
+  if (G.type === 'w') {
+    const w = wByEn[key.slice(2)]; G.ans = w;
+    $('qText').textContent = '意味、覚えてる？';
+    fa.innerHTML = `<div class="word" style="font-size:${w.en.length > 14 ? 28 : 36}px">${esc(w.en)}</div><button class="spk" id="spk">${ICON('spk')}</button>`;
+    $('spk').onclick = e => { e.preventDefault(); e.stopPropagation(); wake(); speakWord(); };
+    fb.innerHTML = `<div class="en">${esc(w.en)}</div><div class="mean">${esc(w.jp)}</div>`;
+    if (S.settings.auto) setTimeout(speakWord, 120);
+  } else {
+    const p = pById[key.slice(2)]; G.ans = p;
+    $('qText').textContent = 'この人、だれ？';
+    fa.innerHTML = `<img class="pbig" src="${p.img}" alt="">`;
+    fb.className = 'face b pf'; fb.innerHTML = profHTML(p);
+    const nk = t.q[t.pos + 1]; if (nk) { const np = pById[nk.replace(/^!/, '').slice(2)]; if (np) new Image().src = np.img; }
+  }
+  $('fhint').textContent = 'カードをタップでめくる';
+  $('pbar').style.width = (doneCount(t) / Math.max(1, t.goal) * 100) + '%';
+  const L = $('lesson'); L.classList.remove('enter'); void L.offsetWidth; L.classList.add('enter'); L.scrollTop = 0;
+  startTimer();
+}
+function flipCard(auto) {
+  if (!G || G.mode !== 'card' || G.flipped || G.answered) return;
+  wake(); G.flipped = true; stopTimer();
+  $('fcard').classList.add('rev'); Sound.flip();
+  $('fhint').textContent = auto ? '時間切れ！' : '';
+  $('bFlip').hidden = true; $('bDuo').hidden = false;
+  if (G.type === 'p' && S.settings.name) Sound.say(G.ans.kana || G.ans.name, 'ja');
+  if (auto) { G.answered = true; setTimeout(() => { if (G) result(false, 'time'); }, 1300); }
+}
+function cardGrade(ok) {
+  if (!G || G.mode !== 'card' || !G.flipped || G.answered) return;
+  wake(); G.answered = true;
+  result(ok, null, $(ok ? 'bOk' : 'bNg'));
 }
 function speakWord() { if (G && G.type === 'w' && G.ans) Sound.say(G.ans.en); }
 function setMult(anim) {
@@ -946,6 +1033,12 @@ function result(ok, reason, el) {
     if (m > m0) setTimeout(() => { Sound.multUp(m); Haptic.up(); FX.praise(`${ICON('fire')}×${m} コンボ！`); FX.burst(innerWidth / 2, innerHeight * .36, 30 + m * 10, 9 + m); }, 160);
   } else { Sound.ng(); Haptic.ng(); }
   if (lvOf(S.xp || 0) > lvBefore) G.pendingLv = lvOf(S.xp || 0);
+  if (G.mode === 'card') {
+    const fc = $('fcard'); fc.classList.add(ok ? 'out-ok' : 'out-ng');
+    if (ok) { const r = $('bOk').getBoundingClientRect(); FX.float('+' + pts, r.left + r.width / 2, r.top); }
+    setTimeout(next, ok ? 320 : 420);
+    return;
+  }
   showSheet(ok, reason, pts, fast);
 }
 function profHTML(p) {
@@ -998,7 +1091,7 @@ function startTimer() {
     el.classList.toggle('warn', f < .5 && f >= .25); el.classList.toggle('danger', f < .25);
     const s = Math.ceil(rem / 1000);
     if (s < G.lastTick) { G.lastTick = s; if (s <= 3 && s > 0) Sound.tick(s === 1); }
-    if (rem <= 0) { G.left = 0; return choose(null, 'time'); }
+    if (rem <= 0) { G.left = 0; return G.mode === 'card' ? flipCard(true) : choose(null, 'time'); }
     G.raf = requestAnimationFrame(step);
   };
   G.raf = requestAnimationFrame(step);
@@ -1158,6 +1251,15 @@ onTap($('dMore'), () => { const type = $('dMore')._type || 'w'; addExtra(type); 
 onTap($('dHome'), () => closePlay());
 onTap($('bNext'), () => { wake(); next(); });
 onTap($('bSkip'), () => choose(null, 'skip'));
+onTap($('fcard'), () => flipCard());
+onTap($('bFlip'), () => flipCard());
+onTap($('bOk'), () => cardGrade(true));
+onTap($('bNg'), () => cardGrade(false));
+document.querySelectorAll('.seg label').forEach(l => onTap(l, () => {
+  wake(); Sound.tap();
+  const type = l.closest('.seg').dataset.type;
+  S.settings.mode = Object.assign({ w: 'quiz', p: 'quiz' }, S.settings.mode, { [type]: l.dataset.m }); save(); renderHome(type);
+}));
 $('xClose').onclick = () => closePlay();
 $('cPrev').onclick = () => { cal.m--; if (cal.m < 0) { cal.m = 11; cal.y--; } renderLog(); };
 $('cNext').onclick = () => { cal.m++; if (cal.m > 11) { cal.m = 0; cal.y++; } renderLog(); };
@@ -1165,6 +1267,12 @@ onTap($('tEff'), () => { wake(); Sound.ok(0); Haptic.ok(2); setTimeout(() => Sou
 onTap($('tSp'), () => Sound.say('Thank you for your patience.'));
 document.addEventListener('keydown', e => {
   if (!G || !$('play').classList.contains('on')) return;
+  if (G.mode === 'card') {
+    if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); flipCard(); }
+    else if (e.key === 'ArrowRight' || e.key === 'Enter') { G.flipped ? cardGrade(true) : flipCard(); }
+    else if (e.key === 'ArrowLeft') cardGrade(false);
+    return;
+  }
   if (!G.answered && /^[1-4]$/.test(e.key)) { const el = $('opts').children[+e.key - 1]; if (el) choose(el); }
   else if (e.key === 'Enter') { if (G.answered) next(); }
 });
@@ -1174,7 +1282,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 boot().then(() => { if ('speechSynthesis' in window) { Sound.loadVoices(); speechSynthesis.onvoiceschanged = () => Sound.loadVoices(); } });
 if (/debug/.test(location.search)) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99;background:#000;color:#0f0;font:11px monospace;padding:4px;pointer-events:none;white-space:pre-wrap';
   document.body.appendChild(d); setInterval(() => { const pools = Object.values(SFX.pool); d.textContent = `iOS:${isIOS} rendered:${Object.keys(SFX.url).length} pools:${pools.length} unlocked:${pools.flat().filter(a => a._u).length}/${pools.flat().length} last:${SFX.last || '-'} ctx:${SFX.ctx ? SFX.ctx.state : '-'}`; }, 300); }
-window.__app = { get S() { return S; }, get G() { return G; }, SFX, start, choose, next, doneCount, dayStr, show, levelUp };
+window.__app = { get S() { return S; }, get G() { return G; }, SFX, start, flipCard, cardGrade, choose, next, doneCount, dayStr, show, levelUp };
 </script>
 </body>
 </html>
