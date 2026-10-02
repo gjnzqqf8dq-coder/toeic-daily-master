@@ -202,7 +202,8 @@ body.playing nav{display:none}
 .prof{display:flex;gap:12px;align-items:flex-start;color:var(--ink)}
 .prof img{width:64px;height:64px;border-radius:12px;object-fit:cover;object-position:50% 22%;flex:none}
 .prof .nm{font-size:20px;font-weight:900;line-height:1.2}
-.prof .kn{font-size:12px;color:var(--wolf)}
+.prof .kn{font-size:12px;color:var(--wolf);font-weight:700;margin-left:8px}
+.prof .go{font-size:12px;color:var(--wolf);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prof .co{display:inline-block;margin-top:6px;font-size:13px;font-weight:800;color:#fff;background:var(--bet);border-radius:8px;padding:2px 8px}
 .prof .rl{font-size:13px;color:var(--wolf);margin-top:4px;line-height:1.4}
 .works{margin:10px 0 0;padding:0;list-style:none}
@@ -1071,7 +1072,7 @@ function result(ok, reason, el) {
   if (ok) {
     Sound.ok(G.combo); Haptic.ok(m);
     const r = (el || $('bOk')).getBoundingClientRect();
-    FX.float('+' + pts, r.right - 40, r.top + 8);
+    if (G.type === 'w' || G.mode === 'card') FX.float('+' + pts, r.right - 40, r.top + 8);
     if (m > m0) setTimeout(() => { Sound.multUp(m); Haptic.up(); FX.praise(`${ICON('fire')}×${m} コンボ！`); FX.burst(innerWidth / 2, innerHeight * .36, 30 + m * 10, 9 + m); }, 160);
   } else { Sound.ng(); Haptic.ng(); }
   if (lvOf(S.xp || 0) > lvBefore) G.pendingLv = lvOf(S.xp || 0);
@@ -1084,8 +1085,9 @@ function result(ok, reason, el) {
   showSheet(ok, reason, pts, fast);
 }
 function profHTML(p) {
-  return `<div class="prof"><img src="${p.img}" alt=""><div style="min-width:0"><div class="nm">${esc(p.name)}</div><div class="kn">${esc(p.kana)}</div>` +
-    (p.co ? `<span class="co">${esc(p.co)}</span>` : '') + (p.role ? `<div class="rl">${esc(p.role)}</div>` : '') + (p.tagline ? `<div class="rl">${esc(p.tagline)}</div>` : '') + `</div></div>` +
+  // 並び：名前（よみ）→ 会社 → 役職 → 行く回（1行）
+  return `<div class="prof"><img src="${p.img}" alt=""><div style="min-width:0;flex:1"><div class="nm">${esc(p.name)}<span class="kn">${esc(p.kana)}</span></div>` +
+    (p.co ? `<span class="co">${esc(p.co)}</span>` : '') + (p.role ? `<div class="rl">${esc(p.role)}</div>` : '') + (p.tagline ? `<div class="go">${esc(p.tagline)}</div>` : '') + `</div></div>` +
     (p.works && p.works.length ? `<ul class="works">${p.works.map(w => `<li>${ICON('star')}${esc(w)}</li>`).join('')}</ul>` : '');
 }
 function showSheet(ok, reason, pts, fast) {
