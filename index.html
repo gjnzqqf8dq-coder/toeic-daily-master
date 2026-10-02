@@ -440,7 +440,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 <div id="toast"></div>
 
 <script src="words.js?v=9"></script>
-<script src="people.js?v=10"></script>
+<script src="people.js?v=11"></script>
 <script>
 'use strict';
 // =========================================================
@@ -449,7 +449,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 //   復習で○ → 次の段（1→3→7→14→30→60日）/ ✕ → 翌日に戻す
 // =========================================================
 const INT = [0, 1, 3, 7, 14, 30, 60];
-const GROUPS = { tc: '虎子屋の講師（行く回）', idea: 'アイデアの学校 講師', peer: 'アイデアの学校 同期', toraA: '虎ノ門広告祭 必修', toraB: '虎ノ門広告祭 その他' };
+const GROUPS = { tc: '行く回の登壇者', idea: 'アイデアの学校 講師', peer: 'アイデアの学校 同期', toraA: '虎ノ門広告祭 必修', toraB: '虎ノ門広告祭 その他' };
 const LS = 'tdm2';
 const W = window.WORDS, P = window.PEOPLE;
 const pById = Object.fromEntries(P.map(p => [p.id, p]));
@@ -1280,18 +1280,19 @@ async function boot() {
     Object.values(S.days).forEach(x => { if (x.xp == null) x.xp = (x.wc + x.pc) * 10; });
     S.best = S.best || {}; S.v3 = true;
   }
-  if (!S.v5) { // 虎子屋の講師を今日の顔の出題の先頭へ（まだ出ていない人だけ）
+  if (!S.v6) { // カレンダーで行く回の登壇者を、今日の顔の出題に優先して入れる（1日の人数は変えない）
     S.settings.groups.tc = true;
     const t = S.today && S.today.date === dayStr() && S.today.p;
     if (t) {
+      const isTc = k => { const p = pById[k.replace(/^!/, '').slice(2)]; return p && p.g === 'tc'; };
       const done = t.q.slice(0, t.pos), rest = t.q.slice(t.pos);
-      const tc = P.filter(p => p.g === 'tc').map(p => 'p:' + p.id).filter(k => !S.cards[k] && !t.q.includes(k));
-      let drop = tc.length; const kept = [];
-      const isTc = k => { const p = pById[k.slice(2)]; return p && p.g === 'tc'; };
+      const slots = rest.filter(k => k[0] !== '!' && !S.cards[k] && !isTc(k)).length;
+      const add = deckKeys('p').filter(k => isTc(k) && !S.cards[k] && !t.q.includes(k)).slice(0, slots);
+      let drop = add.length; const kept = [];
       for (let i = rest.length - 1; i >= 0; i--) { const k = rest[i]; if (drop > 0 && k[0] !== '!' && !S.cards[k] && !isTc(k)) { drop--; continue; } kept.unshift(k); }
-      t.q = done.concat(tc, kept); t.nw = Math.min(t.base, t.nw + tc.length - drop);
+      t.q = done.concat(add, kept); t.nw = Math.min(t.base, t.nw);
     }
-    S.v4 = S.v5 = true;
+    S.v4 = S.v5 = S.v6 = true;
   }
   save();
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
