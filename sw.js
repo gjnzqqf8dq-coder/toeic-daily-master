@@ -1,7 +1,7 @@
 // Daily Master — Service Worker
 // 画面(HTML)は常に最新を取りに行く／写真・データ(?v=付き)・アイコンは一度取れたら端末から即表示
-const CACHE = 'tdm-v13';
-const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './words.js?v=9', './people.js?v=9'];
+const CACHE = 'tdm-v14';
+const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './words.js?v=9', './people.js?v=10'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));

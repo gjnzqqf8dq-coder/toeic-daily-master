@@ -440,7 +440,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 <div id="toast"></div>
 
 <script src="words.js?v=9"></script>
-<script src="people.js?v=9"></script>
+<script src="people.js?v=10"></script>
 <script>
 'use strict';
 // =========================================================
@@ -449,7 +449,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 //   復習で○ → 次の段（1→3→7→14→30→60日）/ ✕ → 翌日に戻す
 // =========================================================
 const INT = [0, 1, 3, 7, 14, 30, 60];
-const GROUPS = { idea: 'アイデアの学校 講師', peer: 'アイデアの学校 同期', toraA: '虎ノ門広告祭 必修', toraB: '虎ノ門広告祭 その他' };
+const GROUPS = { tc: '虎子屋の講師（行く回）', idea: 'アイデアの学校 講師', peer: 'アイデアの学校 同期', toraA: '虎ノ門広告祭 必修', toraB: '虎ノ門広告祭 その他' };
 const LS = 'tdm2';
 const W = window.WORDS, P = window.PEOPLE;
 const pById = Object.fromEntries(P.map(p => [p.id, p]));
@@ -463,7 +463,7 @@ function pgroup(p) { return p.g === 'tora' ? 'tora' + p.tier : p.g; }
 // =========================================================
 // 保存（localStorage ＋ IndexedDB の二重化・1問ごとに即保存）
 // =========================================================
-const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { idea: true, peer: true, toraA: true, toraB: false } };
+const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false } };
 let S;
 function fresh() {
   return { v: 2, updatedAt: 0, cards: {}, days: {}, today: {}, order: shuffle(W.map(w => w.en)), settings: structuredClone(DEF_SETTINGS) };
@@ -539,7 +539,7 @@ function migrateV1(s) {
 function deckKeys(type) {
   if (type === 'w') return S.order.map(en => 'w:' + en);
   const g = S.settings.groups;
-  const rank = { toraA: 0, idea: 1, peer: 2, toraB: 3 }; // 広告祭(10/9〜)が近いので必修を先に
+  const rank = { tc: -1, toraA: 0, idea: 1, peer: 2, toraB: 3 }; // 広告祭(10/9〜)が近いので必修を先に
   return P.filter(p => g[pgroup(p)]).sort((a, b) => rank[pgroup(a)] - rank[pgroup(b)] || b.pri - a.pri).map(p => 'p:' + p.id);
 }
 function counts(type) {
@@ -1279,6 +1279,19 @@ async function boot() {
     S.xp = Object.values(S.days).reduce((a, x) => a + (x.wc + x.pc) * 10, 0);
     Object.values(S.days).forEach(x => { if (x.xp == null) x.xp = (x.wc + x.pc) * 10; });
     S.best = S.best || {}; S.v3 = true;
+  }
+  if (!S.v5) { // 虎子屋の講師を今日の顔の出題の先頭へ（まだ出ていない人だけ）
+    S.settings.groups.tc = true;
+    const t = S.today && S.today.date === dayStr() && S.today.p;
+    if (t) {
+      const done = t.q.slice(0, t.pos), rest = t.q.slice(t.pos);
+      const tc = P.filter(p => p.g === 'tc').map(p => 'p:' + p.id).filter(k => !S.cards[k] && !t.q.includes(k));
+      let drop = tc.length; const kept = [];
+      const isTc = k => { const p = pById[k.slice(2)]; return p && p.g === 'tc'; };
+      for (let i = rest.length - 1; i >= 0; i--) { const k = rest[i]; if (drop > 0 && k[0] !== '!' && !S.cards[k] && !isTc(k)) { drop--; continue; } kept.unshift(k); }
+      t.q = done.concat(tc, kept); t.nw = Math.min(t.base, t.nw + tc.length - drop);
+    }
+    S.v4 = S.v5 = true;
   }
   save();
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
