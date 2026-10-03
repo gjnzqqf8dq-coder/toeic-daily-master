@@ -633,6 +633,8 @@ const Haptic = {
 // 効果音：起動時に全部を音声ファイル（WAV）として作っておく。
 // iPhone は <audio> で鳴らす（マナーモードでも鳴り、Web Audio の制限も受けない）
 // =========================================================
+// 効果音でほかのアプリの音楽を止めたり小さくしたりしない（iOS 16.4+ の Audio Session API。消音スイッチONなら効果音は鳴らない）
+try { if (navigator.audioSession) navigator.audioSession.type = "ambient"; } catch {}
 const SFX = {
   SR: 32000, buf: {}, url: {}, pool: {}, idx: {}, ctx: null, silent: null, rendering: null,
   defs() {
