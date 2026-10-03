@@ -1,7 +1,7 @@
 # Daily Master — 引き継ぎメモ（2026-10-02）
 
 本番: https://gjnzqqf8dq-coder.github.io/toeic-daily-master/ （repo gjnzqqf8dq-coder/toeic-daily-master・main を push で自動公開）
-ローカル: `~/Downloads/claude box/_作業ファイル/toeic-daily-master/`
+ローカル: `~/Downloads/TOEIC Daily Master/_作業/toeic-daily-master/`
 
 ## 編集 → 確認 → 公開
 1. `src/partA.html`（CSS・HTML）/ `src/logic.js`（保存・出題の組み立て）/ `src/partC.js`（画面・音・演出）を編集
@@ -12,6 +12,7 @@
    - `node tools/overflow.mjs` … 全画面の横はみ出し（スマホの横ずれ）検出
    - `node tools/perf_daily.mjs` … CPU6倍遅延で回答8回の固まり時間
    - `node tools/flipvid.mjs <dir>` … 暗記カードのめくりを録画（答えが透けないか）
+   - `node tools/flipperf.mjs` … CPU6倍遅延でめくりの反応時間とコマ落ち（めくりはCSSアニメだけで回す・途中にJSを挟まない）
    ※ tools は ~/webtool に同名で置いてある（playwright がそこに入っている）
 5. データjs を変えたら `src/partA.html` と `sw.js` の `?v=` と `CACHE` 名を上げる（上げないと端末キャッシュで古いまま）
 6. `git add -A && git commit && git push` → 1分ほどで反映。報告は毎回フルURLで

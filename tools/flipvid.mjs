@@ -5,7 +5,7 @@ const p = await ctx.newPage(); await p.goto('http://localhost:8791/?v=' + Date.n
 await p.evaluate(() => { const A = window.__app; A.S.settings.timer = 0; A.S.settings.mode = { w: 'card', p: 'card' }; A.show('sWords'); });
 await p.tap('#wStart'); await sleep(700);
 // 各フレームで「表示中の面」と「不透明度」を記録
-await p.evaluate(() => { window.__f = []; const fc = document.getElementById('fcard'); const loop = () => { const r = fc.classList.contains('rev'); const tr = getComputedStyle(fc.querySelector('.flip')).transform; window.__f.push([Math.round(performance.now()), r ? 'B' : 'A', getComputedStyle(fc).opacity, document.getElementById(r ? 'fb' : 'fa').innerText.slice(0, 12), tr]); requestAnimationFrame(loop); }; loop(); });
+await p.evaluate(() => { window.__f = []; const fc = document.getElementById('fcard'); const loop = () => { const r = fc.classList.contains('rev'); const tr = getComputedStyle(document.getElementById(r ? 'fb' : 'fa')).transform; window.__f.push([Math.round(performance.now()), r ? 'B' : 'A', String(+getComputedStyle(fc).opacity * +getComputedStyle(document.getElementById(r ? 'fb' : 'fa')).opacity), document.getElementById(r ? 'fb' : 'fa').innerText.slice(0, 12), tr]); requestAnimationFrame(loop); }; loop(); });
 for (let i = 0; i < 3; i++) { await p.tap('#fcard'); await sleep(700); await p.tap('#bOk'); await sleep(700); }
 const f = await p.evaluate(() => window.__f);
 // 次のカードへ移る瞬間：不透明度>0 で裏面(B)が見えているのに、内容が新しい問題に変わっているフレームがないか

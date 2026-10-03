@@ -374,7 +374,7 @@ function load() {
 }
 function loadCard(t, key) {
   const fc = $('fcard'), fa = $('fa'), fb = $('fb');
-  fc.style.opacity = '0'; fc.className = 'fcard'; fb.className = 'face b'; fc.querySelector('.flip').getAnimations().forEach(a => a.cancel());
+  fc.style.opacity = '0'; fc.className = 'fcard'; fb.className = 'face b';
   if (G.type === 'w') {
     const w = wByEn[key.slice(2)]; G.ans = w;
     $('qText').textContent = '意味、覚えてる？';
@@ -397,16 +397,13 @@ function loadCard(t, key) {
 }
 function flipCard(auto) {
   if (!G || G.mode !== 'card' || G.flipped || G.answered) return;
-  wake(); G.flipped = true; stopTimer();
-  const fc = $('fcard'), fl = fc.querySelector('.flip'); Sound.flip();
-  const swap = () => fc.classList.add('rev');
-  try {
-    const a1 = fl.animate([{ transform: 'perspective(1200px) rotateY(0deg)' }, { transform: 'perspective(1200px) rotateY(90deg)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' });
-    a1.onfinish = () => { swap(); a1.cancel(); fl.animate([{ transform: 'perspective(1200px) rotateY(-90deg)' }, { transform: 'perspective(1200px) rotateY(0deg)' }], { duration: 170, easing: 'ease-out' }); };
-  } catch { swap(); }
+  G.flipped = true;
+  $('fcard').classList.add('rev'); // 回転は CSS だけで進む（途中で JS を待たない）
   $('fhint').textContent = auto ? '時間切れ！' : '';
   $('bFlip').hidden = true; $('bDuo').hidden = false;
-  if (G.type === 'p' && S.settings.name) Sound.say(G.ans.kana || G.ans.name, 'ja');
+  Sound.flip(); stopTimer();
+  // 重い処理（音の準備・読み上げ）はめくり終わってから
+  const g = G; setTimeout(() => { wake(); if (G === g && G.type === 'p' && S.settings.name) Sound.say(G.ans.kana || G.ans.name, 'ja'); }, 280);
   if (auto) { G.answered = true; setTimeout(() => { if (G) result(false, 'time'); }, 1300); }
 }
 function cardGrade(ok) {
@@ -711,7 +708,9 @@ onTap($('dMore'), () => { const type = $('dMore')._type || 'w'; addExtra(type); 
 onTap($('dHome'), () => closePlay());
 onTap($('bNext'), () => { wake(); next(); });
 onTap($('bSkip'), () => choose(null, 'skip'));
-onTap($('fcard'), () => flipCard());
+// 指が触れた瞬間にめくる（離すのを待たない）。触覚はあとの click で従来どおり鳴る
+$('fcard').addEventListener('pointerdown', e => { if (e.button === 0 && !e.target.closest('.spk')) flipCard(); });
+onTap($('fcard'), () => { wake(); flipCard(); });
 onTap($('bFlip'), () => flipCard());
 onTap($('bOk'), () => cardGrade(true));
 onTap($('bNg'), () => cardGrade(false));

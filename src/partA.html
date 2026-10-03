@@ -164,11 +164,14 @@ body.playing nav{display:none}
 .seg label.on{border-color:#84d8ff;background:var(--eel-p);color:var(--eel-d)}
 .flash{flex:1;display:flex;align-items:center;justify-content:center;perspective:1200px;min-height:260px;margin-bottom:12px}
 .fcard{position:relative;display:block;width:100%;height:min(46vh,380px)}
-.flip{position:absolute;inset:0;will-change:transform}
-/* 表と裏は回転で透かさず、真横になった瞬間に入れ替える */
-.fcard .face.b{display:none}
-.fcard.rev .face.a{display:none}
-.fcard.rev .face.b{display:flex}
+.flip{position:absolute;inset:0}
+/* 表と裏は回転で透かさず、真横になった瞬間に入れ替える（JSを挟まずGPUだけで回す・裏面は先に組み立て済み） */
+.fcard .face{will-change:transform,opacity;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.fcard .face.b{opacity:0;transform:perspective(1200px) rotateY(-90deg);pointer-events:none}
+.fcard.rev .face.a{animation:flipA .11s cubic-bezier(.4,0,1,1) forwards;pointer-events:none}
+.fcard.rev .face.b{animation:flipB .15s cubic-bezier(0,0,.2,1) .11s both;pointer-events:auto}
+@keyframes flipA{0%{transform:perspective(1200px) rotateY(0)}99%{opacity:1}100%{transform:perspective(1200px) rotateY(90deg);opacity:0}}
+@keyframes flipB{0%{transform:perspective(1200px) rotateY(-90deg);opacity:1}100%{transform:perspective(1200px) rotateY(0);opacity:1}}
 .fcard.out-ok,.fcard.out-ng{transition:opacity .16s linear;opacity:0}
 .face{position:absolute;inset:0;border:2px solid var(--swan);border-bottom-width:4px;border-radius:16px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:18px;text-align:center;overflow:hidden}
 .face.b{overflow-y:auto;justify-content:center}
