@@ -736,6 +736,8 @@ document.addEventListener('keydown', e => {
     if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); flipCard(); }
     else if (e.key === 'ArrowRight' || e.key === 'Enter') { G.flipped ? cardGrade(true) : flipCard(); }
     else if (e.key === 'ArrowLeft') cardGrade(false);
+    // 」キーで✕（JISの」はe.code=Backslash）。めくる前なら、めくって✕まで一気に
+    else if (e.key === ']' || e.key === '」' || e.code === 'Backslash') { e.preventDefault(); if (!G.flipped) flipCard(); cardGrade(false); }
     return;
   }
   if (!G.answered && /^[1-4]$/.test(e.key)) { const el = $('opts').children[+e.key - 1]; if (el) choose(el); }
