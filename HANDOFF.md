@@ -37,3 +37,8 @@
 ## 未解決
 - iPhone の振動：Web では不安定（ボタンを label＋input[switch] にして直押しで触覚）。確実にするならネイティブアプリ化（JS側の受け口 `window.webkit.messageHandlers.haptic` は実装済み）
 - Duolingo の実音源は著作権のため不使用（合成で近づけている）
+
+## 同期（2026-10-06）
+- スマホとPCの記録は Cloudflare Worker `tdm-sync`（https://tdm-sync.human-captcha.workers.dev・KV TDM_SYNC）に1つのJSONで置く。ソース=`../tdm-sync/`（`npx wrangler deploy`）
+- キーは logic.js の SYNC_KEY（localStorage `tdm-sync-key` で上書き可）。合わせ方は mergeState（カード=解いた回数が多い方・日ごとの数=大きい方・今日=進んでいる方）
+- 起動時と画面に戻った時に取り込み、保存後20秒で送る（KV無料枠の書き込み1000回/日に配慮）
