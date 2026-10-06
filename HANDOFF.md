@@ -41,4 +41,5 @@
 ## 同期（2026-10-06）
 - スマホとPCの記録は Cloudflare Worker `tdm-sync`（https://tdm-sync.human-captcha.workers.dev・KV TDM_SYNC）に1つのJSONで置く。ソース=`../tdm-sync/`（`npx wrangler deploy`）
 - キーは logic.js の SYNC_KEY（localStorage `tdm-sync-key` で上書き可）。合わせ方は mergeState（カード=解いた回数が多い方・日ごとの数=大きい方・今日=進んでいる方）
-- 起動時と画面に戻った時に取り込み、保存後20秒で送る（KV無料枠の書き込み1000回/日に配慮）
+- 起動時と画面に戻った時に取り込み、15分ごと（Sync.push・解いている途中は送らず終わってから）・画面を閉じた時・電波が戻った時に送る。設定に「今すぐ同期」と状態表示
+- 新しい版の読み直しは「1時間以上離れてから開いた時」だけ（使っている途中で読み直さない）

@@ -51,13 +51,13 @@ function save() {
   clearTimeout(idbTimer);
   idbTimer = setTimeout(flush, 250); // 連続回答の書き込みをまとめる
 }
-function flush() {
+function flush(fromSync) {
   clearTimeout(idbTimer); idbTimer = null;
   if (!S) return;
   const json = JSON.stringify(S);
   try { localStorage.setItem(LS, json); } catch {}
   IDB.put(json);
-  if (typeof Sync !== 'undefined') Sync.later();
+  if (!fromSync && typeof Sync !== 'undefined') Sync.later();
 }
 
 // =========================================================
@@ -97,35 +97,44 @@ function mergeState(a, b) {
   out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
   return out;
 }
+const SYNC_EVERY = 15 * 60 * 1000; // 15分ごとに裏で送る（画面は読み直さない）
 const Sync = {
-  last: 0, busy: false, timer: null,
+  last: 0, busy: false, dirty: false, state: '', hiddenAt: 0,
   async pull() {
     try {
       const r = await fetch(SYNC_URL + SYNC_KEY, { cache: 'no-store' }); if (!r.ok) return false;
       const remote = await r.json();
-      if (remote && remote.cards) { const u = S.updatedAt; S = normalize(mergeState(S, remote)); S.updatedAt = Math.max(u, S.updatedAt); flush(); }
-      this.last = Date.now(); return true;
+      if (remote && remote.cards) { const u = S.updatedAt; S = normalize(mergeState(S, remote)); S.updatedAt = Math.max(u, S.updatedAt); flush(true); }
+      return true;
     } catch { return false; }
   },
   async push(keepalive) {
-    if (this.busy && !keepalive) return; this.busy = true;
+    if (!keepalive && (this.busy || G)) return false; // 解いている途中は手元の記録を差し替えない（終わってから送る）
+    if (!navigator.onLine) { this.status('offline'); return false; }
+    this.busy = true; let ok = false;
     try {
-      if (!keepalive) await this.pull(); // 先に相手の分を取り込んでから上書き
-      await fetch(SYNC_URL + SYNC_KEY, { method: 'PUT', body: JSON.stringify(S), keepalive: !!keepalive && JSON.stringify(S).length < 60000 });
-      this.last = Date.now();
+      if (!keepalive) { this.status('busy'); if (!await this.pull()) throw 0; } // 先に相手の分を取り込んでから上書き
+      const body = JSON.stringify(S);
+      const r = await fetch(SYNC_URL + SYNC_KEY, { method: 'PUT', body, keepalive: !!keepalive && body.length < 60000 });
+      ok = r.ok; if (ok) { this.last = Date.now(); this.dirty = false; }
     } catch {}
-    this.busy = false;
+    this.busy = false; this.status(ok ? 'ok' : navigator.onLine ? 'error' : 'offline');
+    return ok;
   },
-  later() { clearTimeout(this.timer); this.timer = setTimeout(() => this.push(), 20000); },
+  later() { this.dirty = true; },
+  status(st) { if (st) this.state = st; if (typeof syncInfo === 'function') syncInfo(); },
 };
+setInterval(() => { if (!document.hidden) Sync.push(); }, SYNC_EVERY);
+addEventListener('online', () => Sync.push()); // 電波が戻ったら、たまっていた分を送る
+addEventListener('offline', () => Sync.status('offline'));
 
-addEventListener('pagehide', () => { flush(); Sync.push(true); });
+addEventListener('pagehide', () => { flush(); if (Sync.dirty) Sync.push(true); });
 document.addEventListener('visibilitychange', async () => {
-  if (document.hidden) { flush(); Sync.push(true); }
-  else if (S && !G) {
-    if (await newVersion()) { flush(); return location.reload(); } // ホーム画面のアプリは裏に残ると古い画面のままなので、新しい版があれば読み直す
-    if (await Sync.pull()) show(tab); // 別の端末でやった分を開いた時に取り込む
-  }
+  if (document.hidden) { Sync.hiddenAt = Date.now(); flush(); if (Sync.dirty) Sync.push(true); return; }
+  if (!S || G) return;
+  // 1時間以上たってから開いた時だけ、新しい版があれば読み直す（使っている途中では読み直さない）
+  if (Sync.hiddenAt && Date.now() - Sync.hiddenAt > 60 * 60 * 1000 && await newVersion()) { flush(); return location.reload(); }
+  if (await Sync.pull()) { show(tab); Sync.push(); } // 別の端末でやった分を開いた時に取り込む
 });
 const BUILD = '__BUILD__';
 async function newVersion() {

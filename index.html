@@ -273,6 +273,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 .sw{width:52px;height:30px;border-radius:15px;background:var(--swan);position:relative;flex:none;transition:background .2s}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .2s var(--back)}
 .sw.on{background:var(--owl)} .sw.on::after{left:25px}
+.syncst{font-size:13px;color:var(--hare);line-height:1.5}
 .test{position:relative;font-size:12px;font-weight:800;padding:6px 10px;border:2px solid var(--swan);border-bottom-width:4px;border-radius:10px;color:var(--eel)}
 
 #lvup{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;flex-direction:column;background:var(--bee);color:#fff;text-align:center}
@@ -384,6 +385,8 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="set"><span>振動テスト（押して確認）</span><input type="checkbox" switch style="width:52px;height:30px"></div>
   <div class="set"><span>出題時に自動で発音</span><div class="sw" id="swAuto"></div></div>
   <div class="set"><span>名前を読み上げる</span><div class="sw" id="swName"></div></div>
+  <div class="sec">スマホとPCの同期</div>
+  <div class="set"><span id="stSync" class="syncst">—</span><label class="test" id="tSync"><input type="checkbox" switch class="hsw">今すぐ同期</label></div>
   <div class="small" style="padding:16px 0" id="stStore"></div>
 </section>
 
@@ -500,13 +503,13 @@ function save() {
   clearTimeout(idbTimer);
   idbTimer = setTimeout(flush, 250); // 連続回答の書き込みをまとめる
 }
-function flush() {
+function flush(fromSync) {
   clearTimeout(idbTimer); idbTimer = null;
   if (!S) return;
   const json = JSON.stringify(S);
   try { localStorage.setItem(LS, json); } catch {}
   IDB.put(json);
-  if (typeof Sync !== 'undefined') Sync.later();
+  if (!fromSync && typeof Sync !== 'undefined') Sync.later();
 }
 
 // =========================================================
@@ -546,37 +549,46 @@ function mergeState(a, b) {
   out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
   return out;
 }
+const SYNC_EVERY = 15 * 60 * 1000; // 15分ごとに裏で送る（画面は読み直さない）
 const Sync = {
-  last: 0, busy: false, timer: null,
+  last: 0, busy: false, dirty: false, state: '', hiddenAt: 0,
   async pull() {
     try {
       const r = await fetch(SYNC_URL + SYNC_KEY, { cache: 'no-store' }); if (!r.ok) return false;
       const remote = await r.json();
-      if (remote && remote.cards) { const u = S.updatedAt; S = normalize(mergeState(S, remote)); S.updatedAt = Math.max(u, S.updatedAt); flush(); }
-      this.last = Date.now(); return true;
+      if (remote && remote.cards) { const u = S.updatedAt; S = normalize(mergeState(S, remote)); S.updatedAt = Math.max(u, S.updatedAt); flush(true); }
+      return true;
     } catch { return false; }
   },
   async push(keepalive) {
-    if (this.busy && !keepalive) return; this.busy = true;
+    if (!keepalive && (this.busy || G)) return false; // 解いている途中は手元の記録を差し替えない（終わってから送る）
+    if (!navigator.onLine) { this.status('offline'); return false; }
+    this.busy = true; let ok = false;
     try {
-      if (!keepalive) await this.pull(); // 先に相手の分を取り込んでから上書き
-      await fetch(SYNC_URL + SYNC_KEY, { method: 'PUT', body: JSON.stringify(S), keepalive: !!keepalive && JSON.stringify(S).length < 60000 });
-      this.last = Date.now();
+      if (!keepalive) { this.status('busy'); if (!await this.pull()) throw 0; } // 先に相手の分を取り込んでから上書き
+      const body = JSON.stringify(S);
+      const r = await fetch(SYNC_URL + SYNC_KEY, { method: 'PUT', body, keepalive: !!keepalive && body.length < 60000 });
+      ok = r.ok; if (ok) { this.last = Date.now(); this.dirty = false; }
     } catch {}
-    this.busy = false;
+    this.busy = false; this.status(ok ? 'ok' : navigator.onLine ? 'error' : 'offline');
+    return ok;
   },
-  later() { clearTimeout(this.timer); this.timer = setTimeout(() => this.push(), 20000); },
+  later() { this.dirty = true; },
+  status(st) { if (st) this.state = st; if (typeof syncInfo === 'function') syncInfo(); },
 };
+setInterval(() => { if (!document.hidden) Sync.push(); }, SYNC_EVERY);
+addEventListener('online', () => Sync.push()); // 電波が戻ったら、たまっていた分を送る
+addEventListener('offline', () => Sync.status('offline'));
 
-addEventListener('pagehide', () => { flush(); Sync.push(true); });
+addEventListener('pagehide', () => { flush(); if (Sync.dirty) Sync.push(true); });
 document.addEventListener('visibilitychange', async () => {
-  if (document.hidden) { flush(); Sync.push(true); }
-  else if (S && !G) {
-    if (await newVersion()) { flush(); return location.reload(); } // ホーム画面のアプリは裏に残ると古い画面のままなので、新しい版があれば読み直す
-    if (await Sync.pull()) show(tab); // 別の端末でやった分を開いた時に取り込む
-  }
+  if (document.hidden) { Sync.hiddenAt = Date.now(); flush(); if (Sync.dirty) Sync.push(true); return; }
+  if (!S || G) return;
+  // 1時間以上たってから開いた時だけ、新しい版があれば読み直す（使っている途中では読み直さない）
+  if (Sync.hiddenAt && Date.now() - Sync.hiddenAt > 60 * 60 * 1000 && await newVersion()) { flush(); return location.reload(); }
+  if (await Sync.pull()) { show(tab); Sync.push(); } // 別の端末でやった分を開いた時に取り込む
 });
-const BUILD = '1791263250';
+const BUILD = '1791269703';
 async function newVersion() {
   try { const t = await (await fetch('./?chk=' + Date.now(), { cache: 'no-store' })).text(); const m = t.match(/const BUILD = '(\w+)'/); return !!(m && m[1] !== BUILD && BUILD !== '__' + 'BUILD__'); } catch { return false; }
 }
@@ -1249,7 +1261,7 @@ function finish() {
   setTx($('dMore'), `＋${type === 'w' ? S.settings.wordExtra + '語' : S.settings.faceExtra + '人'}`);
   $('dMore')._type = type;
 }
-function closePlay() { stopTimer(); const type = G ? G.type : (tab === 'sFaces' ? 'p' : 'w'); clearTimeout(autoT); G = null; try { speechSynthesis.cancel(); } catch {} show(type === 'w' ? 'sWords' : 'sFaces'); }
+function closePlay() { stopTimer(); const type = G ? G.type : (tab === 'sFaces' ? 'p' : 'w'); clearTimeout(autoT); G = null; try { speechSynthesis.cancel(); } catch {} if (Sync.dirty && Date.now() - Sync.last > SYNC_EVERY) Sync.push(); show(type === 'w' ? 'sWords' : 'sFaces'); }
 
 // =========================================================
 // 記録
@@ -1324,7 +1336,15 @@ function renderSettings() {
   sw('swHap', 'hap', applyHap); sw('swAuto', 'auto'); sw('swName', 'name');
   renderVoices();
   $('stVoice').onchange = e => { s.voice = e.target.value; save(); Sound.say('available'); };
-  storeInfo();
+  storeInfo(); syncInfo();
+}
+function syncInfo() {
+  const e = $('stSync'); if (!e) return;
+  const t = Sync.last ? new Date(Sync.last).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '';
+  e.textContent = Sync.state === 'busy' ? '同期中…'
+    : Sync.state === 'offline' ? 'オフライン（記録は端末に保存中・つながったら送ります）'
+    : Sync.state === 'error' ? '同期できませんでした（15分後にまた試します）'
+    : (t ? '最終同期 ' + t : 'まだ同期していません') + (Sync.dirty ? '・未送信あり' : '') + '　15分ごとに自動';
 }
 async function storeInfo() {
   let persisted = false;
@@ -1332,7 +1352,6 @@ async function storeInfo() {
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   $('stStore').innerHTML = `記録はこの端末に二重で保存しています（1問ごと）。永続化：${persisted ? 'ON' : 'OFF'}` +
     (standalone ? '' : '<br>iPhoneは Safari の共有→「ホーム画面に追加」から開くと、記録が自動で消されなくなります。') +
-    `<br>スマホとPCの記録は自動で同期しています${Sync.last ? '（最終 ' + new Date(Sync.last).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + '）' : ''}。` +
     '<br>振動は iPhone（iOS 18以降）では「設定 → サウンドと触覚 → システムの触覚」がオンのときに出ます。';
 }
 
@@ -1407,6 +1426,7 @@ document.querySelectorAll('.seg label').forEach(l => onTap(l, () => {
 $('xClose').onclick = () => closePlay();
 $('cPrev').onclick = () => { cal.m--; if (cal.m < 0) { cal.m = 11; cal.y--; } renderLog(); };
 $('cNext').onclick = () => { cal.m++; if (cal.m > 11) { cal.m = 0; cal.y++; } renderLog(); };
+onTap($('tSync'), async () => { Sound.tap(); if (await Sync.push()) { toast('同期しました'); if (!G) show(tab); } else toast(Sync.state === 'offline' ? 'オフラインです。つながったら自動で送ります' : '同期できませんでした'); });
 onTap($('tEff'), () => { wake(); Sound.ok(0); Haptic.ok(2); setTimeout(() => Sound.ok(8), 500); setTimeout(() => Sound.ng(), 1100); });
 onTap($('tSp'), () => Sound.say('Thank you for your patience.'));
 document.addEventListener('keydown', e => {

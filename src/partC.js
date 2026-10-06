@@ -572,7 +572,7 @@ function finish() {
   setTx($('dMore'), `＋${type === 'w' ? S.settings.wordExtra + '語' : S.settings.faceExtra + '人'}`);
   $('dMore')._type = type;
 }
-function closePlay() { stopTimer(); const type = G ? G.type : (tab === 'sFaces' ? 'p' : 'w'); clearTimeout(autoT); G = null; try { speechSynthesis.cancel(); } catch {} show(type === 'w' ? 'sWords' : 'sFaces'); }
+function closePlay() { stopTimer(); const type = G ? G.type : (tab === 'sFaces' ? 'p' : 'w'); clearTimeout(autoT); G = null; try { speechSynthesis.cancel(); } catch {} if (Sync.dirty && Date.now() - Sync.last > SYNC_EVERY) Sync.push(); show(type === 'w' ? 'sWords' : 'sFaces'); }
 
 // =========================================================
 // 記録
@@ -647,7 +647,15 @@ function renderSettings() {
   sw('swHap', 'hap', applyHap); sw('swAuto', 'auto'); sw('swName', 'name');
   renderVoices();
   $('stVoice').onchange = e => { s.voice = e.target.value; save(); Sound.say('available'); };
-  storeInfo();
+  storeInfo(); syncInfo();
+}
+function syncInfo() {
+  const e = $('stSync'); if (!e) return;
+  const t = Sync.last ? new Date(Sync.last).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '';
+  e.textContent = Sync.state === 'busy' ? '同期中…'
+    : Sync.state === 'offline' ? 'オフライン（記録は端末に保存中・つながったら送ります）'
+    : Sync.state === 'error' ? '同期できませんでした（15分後にまた試します）'
+    : (t ? '最終同期 ' + t : 'まだ同期していません') + (Sync.dirty ? '・未送信あり' : '') + '　15分ごとに自動';
 }
 async function storeInfo() {
   let persisted = false;
@@ -655,7 +663,6 @@ async function storeInfo() {
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   $('stStore').innerHTML = `記録はこの端末に二重で保存しています（1問ごと）。永続化：${persisted ? 'ON' : 'OFF'}` +
     (standalone ? '' : '<br>iPhoneは Safari の共有→「ホーム画面に追加」から開くと、記録が自動で消されなくなります。') +
-    `<br>スマホとPCの記録は自動で同期しています${Sync.last ? '（最終 ' + new Date(Sync.last).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + '）' : ''}。` +
     '<br>振動は iPhone（iOS 18以降）では「設定 → サウンドと触覚 → システムの触覚」がオンのときに出ます。';
 }
 
@@ -730,6 +737,7 @@ document.querySelectorAll('.seg label').forEach(l => onTap(l, () => {
 $('xClose').onclick = () => closePlay();
 $('cPrev').onclick = () => { cal.m--; if (cal.m < 0) { cal.m = 11; cal.y--; } renderLog(); };
 $('cNext').onclick = () => { cal.m++; if (cal.m > 11) { cal.m = 0; cal.y++; } renderLog(); };
+onTap($('tSync'), async () => { Sound.tap(); if (await Sync.push()) { toast('同期しました'); if (!G) show(tab); } else toast(Sync.state === 'offline' ? 'オフラインです。つながったら自動で送ります' : '同期できませんでした'); });
 onTap($('tEff'), () => { wake(); Sound.ok(0); Haptic.ok(2); setTimeout(() => Sound.ok(8), 500); setTimeout(() => Sound.ng(), 1100); });
 onTap($('tSp'), () => Sound.say('Thank you for your patience.'));
 document.addEventListener('keydown', e => {
