@@ -97,7 +97,7 @@ function mergeState(a, b) {
   out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
   return out;
 }
-const SYNC_EVERY = 15 * 60 * 1000; // 15分ごとに裏で送る（画面は読み直さない）
+const SYNC_EVERY = 5 * 60 * 1000; // 5分ごとに裏で送る（画面は読み直さない）
 const Sync = {
   last: 0, busy: false, dirty: false, state: '', hiddenAt: 0,
   async pull() {

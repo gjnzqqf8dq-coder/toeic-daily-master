@@ -549,7 +549,7 @@ function mergeState(a, b) {
   out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
   return out;
 }
-const SYNC_EVERY = 15 * 60 * 1000; // 15分ごとに裏で送る（画面は読み直さない）
+const SYNC_EVERY = 5 * 60 * 1000; // 5分ごとに裏で送る（画面は読み直さない）
 const Sync = {
   last: 0, busy: false, dirty: false, state: '', hiddenAt: 0,
   async pull() {
@@ -588,7 +588,7 @@ document.addEventListener('visibilitychange', async () => {
   if (Sync.hiddenAt && Date.now() - Sync.hiddenAt > 60 * 60 * 1000 && await newVersion()) { flush(); return location.reload(); }
   if (await Sync.pull()) { show(tab); Sync.push(); } // 別の端末でやった分を開いた時に取り込む
 });
-const BUILD = '1791269703';
+const BUILD = '1791270691';
 async function newVersion() {
   try { const t = await (await fetch('./?chk=' + Date.now(), { cache: 'no-store' })).text(); const m = t.match(/const BUILD = '(\w+)'/); return !!(m && m[1] !== BUILD && BUILD !== '__' + 'BUILD__'); } catch { return false; }
 }
