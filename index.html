@@ -138,6 +138,8 @@ body.playing nav{display:none}
 .word{font-size:32px;font-weight:900;line-height:1.1;word-break:break-word}
 .photo{width:min(46vw,180px);aspect-ratio:1;border-radius:16px;object-fit:cover;object-position:50% 22%;border:2px solid var(--swan);border-bottom-width:4px;display:block}
 .prompt.pface{justify-content:center}
+.stubq{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px;text-align:center;background:#f7f7f7;color:var(--ink,#3c3c3c);font-size:15px;line-height:1.4}
+.stubq .co{font-size:13px;font-weight:800;color:#fff;background:var(--bet);border-radius:8px;padding:2px 8px}.stubq b{font-size:17px;font-weight:800}.stubq small{font-size:12px;color:#777}.photo.stubq{height:auto}
 .timer{height:8px;background:var(--swan);border-radius:99px;overflow:hidden;margin:4px 0 16px;flex:none}
 .timer i{display:block;height:100%;width:100%;background:var(--eel);border-radius:99px;transform-origin:left;will-change:transform;transition:background-color .3s}
 .timer i{background:#c9ecfd}
@@ -443,7 +445,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 <div id="toast"></div>
 
 <script src="words.js?v=9"></script>
-<script src="people.js?v=11"></script>
+<script src="people.js?v=12"></script>
 <script>
 'use strict';
 // =========================================================
@@ -452,7 +454,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 //   復習で○ → 次の段（1→3→7→14→30→60日）/ ✕ → 翌日に戻す
 // =========================================================
 const INT = [0, 1, 3, 7, 14, 30, 60];
-const GROUPS = { tc: '行く回の登壇者', idea: 'アイデアの学校 講師', peer: 'アイデアの学校 同期', toraA: '虎ノ門広告祭 必修', toraB: '虎ノ門広告祭 その他' };
+const GROUPS = { tc: '行く回の登壇者', idea: 'アイデアの学校 講師', peer: 'アイデアの学校 同期', toraA: '虎ノ門広告祭 必修', toraB: '虎ノ門広告祭 その他', tcy: '虎子屋 講師候補' };
 const LS = 'tdm2';
 const W = window.WORDS, P = window.PEOPLE;
 const pById = Object.fromEntries(P.map(p => [p.id, p]));
@@ -466,7 +468,7 @@ function pgroup(p) { return p.g === 'tora' ? 'tora' + p.tier : p.g; }
 // =========================================================
 // 保存（localStorage ＋ IndexedDB の二重化・1問ごとに即保存）
 // =========================================================
-const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false } };
+const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
 let S;
 function fresh() {
   return { v: 2, updatedAt: 0, cards: {}, days: {}, today: {}, order: shuffle(W.map(w => w.en)), settings: structuredClone(DEF_SETTINGS) };
@@ -542,8 +544,8 @@ function migrateV1(s) {
 function deckKeys(type) {
   if (type === 'w') return S.order.map(en => 'w:' + en);
   const g = S.settings.groups;
-  const rank = { tc: -1, toraA: 0, idea: 1, peer: 2, toraB: 3 }; // 広告祭(10/9〜)が近いので必修を先に
-  return P.filter(p => g[pgroup(p)]).sort((a, b) => rank[pgroup(a)] - rank[pgroup(b)] || b.pri - a.pri).map(p => 'p:' + p.id);
+  const rank = { tc: -1, toraA: 0, tcy: 0.5, idea: 1, peer: 2, toraB: 3 }; // 広告祭(10/9〜)が近いので必修を先に
+  return P.filter(p => g[pgroup(p)] || (p.also || []).some(x => g[x])).sort((a, b) => rank[pgroup(a)] - rank[pgroup(b)] || b.pri - a.pri).map(p => 'p:' + p.id);
 }
 function counts(type) {
   const today = dayNum(); let learned = 0, dueTomorrow = 0, unseen = 0;
@@ -884,7 +886,7 @@ function renderHome(type) {
 }
 function renderChips() {
   const box = $('gChips'); box.innerHTML = '';
-  const n = {}; P.forEach(p => { const g = pgroup(p); n[g] = (n[g] || 0) + 1; });
+  const n = {}; P.forEach(p => [pgroup(p), ...(p.also || [])].forEach(g => { n[g] = (n[g] || 0) + 1; }));
   for (const [g, label] of Object.entries(GROUPS)) {
     const b = document.createElement('label');
     b.className = 'chip' + (S.settings.groups[g] ? ' on' : '');
@@ -961,7 +963,7 @@ function load() {
     G.ans = p;
     $('qText').textContent = 'この人はだれ？';
     prompt.className = 'prompt pface';
-    prompt.innerHTML = `<img class="photo" src="${p.img}" alt="">`;
+    prompt.innerHTML = p.stub ? stubHTML(p, 'photo') : `<img class="photo" src="${p.img}" alt="">`;
     opts.classList.add('two');
     list = shuffle([{ t: p.name, ok: true }, ...pickFaceOpts(p).map(x => ({ t: x.name }))]);
     const nk = t.q[t.pos + 1]; if (nk) { const np = pById[nk.replace(/^!/, '').slice(2)]; if (np) new Image().src = np.img; }
@@ -991,7 +993,7 @@ function loadCard(t, key) {
   } else {
     const p = pById[key.slice(2)]; G.ans = p;
     $('qText').textContent = 'この人、だれ？';
-    fa.innerHTML = `<img class="pbig" src="${p.img}" alt="">`;
+    fa.innerHTML = p.stub ? stubHTML(p, 'pbig') : `<img class="pbig" src="${p.img}" alt="">`;
     fb.className = 'face b pf'; fb.innerHTML = profHTML(p);
     const nk = t.q[t.pos + 1]; if (nk) { const np = pById[nk.replace(/^!/, '').slice(2)]; if (np) new Image().src = np.img; }
   }
@@ -1084,6 +1086,10 @@ function result(ok, reason, el) {
   }
   if (ok && G.type === 'w') { clearTimeout(autoT); autoT = setTimeout(next, 650); return; }
   showSheet(ok, reason, pts, fast);
+}
+// 写真がまだない人（スタブ）は、会社・役職・どの回の講師かを手がかりに出す
+function stubHTML(p, cls) {
+  return `<div class="${cls} stubq"><span class="co">${esc(p.co || '所属 未登録')}</span><b>${esc(p.role)}</b><small>${esc(p.tagline.replace(/ 講師.*$/, ''))}</small></div>`;
 }
 function profHTML(p) {
   // 並び：名前（よみ）→ 会社 → 役職 → 行く回（1行）

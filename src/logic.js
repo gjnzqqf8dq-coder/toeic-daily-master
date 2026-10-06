@@ -5,7 +5,7 @@
 //   復習で○ → 次の段（1→3→7→14→30→60日）/ ✕ → 翌日に戻す
 // =========================================================
 const INT = [0, 1, 3, 7, 14, 30, 60];
-const GROUPS = { tc: '行く回の登壇者', idea: 'アイデアの学校 講師', peer: 'アイデアの学校 同期', toraA: '虎ノ門広告祭 必修', toraB: '虎ノ門広告祭 その他' };
+const GROUPS = { tc: '行く回の登壇者', idea: 'アイデアの学校 講師', peer: 'アイデアの学校 同期', toraA: '虎ノ門広告祭 必修', toraB: '虎ノ門広告祭 その他', tcy: '虎子屋 講師候補' };
 const LS = 'tdm2';
 const W = window.WORDS, P = window.PEOPLE;
 const pById = Object.fromEntries(P.map(p => [p.id, p]));
@@ -19,7 +19,7 @@ function pgroup(p) { return p.g === 'tora' ? 'tora' + p.tier : p.g; }
 // =========================================================
 // 保存（localStorage ＋ IndexedDB の二重化・1問ごとに即保存）
 // =========================================================
-const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false } };
+const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
 let S;
 function fresh() {
   return { v: 2, updatedAt: 0, cards: {}, days: {}, today: {}, order: shuffle(W.map(w => w.en)), settings: structuredClone(DEF_SETTINGS) };
@@ -95,8 +95,8 @@ function migrateV1(s) {
 function deckKeys(type) {
   if (type === 'w') return S.order.map(en => 'w:' + en);
   const g = S.settings.groups;
-  const rank = { tc: -1, toraA: 0, idea: 1, peer: 2, toraB: 3 }; // 広告祭(10/9〜)が近いので必修を先に
-  return P.filter(p => g[pgroup(p)]).sort((a, b) => rank[pgroup(a)] - rank[pgroup(b)] || b.pri - a.pri).map(p => 'p:' + p.id);
+  const rank = { tc: -1, toraA: 0, tcy: 0.5, idea: 1, peer: 2, toraB: 3 }; // 広告祭(10/9〜)が近いので必修を先に
+  return P.filter(p => g[pgroup(p)] || (p.also || []).some(x => g[x])).sort((a, b) => rank[pgroup(a)] - rank[pgroup(b)] || b.pri - a.pri).map(p => 'p:' + p.id);
 }
 function counts(type) {
   const today = dayNum(); let learned = 0, dueTomorrow = 0, unseen = 0;

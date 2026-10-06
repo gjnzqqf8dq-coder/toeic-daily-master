@@ -280,7 +280,7 @@ function renderHome(type) {
 }
 function renderChips() {
   const box = $('gChips'); box.innerHTML = '';
-  const n = {}; P.forEach(p => { const g = pgroup(p); n[g] = (n[g] || 0) + 1; });
+  const n = {}; P.forEach(p => [pgroup(p), ...(p.also || [])].forEach(g => { n[g] = (n[g] || 0) + 1; }));
   for (const [g, label] of Object.entries(GROUPS)) {
     const b = document.createElement('label');
     b.className = 'chip' + (S.settings.groups[g] ? ' on' : '');
@@ -357,7 +357,7 @@ function load() {
     G.ans = p;
     $('qText').textContent = 'この人はだれ？';
     prompt.className = 'prompt pface';
-    prompt.innerHTML = `<img class="photo" src="${p.img}" alt="">`;
+    prompt.innerHTML = p.stub ? stubHTML(p, 'photo') : `<img class="photo" src="${p.img}" alt="">`;
     opts.classList.add('two');
     list = shuffle([{ t: p.name, ok: true }, ...pickFaceOpts(p).map(x => ({ t: x.name }))]);
     const nk = t.q[t.pos + 1]; if (nk) { const np = pById[nk.replace(/^!/, '').slice(2)]; if (np) new Image().src = np.img; }
@@ -387,7 +387,7 @@ function loadCard(t, key) {
   } else {
     const p = pById[key.slice(2)]; G.ans = p;
     $('qText').textContent = 'この人、だれ？';
-    fa.innerHTML = `<img class="pbig" src="${p.img}" alt="">`;
+    fa.innerHTML = p.stub ? stubHTML(p, 'pbig') : `<img class="pbig" src="${p.img}" alt="">`;
     fb.className = 'face b pf'; fb.innerHTML = profHTML(p);
     const nk = t.q[t.pos + 1]; if (nk) { const np = pById[nk.replace(/^!/, '').slice(2)]; if (np) new Image().src = np.img; }
   }
@@ -480,6 +480,10 @@ function result(ok, reason, el) {
   }
   if (ok && G.type === 'w') { clearTimeout(autoT); autoT = setTimeout(next, 650); return; }
   showSheet(ok, reason, pts, fast);
+}
+// 写真がまだない人（スタブ）は、会社・役職・どの回の講師かを手がかりに出す
+function stubHTML(p, cls) {
+  return `<div class="${cls} stubq"><span class="co">${esc(p.co || '所属 未登録')}</span><b>${esc(p.role)}</b><small>${esc(p.tagline.replace(/ 講師.*$/, ''))}</small></div>`;
 }
 function profHTML(p) {
   // 並び：名前（よみ）→ 会社 → 役職 → 行く回（1行）
