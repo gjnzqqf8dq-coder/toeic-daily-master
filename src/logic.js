@@ -122,8 +122,15 @@ const Sync = {
 addEventListener('pagehide', () => { flush(); Sync.push(true); });
 document.addEventListener('visibilitychange', async () => {
   if (document.hidden) { flush(); Sync.push(true); }
-  else if (S && !G && await Sync.pull()) show(tab); // 別の端末でやった分を開いた時に取り込む
+  else if (S && !G) {
+    if (await newVersion()) { flush(); return location.reload(); } // ホーム画面のアプリは裏に残ると古い画面のままなので、新しい版があれば読み直す
+    if (await Sync.pull()) show(tab); // 別の端末でやった分を開いた時に取り込む
+  }
 });
+const BUILD = '__BUILD__';
+async function newVersion() {
+  try { const t = await (await fetch('./?chk=' + Date.now(), { cache: 'no-store' })).text(); const m = t.match(/const BUILD = '(\w+)'/); return !!(m && m[1] !== BUILD && BUILD !== '__' + 'BUILD__'); } catch { return false; }
+}
 function loadLocal() {
   try { const v = localStorage.getItem(LS); return v ? JSON.parse(v) : null; } catch { return null; }
 }
