@@ -506,9 +506,73 @@ function flush() {
   const json = JSON.stringify(S);
   try { localStorage.setItem(LS, json); } catch {}
   IDB.put(json);
+  if (typeof Sync !== 'undefined') Sync.later();
 }
-addEventListener('pagehide', () => flush());
-document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+
+// =========================================================
+// 端末間の同期（スマホとPCで同じ記録）。Cloudflare Worker に1つのJSONを置き、取ってきたら手元と合わせる
+// =========================================================
+const SYNC_URL = 'https://tdm-sync.human-captcha.workers.dev/s/';
+const SYNC_KEY = (() => { try { return localStorage.getItem('tdm-sync-key') || 'kx-wO4eBZmuKdnGid_tYGkqK'; } catch { return 'kx-wO4eBZmuKdnGid_tYGkqK'; } })();
+function mergeState(a, b) {
+  if (!b || !b.cards) return a;
+  const out = Object.assign({}, a);
+  // カード：解いた回数が多い方（同じなら最後に解いた日が新しい方）
+  out.cards = Object.assign({}, b.cards);
+  for (const [k, c] of Object.entries(a.cards || {})) {
+    const o = out.cards[k];
+    if (!o || (c.n || 0) > (o.n || 0) || ((c.n || 0) === (o.n || 0) && (c.l || 0) >= (o.l || 0))) out.cards[k] = c;
+  }
+  // 日ごとの記録：数は大きい方
+  out.days = Object.assign({}, b.days);
+  for (const [d, x] of Object.entries(a.days || {})) {
+    const o = out.days[d]; if (!o) { out.days[d] = x; continue; }
+    const m = Object.assign({}, o, x);
+    for (const f of ['w', 'wc', 'p', 'pc', 'xp']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
+    out.days[d] = m;
+  }
+  // 今日の出題：日付が新しい方、同じ日なら種類ごとに進んでいる方
+  const ta = a.today || {}, tb = b.today || {};
+  if ((tb.date || '') > (ta.date || '')) out.today = tb;
+  else if (tb.date === ta.date) {
+    out.today = Object.assign({}, ta);
+    for (const t of ['w', 'p']) if (tb[t] && (!ta[t] || (tb[t].pos || 0) > (ta[t].pos || 0))) out.today[t] = tb[t];
+  }
+  out.xp = Math.max(a.xp || 0, b.xp || 0);
+  out.best = Object.assign({}, b.best); for (const [k, v] of Object.entries(a.best || {})) out.best[k] = Math.max(v || 0, out.best[k] || 0);
+  if (Object.keys(b.cards).length > Object.keys(a.cards || {}).length) out.order = b.order || a.order;
+  if ((b.updatedAt || 0) > (a.updatedAt || 0)) out.settings = b.settings;
+  for (const f of ['migrated', 'v3', 'v4', 'v5', 'v6']) out[f] = a[f] || b[f];
+  out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
+  return out;
+}
+const Sync = {
+  last: 0, busy: false, timer: null,
+  async pull() {
+    try {
+      const r = await fetch(SYNC_URL + SYNC_KEY, { cache: 'no-store' }); if (!r.ok) return false;
+      const remote = await r.json();
+      if (remote && remote.cards) { const u = S.updatedAt; S = normalize(mergeState(S, remote)); S.updatedAt = Math.max(u, S.updatedAt); flush(); }
+      this.last = Date.now(); return true;
+    } catch { return false; }
+  },
+  async push(keepalive) {
+    if (this.busy && !keepalive) return; this.busy = true;
+    try {
+      if (!keepalive) await this.pull(); // 先に相手の分を取り込んでから上書き
+      await fetch(SYNC_URL + SYNC_KEY, { method: 'PUT', body: JSON.stringify(S), keepalive: !!keepalive && JSON.stringify(S).length < 60000 });
+      this.last = Date.now();
+    } catch {}
+    this.busy = false;
+  },
+  later() { clearTimeout(this.timer); this.timer = setTimeout(() => this.push(), 20000); },
+};
+
+addEventListener('pagehide', () => { flush(); Sync.push(true); });
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden) { flush(); Sync.push(true); }
+  else if (S && !G && await Sync.pull()) show(tab); // 別の端末でやった分を開いた時に取り込む
+});
 function loadLocal() {
   try { const v = localStorage.getItem(LS); return v ? JSON.parse(v) : null; } catch { return null; }
 }
@@ -1261,6 +1325,7 @@ async function storeInfo() {
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   $('stStore').innerHTML = `記録はこの端末に二重で保存しています（1問ごと）。永続化：${persisted ? 'ON' : 'OFF'}` +
     (standalone ? '' : '<br>iPhoneは Safari の共有→「ホーム画面に追加」から開くと、記録が自動で消されなくなります。') +
+    `<br>スマホとPCの記録は自動で同期しています${Sync.last ? '（最終 ' + new Date(Sync.last).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + '）' : ''}。` +
     '<br>振動は iPhone（iOS 18以降）では「設定 → サウンドと触覚 → システムの触覚」がオンのときに出ます。';
 }
 
@@ -1307,6 +1372,7 @@ async function boot() {
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
   applyHap();
   show(tab);
+  Sync.pull().then(ok => { if (ok && !G) show(tab); Sync.push(); });
   setTimeout(() => SFX.render(), 700); // 最初の表示を優先
 }
 

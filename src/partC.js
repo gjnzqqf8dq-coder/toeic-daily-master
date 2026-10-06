@@ -655,6 +655,7 @@ async function storeInfo() {
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   $('stStore').innerHTML = `記録はこの端末に二重で保存しています（1問ごと）。永続化：${persisted ? 'ON' : 'OFF'}` +
     (standalone ? '' : '<br>iPhoneは Safari の共有→「ホーム画面に追加」から開くと、記録が自動で消されなくなります。') +
+    `<br>スマホとPCの記録は自動で同期しています${Sync.last ? '（最終 ' + new Date(Sync.last).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) + '）' : ''}。` +
     '<br>振動は iPhone（iOS 18以降）では「設定 → サウンドと触覚 → システムの触覚」がオンのときに出ます。';
 }
 
@@ -701,6 +702,7 @@ async function boot() {
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
   applyHap();
   show(tab);
+  Sync.pull().then(ok => { if (ok && !G) show(tab); Sync.push(); });
   setTimeout(() => SFX.render(), 700); // 最初の表示を優先
 }
 
