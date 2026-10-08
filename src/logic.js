@@ -79,7 +79,7 @@ function mergeState(a, b) {
   for (const [d, x] of Object.entries(a.days || {})) {
     const o = out.days[d]; if (!o) { out.days[d] = x; continue; }
     const m = Object.assign({}, o, x);
-    for (const f of ['w', 'wc', 'p', 'pc', 'xp']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
+    for (const f of ['w', 'wc', 'p', 'pc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
     out.days[d] = m;
   }
   // 今日の出題：日付が新しい方、同じ日なら種類ごとに進んでいる方

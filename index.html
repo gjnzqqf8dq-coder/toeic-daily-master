@@ -531,7 +531,7 @@ function mergeState(a, b) {
   for (const [d, x] of Object.entries(a.days || {})) {
     const o = out.days[d]; if (!o) { out.days[d] = x; continue; }
     const m = Object.assign({}, o, x);
-    for (const f of ['w', 'wc', 'p', 'pc', 'xp']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
+    for (const f of ['w', 'wc', 'p', 'pc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
     out.days[d] = m;
   }
   // 今日の出題：日付が新しい方、同じ日なら種類ごとに進んでいる方
@@ -588,7 +588,7 @@ document.addEventListener('visibilitychange', async () => {
   if (Sync.hiddenAt && Date.now() - Sync.hiddenAt > 60 * 60 * 1000 && await newVersion()) { flush(); return location.reload(); }
   if (await Sync.pull()) { show(tab); Sync.push(); } // 別の端末でやった分を開いた時に取り込む
 });
-const BUILD = '1791270691';
+const BUILD = '1791454216';
 async function newVersion() {
   try { const t = await (await fetch('./?chk=' + Date.now(), { cache: 'no-store' })).text(); const m = t.match(/const BUILD = '(\w+)'/); return !!(m && m[1] !== BUILD && BUILD !== '__' + 'BUILD__'); } catch { return false; }
 }
@@ -1139,6 +1139,13 @@ function result(ok, reason, el) {
     c.d = today + INT[c.b]; c.l = today; S.cards[key] = c;
     const f = G.type === 'w' ? ['w', 'wc'] : ['p', 'pc'];
     log[f[0]]++; if (ok) log[f[1]]++;
+    // 答えるまでの時間（制限時間がある時だけ測れる）。単語の正解だけを桑田イングリッシュの分析に使う
+    if (G.type === 'w' && ok && G.left != null && G.tLen) {
+      const ms = Math.round((1 - G.left) * G.tLen), md = G.mode === 'card' ? 'c' : 'q';
+      log['rt' + md] = (log['rt' + md] || 0) + ms; log['rn' + md] = (log['rn' + md] || 0) + 1;
+      if (ms <= 1500) log['rf' + md] = (log['rf' + md] || 0) + 1;
+      c.t = Math.round(ms / 100); // 0.1秒単位・最後に正解した時の速さ
+    }
     G.n++; if (ok) G.ok++;
   }
   if (!ok && !again) { t.q = t.q.slice(); t.q.splice(Math.min(t.pos + 8, t.q.length), 0, '!' + key); }

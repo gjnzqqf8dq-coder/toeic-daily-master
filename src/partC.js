@@ -450,6 +450,13 @@ function result(ok, reason, el) {
     c.d = today + INT[c.b]; c.l = today; S.cards[key] = c;
     const f = G.type === 'w' ? ['w', 'wc'] : ['p', 'pc'];
     log[f[0]]++; if (ok) log[f[1]]++;
+    // 答えるまでの時間（制限時間がある時だけ測れる）。単語の正解だけを桑田イングリッシュの分析に使う
+    if (G.type === 'w' && ok && G.left != null && G.tLen) {
+      const ms = Math.round((1 - G.left) * G.tLen), md = G.mode === 'card' ? 'c' : 'q';
+      log['rt' + md] = (log['rt' + md] || 0) + ms; log['rn' + md] = (log['rn' + md] || 0) + 1;
+      if (ms <= 1500) log['rf' + md] = (log['rf' + md] || 0) + 1;
+      c.t = Math.round(ms / 100); // 0.1秒単位・最後に正解した時の速さ
+    }
     G.n++; if (ok) G.ok++;
   }
   if (!ok && !again) { t.q = t.q.slice(); t.q.splice(Math.min(t.pos + 8, t.q.length), 0, '!' + key); }
