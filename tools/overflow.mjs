@@ -11,6 +11,9 @@ for (const [n, eng, opt] of [['ios', webkit, devices['iPhone 13']], ['pc', chrom
     if (m === 'card') { await p.evaluate(() => window.__app.flipCard()); await sleep(500); await check(m + t + '-back'); }
     await p.evaluate(() => document.getElementById('xClose').click()); await sleep(200);
   }
+  await p.evaluate(() => { window.__app.S.settings.flash = 50; window.__app.fastStart(); }); await sleep(400); await check('fast');
+  await p.evaluate(() => document.getElementById('fGo').dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }))); await sleep(300); await check('fast-flip');
+  await p.evaluate(() => document.getElementById('fxClose').click()); await sleep(200);
   for (const s of ['sWords', 'sFaces', 'sLog', 'sSet']) { await p.evaluate(s => window.__app.show(s), s); await sleep(200); await check(s); }
   console.log(n, res.join('  ')); await b.close();
 }

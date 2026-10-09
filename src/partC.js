@@ -753,17 +753,20 @@ document.addEventListener('keydown', e => {
 });
 
 // =========================================================
-// 高速モード（単語だけ）。見た瞬間に「知ってる／知らない」。演出なし・答えるまでの時間を全部記録
-//   知ってる → 意味を一瞬見せて次へ（ときどき2択の抜き打ちで「知ってるつもり」を防ぐ）
-//   知らない・時間切れ → 意味を1秒見せて、6問後にもう一度
+// 高速モード（単語だけ）。見る→「裏返す」→意味を見て「正解」。演出なし・時間を全部記録
+//   間違いのボタンは置かない。分からなかった時は次の語で右下の「ひとつ前を間違えた」を押す
+//   （直前の○を✕に直す＝間隔反復・日ごとの数・XP・記録の行を✕で答えたのと同じ状態にして、6問後にもう一度）
+//   時間切れ（裏返す前）→ 意味を1.1秒見せて✕・6問後にもう一度
+//   時間: ev[3]=出てから裏返すまで / ev[5]=出てから正解を押すまで
 // =========================================================
 let F = null;
 const fastSec = () => S.settings.flash ? Math.max(.4, S.settings.flash / 10) : ((Plan.v && Plan.v.flash) || 1.5);
 function fastStart() {
   wake(); clearTimeout(autoT);
   const t = getToday('w'); if (t.pos >= t.q.length) addExtra('w');
-  F = { t: getToday('w'), n: 0, ok: 0, ms: [], phase: '', tid: 0, nid: 0 };
+  F = { t: getToday('w'), n: 0, ok: 0, ms: [], phase: '', tid: 0, nid: 0, prev: null };
   show('fast'); $('fdone').hidden = true;
+  fastPrevUI();
   fastLoad();
 }
 function fastStats() {
@@ -774,6 +777,9 @@ function fastStats() {
   const avg = F.ms.length ? F.ms.reduce((a, b) => a + b, 0) / F.ms.length / 1000 : 0;
   $('facc').textContent = F.n ? `正答 ${Math.round(F.ok / F.n * 100)}%` + (F.ms.length ? `・平均 ${avg.toFixed(2)}秒` : '') : '';
 }
+function fastBtn(flip) {
+  const b = $('fGo'); b.className = 'btn ' + (flip ? 'owl' : 'eel'); setTx(b, flip ? '正解' : '裏返す');
+}
 function fastLoad() {
   if (!F) return;
   clearTimeout(F.tid); clearTimeout(F.nid);
@@ -781,10 +787,10 @@ function fastLoad() {
   if (t.pos >= t.q.length) return fastDone();
   const raw = t.q[t.pos], key = raw.replace(/^!/, ''), w = wByEn[key.slice(2)];
   if (!w) { t.pos++; return fastLoad(); }
-  Object.assign(F, { raw, key, again: raw[0] === '!', w, phase: 'ask', spot: null });
+  Object.assign(F, { raw, key, again: raw[0] === '!', w, phase: 'ask', flipMs: null, flipAt: 0 });
   const fw = $('fword'); fw.textContent = w.en; fw.style.fontSize = w.en.length > 14 ? '32px' : w.en.length > 10 ? '38px' : '44px';
   const fm = $('fmean'); fm.textContent = ''; fm.className = 'fmean';
-  $('fbtns').hidden = false; $('fchk').hidden = true;
+  $('fbtns').hidden = false; fastBtn(false);
   fastStats();
   fastTimer(fastSec(), () => fastAnswer(false, null));
 }
@@ -796,38 +802,27 @@ function fastTimer(sec, onEnd) {
   F.tid = setTimeout(() => { if (F) onEnd(); }, sec * 1000);
 }
 function fastStop() { clearTimeout(F.tid); const bar = $('ftbar'), cs = getComputedStyle(bar).transform; bar.style.transition = 'none'; if (cs && cs !== 'none') bar.style.transform = cs; }
-function fastKnow() {
-  if (!F || F.phase !== 'ask') return;
-  const ms = Math.round(performance.now() - F.t0);
-  if (ms < 120) return; // 前の語の意味を見ている途中の連打（読めていない）は数えない
+function fastGo() { if (!F) return; if (F.phase === 'ask') fastFlip(); else if (F.phase === 'flip') fastOk(); }
+function fastFlip() {
+  const now = performance.now(), ms = Math.round(now - F.t0);
+  if (ms < 120) return; // 前の語の連打（読めていない）は数えない
   fastStop();
-  // 抜き打ち：初めての語・よく間違える語は多めに確かめる
-  const c = S.cards[F.key], base = Plan.v && Plan.v.spot != null ? Plan.v.spot : .15;
-  const p = !c || (c.w || 0) >= 2 ? Math.max(base, .35) : base;
-  if (Math.random() < p) {
-    const opts = shuffle([{ t: F.w.jp, ok: true }, { t: pickWordOpts(F.w)[0].jp }]);
-    F.phase = 'chk'; F.spot = { ms, opts };
-    ['fc0', 'fc1'].forEach((id, i) => setTx($(id), opts[i].t));
-    const fm = $('fmean'); fm.textContent = '抜き打ち：意味はどっち？'; fm.className = 'fmean q';
-    $('fbtns').hidden = true; $('fchk').hidden = false;
-    fastTimer(2.5, () => fastPick(-1));
-    return;
-  }
-  fastAnswer(true, ms);
+  F.phase = 'flip'; F.flipMs = ms; F.flipAt = now;
+  const fm = $('fmean'); fm.textContent = F.w.jp; fm.className = 'fmean';
+  fastBtn(true);
 }
-function fastPick(i) {
-  if (!F || F.phase !== 'chk') return;
-  fastStop();
-  const ok = i >= 0 && F.spot.opts[i].ok, log = dayLog();
-  log.sp = (log.sp || 0) + 1; if (!ok) log.spx = (log.spx || 0) + 1; // 抜き打ちの回数と外した回数（自己申告の甘さ）
-  fastAnswer(ok, ok ? F.spot.ms : null, true);
+function fastOk() {
+  const now = performance.now();
+  if (now - F.flipAt < 150) return; // 裏返しと同時の2度押しは数えない
+  fastAnswer(true, F.flipMs, Math.round(now - F.t0));
 }
-function fastAnswer(ok, ms, spot) {
-  if (!F || F.phase === 'res') return;
+function fastAnswer(ok, ms, ms2) {
+  if (!F || F.phase === 'res' || F.phase === 'done') return;
   fastStop(); F.phase = 'res';
   const t = F.t, key = F.key, again = F.again;
-  record(key, again, ok, ok ? ms : null, 'f');
-  if (spot) S.ev[S.ev.length - 1][4] = 's' + (again ? '!' : '');
+  const before = !again && S.cards[key] ? Object.assign({}, S.cards[key]) : null, dn = dayNum(), ds = dayStr();
+  record(key, again, ok, ok ? ms : null, 'f', ok ? ms2 : null);
+  const ev = S.ev[S.ev.length - 1];
   if (!again) { F.n++; if (ok) { F.ok++; if (ms != null) F.ms.push(ms); } }
   const pts = ok ? (again ? 5 : 10) + (ms != null && ms < 1000 ? 5 : 0) : 0;
   if (pts) { S.xp = (S.xp || 0) + pts; const lg = dayLog(); lg.xp = (lg.xp || 0) + pts; }
@@ -835,15 +830,40 @@ function fastAnswer(ok, ms, spot) {
   t.pos++;
   if (doneCount(t) >= t.base) dayLog().goalW = true;
   save();
-  const fm = $('fmean'); fm.textContent = F.w.jp; fm.className = 'fmean ' + (ok ? 'ok' : 'ng');
-  $('fbtns').hidden = false; $('fchk').hidden = true;
-  if (ok) Haptic.ok(1); else { Haptic.ng(); Sound.ng(); }
+  F.prev = ok ? { key, again, before, ev, ms, md: 'f', pts, dn, ds, en: F.w.en } : null;
+  fastPrevUI();
   fastStats();
-  F.nid = setTimeout(fastLoad, ok ? 260 : 1100);
+  if (ok) { Haptic.ok(1); return fastLoad(); } // 意味はもう見ているので、すぐ次へ
+  const fm = $('fmean'); fm.textContent = F.w.jp; fm.className = 'fmean ng';
+  Haptic.ng(); Sound.ng();
+  F.nid = setTimeout(fastLoad, 1100);
+}
+// 右下「ひとつ前を間違えた」：直前の○だけ✕に直せる（1回きり・押したら次の○まで押せない）
+function fastPrevUI() {
+  const u = F && F.prev, b = $('fUndo');
+  b.classList.toggle('dis', !u || u.done); b.classList.toggle('used', !!(u && u.done));
+  setTx(b, u && u.done ? '間違いにしました' : 'ひとつ前を間違えた');
+  const fp = $('fprev'); fp.textContent = u ? `前：${u.en}` : ''; fp.classList.remove('ng');
+}
+function fastUndo() {
+  const u = F && F.prev; if (!u || u.done) return;
+  u.done = true;
+  regrade(u);
+  if (!u.again) {
+    F.ok = Math.max(0, F.ok - 1); const i = F.ms.lastIndexOf(u.ms); if (i >= 0) F.ms.splice(i, 1);
+    const t = F.t; t.q = t.q.slice();
+    const at = F.phase === 'done' ? t.q.length : Math.min(t.pos + (F.phase === 'res' ? 5 : 6), t.q.length); // 押した時点の語の後ろ、だいたい6問後
+    t.q.splice(at, 0, '!' + u.key);
+  }
+  save();
+  Haptic.ng();
+  fastPrevUI(); fastStats();
+  const fp = $('fprev'); fp.textContent = u.again ? `${u.en} を間違いに` : `${u.en} はあとでもう一度`; fp.classList.add('ng');
+  if (F.phase === 'done' && !u.again) { $('fdone').hidden = true; fastLoad(); }
 }
 function fastDone() {
   F.phase = 'done'; fastStop();
-  $('fbtns').hidden = true; $('fchk').hidden = true; $('fdone').hidden = false;
+  $('fbtns').hidden = true; $('fdone').hidden = false;
   $('fword').textContent = ''; $('fmean').textContent = '';
   const avg = F.ms.length ? F.ms.reduce((a, b) => a + b, 0) / F.ms.length / 1000 : 0, fast = F.ms.filter(x => x <= 1000).length;
   $('fdT').textContent = `${F.n}語 おわり`;
@@ -858,16 +878,16 @@ function fastClose() {
 }
 // 押した瞬間に反応する（指を離すのを待たない）
 const onDown = (el, fn) => el.addEventListener('pointerdown', e => { if (e.button === 0) { e.preventDefault(); wake(); fn(); } });
-onDown($('fYes'), fastKnow); onDown($('fNo'), () => { if (F && F.phase === 'ask') fastAnswer(false, null); });
-onDown($('fc0'), () => fastPick(0)); onDown($('fc1'), () => fastPick(1));
-$('fstage').addEventListener('pointerdown', () => { if (F && F.phase === 'res') fastLoad(); }); // 意味を見たらタップで先へ
+onDown($('fGo'), fastGo);
+onTap($('fUndo'), () => { wake(); fastUndo(); });
+$('fstage').addEventListener('pointerdown', () => { if (F && F.phase === 'res') fastLoad(); }); // 時間切れの意味を見たらタップで先へ
 onTap($('fxClose'), fastClose); onTap($('fdClose'), fastClose);
 onTap($('fdMore'), () => { addExtra('w'); $('fdone').hidden = true; F.t = getToday('w'); fastLoad(); });
 document.addEventListener('keydown', e => {
   if (!F || !$('fast').classList.contains('on') || e.repeat) return;
   const k = e.key;
-  if (F.phase === 'ask') { if (k === 'ArrowRight' || k === 'j' || k === ' ') { e.preventDefault(); fastKnow(); } else if (k === 'ArrowLeft' || k === 'f') fastAnswer(false, null); }
-  else if (F.phase === 'chk') { if (k === 'ArrowLeft' || k === '1' || k === 'f') fastPick(0); else if (k === 'ArrowRight' || k === '2' || k === 'j') fastPick(1); }
+  if (k === 'Backspace' || k === 'ArrowLeft' || k === 'f' || k === 'z') { e.preventDefault(); return fastUndo(); }
+  if (F.phase === 'ask' || F.phase === 'flip') { if (k === 'ArrowRight' || k === 'j' || k === ' ' || k === 'Enter') { e.preventDefault(); fastGo(); } }
   else if (F.phase === 'res') { if (k === ' ' || k === 'Enter') { e.preventDefault(); fastLoad(); } }
   else if (F.phase === 'done') { if (k === 'Enter') $('fdMore').click(); else if (k === 'Escape') fastClose(); }
   if (k === 'Escape' && F && F.phase !== 'done') fastClose();
@@ -877,7 +897,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 boot().then(() => { if ('speechSynthesis' in window) { Sound.loadVoices(); speechSynthesis.onvoiceschanged = () => Sound.loadVoices(); } });
 if (/debug/.test(location.search)) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99;background:#000;color:#0f0;font:11px monospace;padding:4px;pointer-events:none;white-space:pre-wrap';
   document.body.appendChild(d); setInterval(() => { const pools = Object.values(SFX.pool); d.textContent = `iOS:${isIOS} rendered:${Object.keys(SFX.buf).length} pools:${pools.length} unlocked:${pools.filter(a => a._u).length}/${pools.length} last:${SFX.last || '-'} ctx:${SFX.ctx ? SFX.ctx.state : '-'}`; }, 300); }
-window.__app = { get S() { return S; }, get G() { return G; }, get F() { return F; }, fastStart, Plan, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
+window.__app = { get S() { return S; }, get G() { return G; }, get F() { return F; }, fastStart, fastUndo, P, Plan, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
 </script>
 </body>
 </html>

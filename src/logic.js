@@ -7,7 +7,9 @@
 const INT = [0, 1, 3, 7, 14, 30, 60];
 const GROUPS = { tc: '行く回の登壇者', idea: 'アイデアの学校 講師', peer: 'アイデアの学校 同期', toraA: '虎ノ門広告祭 必修', toraB: '虎ノ門広告祭 その他', tcy: '虎子屋 講師候補' };
 const LS = 'tdm2';
-const W = window.WORDS, P = window.PEOPLE;
+// 顔カードは写真がある人だけ（写真なし＝stub は顔を見ても分からないので出さない。データは people.js に残す）
+const hasFace = p => !p.stub && !!p.img && !/_stub\./.test(p.img);
+const W = window.WORDS, P = window.PEOPLE.filter(hasFace);
 const pById = Object.fromEntries(P.map(p => [p.id, p]));
 const wByEn = Object.fromEntries(W.map(w => [w.en, w]));
 
@@ -90,7 +92,8 @@ function mergeState(a, b) {
     for (const t of ['w', 'p']) if (tb[t] && (!ta[t] || (tb[t].pos || 0) > (ta[t].pos || 0))) out.today[t] = tb[t];
   }
   // 1問ごとの記録（AIの分析用）：両方を合わせて新しい順に EV_MAX 件
-  if (a.ev || b.ev) { const seen = new Set(), ev = []; for (const e of [...(b.ev || []), ...(a.ev || [])]) { const k = e[0] + '|' + e[1]; if (!seen.has(k)) { seen.add(k); ev.push(e); } } out.ev = ev.sort((x, y) => x[0] - y[0]).slice(-EV_MAX); }
+  //   同じ行（秒＋英語）が両方にあれば、「ひとつ前を間違えた」で直した方（モードに x）を残す
+  if (a.ev || b.ev) { const m = new Map(); for (const e of [...(b.ev || []), ...(a.ev || [])]) { const k = e[0] + '|' + e[1], o = m.get(k); if (!o || (!String(o[4]).includes('x') && String(e[4]).includes('x'))) m.set(k, e); } out.ev = [...m.values()].sort((x, y) => x[0] - y[0]).slice(-EV_MAX); }
   out.xp = Math.max(a.xp || 0, b.xp || 0);
   out.best = Object.assign({}, b.best); for (const [k, v] of Object.entries(a.best || {})) out.best[k] = Math.max(v || 0, out.best[k] || 0);
   if (Object.keys(b.cards).length > Object.keys(a.cards || {}).length) out.order = b.order || a.order;
@@ -116,9 +119,11 @@ const Plan = {
   prio(en) { return (this.v && this.v.prio && this.v.prio[en]) || 0; },
 };
 // 1問の結果を記録（間隔反復・日ごとの数・答えるまでの時間・1問ごとのログ）。md: q=4択 c=カード f=高速
-function record(key, again, ok, ms, md) {
+//   S.ev の1行 = [秒, 英語, 正誤1/0, ミリ秒(-1=なし), モード, (高速のみ)○を押すまでのミリ秒]
+//   モード: q/c/f（s=旧・抜き打ち）。末尾 ! = 再出題。fx = 高速で○の後に「ひとつ前を間違えた」で✕に直した行
+function record(key, again, ok, ms, md, ms2) {
   const log = dayLog(), today = dayNum(), isW = key[0] === 'w';
-  if (isW) { S.ev = S.ev || []; S.ev.push([Math.floor(Date.now() / 1000), key.slice(2), ok ? 1 : 0, ms == null ? -1 : ms, md + (again ? '!' : '')]); if (S.ev.length > EV_MAX + 200) S.ev = S.ev.slice(-EV_MAX); }
+  if (isW) { S.ev = S.ev || []; const e = [Math.floor(Date.now() / 1000), key.slice(2), ok ? 1 : 0, ms == null ? -1 : ms, md + (again ? '!' : '')]; if (ms2 != null) e.push(ms2); S.ev.push(e); if (S.ev.length > EV_MAX + 200) S.ev = S.ev.slice(-EV_MAX); }
   if (again) return;
   const c = S.cards[key] || { b: 0, n: 0, w: 0 };
   const isNew = c.n === 0; c.n++;
@@ -132,6 +137,19 @@ function record(key, again, ok, ms, md) {
     c.t = Math.round(ms / 100); // 0.1秒単位・最後に正解した時の速さ
   }
   return c;
+}
+// 「ひとつ前を間違えた」：直前に○で記録した1問を、✕で答えたのと同じ状態に直す。
+//   u = { key, again, before(○の前のカード or null), ev(その行), ms, md, pts, dn(日番号), ds(日付) }
+//   行は足さずに書き換える（正誤0・ミリ秒-1・モード f→fx）ので、件数も正答率も✕1回分としてそのまま数えられる
+function regrade(u) {
+  const e = u.ev; e[2] = 0; e[3] = -1; e[4] = String(e[4]).replace(/^(\w)/, '$1x'); e.length = 5;
+  const log = S.days[u.ds] || dayLog();
+  if (u.pts) { S.xp = Math.max(0, (S.xp || 0) - u.pts); log.xp = Math.max(0, (log.xp || 0) - u.pts); }
+  if (u.again) return; // 再出題は記録の行だけ（間隔反復には入れていない）
+  log.wc = Math.max(0, (log.wc || 0) - 1);
+  if (u.ms != null) { const md = u.md; log['rt' + md] = Math.max(0, (log['rt' + md] || 0) - u.ms); log['rn' + md] = Math.max(0, (log['rn' + md] || 0) - 1); if (u.ms <= 1500) log['rf' + md] = Math.max(0, (log['rf' + md] || 0) - 1); }
+  const c = u.before ? Object.assign({}, u.before) : { b: 0, n: 0, w: 0 };
+  c.n++; c.b = 1; c.w++; c.d = u.dn + INT[1]; c.l = u.dn; S.cards[u.key] = c;
 }
 const SYNC_EVERY = 5 * 60 * 1000; // 5分ごとに裏で送る（画面は読み直さない）
 const Sync = {
@@ -187,6 +205,14 @@ function normalize(s) {
   s.settings.groups = Object.assign(structuredClone(DEF_SETTINGS.groups), (s.settings.groups) || {});
   // 新しい単語が増えた場合に備えて出題順へ追加
   const known = new Set(s.order); W.forEach(w => { if (!known.has(w.en)) s.order.push(w.en); });
+  // 今日の顔の出題から写真なしの人を外す（外した分だけ進み位置もずらす）
+  const tp = s.today && s.today.p;
+  if (tp && tp.q && tp.q.some(k => !pById[k.replace(/^!/, '').slice(2)])) {
+    const keep = k => !!pById[k.replace(/^!/, '').slice(2)];
+    const gone = tp.q.slice(0, tp.pos).filter(k => !keep(k)).length, goneAll = tp.q.filter(k => !keep(k) && k[0] !== '!').length;
+    tp.q = tp.q.filter(keep); tp.pos = Math.max(0, tp.pos - gone);
+    tp.goal = Math.max(0, tp.goal - goneAll); tp.base = Math.max(0, (tp.base || 0) - goneAll);
+  }
   return s;
 }
 // 旧版（v1）の記録を引き継ぐ

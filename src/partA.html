@@ -70,9 +70,13 @@ h1{font-size:24px;font-weight:800;margin:4px 0 16px}
 .fword{font-size:44px;font-weight:800;color:#3c3c3c;letter-spacing:.01em;line-height:1.15;word-break:break-word}
 .fmean{min-height:1.6em;font-size:20px;font-weight:800;line-height:1.5;max-width:100%}
 .fmean.q{font-size:14px;color:var(--hare)} .fmean.ok{color:var(--owl-d)} .fmean.ng{color:var(--car)}
-.fbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:none}
-.fbtns .btn{min-height:76px;font-size:18px}
-.fbtns.chk .btn{min-height:76px;font-size:15px;text-transform:none;letter-spacing:0;line-height:1.35;padding:8px 10px}
+.fbtns{display:grid;grid-template-columns:1fr;flex:none}
+.fbtns .btn{min-height:76px;font-size:19px}
+.fsub{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex:none}
+.fprev{min-width:0;font-size:13px;font-weight:700;color:var(--hare);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .fprev.ng{color:var(--car-d)}
+.fundo{position:relative;flex:none;display:flex;align-items:center;height:44px;padding:0 14px;border:2px solid var(--swan);border-bottom-width:4px;border-radius:12px;background:#fff;color:var(--car-d);font-size:14px;font-weight:800}
+.fundo:active{transform:translateY(2px);border-bottom-width:2px}
+.fundo.dis{color:var(--hare);pointer-events:none} .fundo.used{background:var(--car-p);border-color:#ffc9cb;color:var(--car-d)}
 .fdone{flex:none;display:flex;flex-direction:column;gap:10px;align-items:stretch;text-align:center}
 .fdone b{font-size:22px;font-weight:800;color:#3c3c3c} .fdone span{font-size:14px;color:var(--wolf);margin-bottom:6px;line-height:1.6}
 #fast .timer{margin:8px 0 14px}
@@ -412,7 +416,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="small" style="padding:16px 0" id="stStore"></div>
 </section>
 
-<!-- 高速（単語を一瞬で判定。知ってる→次へ／知らない・時間切れ→意味を見せて少し後にもう一度。ときどき2択の抜き打ち） -->
+<!-- 高速（単語を見て「裏返す」→意味を見て「正解」。分からなかった語は次の語で右下「ひとつ前を間違えた」。時間切れ→意味を見せて少し後にもう一度） -->
 <section class="screen" id="fast">
   <div class="ltop">
     <button class="x" id="fxClose" aria-label="閉じる"><svg><use href="#i-x"/></svg></button>
@@ -422,9 +426,9 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="fmeta"><span id="fsec"></span><span id="facc"></span></div>
   <div class="fstage" id="fstage"><div class="fword" id="fword"></div><div class="fmean" id="fmean"></div></div>
   <div class="timer" id="ftimer"><i id="ftbar"></i></div>
-  <div class="fbtns" id="fbtns"><label class="btn car" id="fNo"><input type="checkbox" switch class="hsw"><span class="tx">知らない</span></label><label class="btn owl" id="fYes"><input type="checkbox" switch class="hsw"><span class="tx">知ってる</span></label></div>
-  <div class="fbtns chk" id="fchk" hidden><label class="btn sec" id="fc0"><input type="checkbox" switch class="hsw"><span class="tx"></span></label><label class="btn sec" id="fc1"><input type="checkbox" switch class="hsw"><span class="tx"></span></label></div>
+  <div class="fbtns" id="fbtns"><label class="btn eel" id="fGo"><input type="checkbox" switch class="hsw"><span class="tx">裏返す</span></label></div>
   <div class="fdone" id="fdone" hidden><b id="fdT"></b><span id="fdS"></span><label class="btn" id="fdMore"><input type="checkbox" switch class="hsw"><span class="tx">＋100語</span></label><label class="btn sec" id="fdClose"><input type="checkbox" switch class="hsw"><span class="tx">おわる</span></label></div>
+  <div class="fsub"><span class="fprev" id="fprev"></span><label class="fundo dis" id="fUndo"><input type="checkbox" switch class="hsw"><span class="tx">ひとつ前を間違えた</span></label></div>
 </section>
 
 <!-- レッスン -->
