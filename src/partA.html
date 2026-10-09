@@ -7,14 +7,14 @@
 <meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Daily Master">
+<meta name="apple-mobile-web-app-title" content="メモリー">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
-<title>Daily Master</title>
+<title>メモリー</title>
 <style>
 /* Duolingo の色名と値（Owl / Eel / Cardinal / Bee / Fox / Beetle / Swan / Hare / Wolf） */
 :root{
@@ -57,6 +57,26 @@ h1{font-size:24px;font-weight:800;margin:4px 0 16px}
 .btn.sec{background:#fff;color:var(--eel);border:2px solid var(--swan);border-bottom-width:4px}
 .btn.sec.gray{color:var(--hare)}
 .btn.eel{--c:var(--eel);--cd:var(--eel-d)} .btn.car{--c:var(--car);--cd:var(--car-d)} .btn.owl{--c:var(--owl);--cd:var(--owl-d)}
+
+
+/* 高速モード：文字だけ・動きなし（一瞬で読む） */
+.seg.s3{grid-template-columns:1fr 1fr 1fr}
+.coach{margin:-4px 0 12px;padding:10px 14px;border:2px solid var(--swan);border-radius:12px;font-size:13px;line-height:1.6;color:var(--wolf)}
+.coach b{color:var(--owl-d);margin-right:6px}
+#fast{padding-bottom:calc(env(safe-area-inset-bottom) + 16px);overflow:hidden;user-select:none;-webkit-user-select:none}
+.fcnt{font-size:14px;font-weight:800;color:var(--hare);min-width:56px;text-align:right;font-variant-numeric:tabular-nums}
+.fmeta{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--hare);margin:8px 0 0;font-variant-numeric:tabular-nums}
+.fstage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:0;text-align:center}
+.fword{font-size:44px;font-weight:800;color:#3c3c3c;letter-spacing:.01em;line-height:1.15;word-break:break-word}
+.fmean{min-height:1.6em;font-size:20px;font-weight:800;line-height:1.5;max-width:100%}
+.fmean.q{font-size:14px;color:var(--hare)} .fmean.ok{color:var(--owl-d)} .fmean.ng{color:var(--car)}
+.fbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:none}
+.fbtns .btn{min-height:76px;font-size:18px}
+.fbtns.chk .btn{min-height:76px;font-size:15px;text-transform:none;letter-spacing:0;line-height:1.35;padding:8px 10px}
+.fdone{flex:none;display:flex;flex-direction:column;gap:10px;align-items:stretch;text-align:center}
+.fdone b{font-size:22px;font-weight:800;color:#3c3c3c} .fdone span{font-size:14px;color:var(--wolf);margin-bottom:6px;line-height:1.6}
+#fast .timer{margin:8px 0 14px}
+#ftbar{background:var(--owl-d)}
 
 /* 上のステータス */
 .stats{display:flex;justify-content:space-between;align-items:center;padding:4px 18px 12px;border-bottom:2px solid var(--swan);margin:0 -16px 16px}
@@ -322,7 +342,8 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="stats"><span class="stat fire" data-streak><svg><use href="#i-fire"/></svg><b>0</b></span><span class="stat bolt" data-xp><svg><use href="#i-bolt"/></svg><b>0</b></span><span class="stat lv" data-lv><svg><use href="#i-crown"/></svg><b>1</b></span></div>
   <div class="hero"><div class="m"></div><div class="bubble" id="wSay"></div></div>
   <div class="box" data-lvcard></div>
-  <div class="seg" data-type="w"><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
+  <div class="seg s3" data-type="w"><label data-m="fast"><input type="checkbox" switch class="hsw">高速</label><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
+  <div class="coach" id="wCoach" hidden></div>
   <div class="box">
     <div class="cap">今日の単語</div>
     <div class="big"><span id="wDone">0</span><small id="wOf"> / 100</small></div>
@@ -375,6 +396,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="set"><span>1日の単語数</span><input type="range" id="stWordGoal" min="50" max="400" step="10"><span class="v" id="vWordGoal"></span></div>
   <div class="set"><span>1日の人数</span><input type="range" id="stFaceGoal" min="10" max="100" step="5"><span class="v" id="vFaceGoal"></span></div>
   <div class="set"><span>復習の上限</span><input type="range" id="stRatio" min="30" max="80" step="5"><span class="v" id="vRatio"></span></div>
+  <div class="set"><span>高速モードの制限時間</span><input type="range" id="stFlash" min="0" max="30" step="1"><span class="v" id="vFlash"></span></div>
   <div class="set"><span>制限時間（1問）</span><input type="range" id="stTimer" min="0" max="15" step="1"><span class="v" id="vTimer"></span></div>
   <div class="sec">音と振動</div>
   <div class="set"><span>効果音</span><input type="range" id="stEff" min="0" max="100" step="5"><span class="v" id="vEff"></span><label class="test" id="tEff"><input type="checkbox" switch class="hsw">試す</label></div>
@@ -388,6 +410,21 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="sec">スマホとPCの同期</div>
   <div class="set"><span id="stSync" class="syncst">—</span><label class="test" id="tSync"><input type="checkbox" switch class="hsw">今すぐ同期</label></div>
   <div class="small" style="padding:16px 0" id="stStore"></div>
+</section>
+
+<!-- 高速（単語を一瞬で判定。知ってる→次へ／知らない・時間切れ→意味を見せて少し後にもう一度。ときどき2択の抜き打ち） -->
+<section class="screen" id="fast">
+  <div class="ltop">
+    <button class="x" id="fxClose" aria-label="閉じる"><svg><use href="#i-x"/></svg></button>
+    <div class="bar"><i id="fpbar"></i></div>
+    <span class="fcnt" id="fcnt">0</span>
+  </div>
+  <div class="fmeta"><span id="fsec"></span><span id="facc"></span></div>
+  <div class="fstage" id="fstage"><div class="fword" id="fword"></div><div class="fmean" id="fmean"></div></div>
+  <div class="timer" id="ftimer"><i id="ftbar"></i></div>
+  <div class="fbtns" id="fbtns"><label class="btn car" id="fNo"><input type="checkbox" switch class="hsw"><span class="tx">知らない</span></label><label class="btn owl" id="fYes"><input type="checkbox" switch class="hsw"><span class="tx">知ってる</span></label></div>
+  <div class="fbtns chk" id="fchk" hidden><label class="btn sec" id="fc0"><input type="checkbox" switch class="hsw"><span class="tx"></span></label><label class="btn sec" id="fc1"><input type="checkbox" switch class="hsw"><span class="tx"></span></label></div>
+  <div class="fdone" id="fdone" hidden><b id="fdT"></b><span id="fdS"></span><label class="btn" id="fdMore"><input type="checkbox" switch class="hsw"><span class="tx">＋100語</span></label><label class="btn sec" id="fdClose"><input type="checkbox" switch class="hsw"><span class="tx">おわる</span></label></div>
 </section>
 
 <!-- レッスン -->

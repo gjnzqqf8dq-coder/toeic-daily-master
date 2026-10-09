@@ -19,7 +19,7 @@ function pgroup(p) { return p.g === 'tora' ? 'tora' + p.tier : p.g; }
 // =========================================================
 // 保存（localStorage ＋ IndexedDB の二重化・1問ごとに即保存）
 // =========================================================
-const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
+const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, flash: 0, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
 let S;
 function fresh() {
   return { v: 2, updatedAt: 0, cards: {}, days: {}, today: {}, order: shuffle(W.map(w => w.en)), settings: structuredClone(DEF_SETTINGS) };
@@ -79,7 +79,7 @@ function mergeState(a, b) {
   for (const [d, x] of Object.entries(a.days || {})) {
     const o = out.days[d]; if (!o) { out.days[d] = x; continue; }
     const m = Object.assign({}, o, x);
-    for (const f of ['w', 'wc', 'p', 'pc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
+    for (const f of ['w', 'wc', 'p', 'pc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq', 'rtf', 'rnf', 'rff', 'sp', 'spx']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
     out.days[d] = m;
   }
   // 今日の出題：日付が新しい方、同じ日なら種類ごとに進んでいる方
@@ -89,6 +89,8 @@ function mergeState(a, b) {
     out.today = Object.assign({}, ta);
     for (const t of ['w', 'p']) if (tb[t] && (!ta[t] || (tb[t].pos || 0) > (ta[t].pos || 0))) out.today[t] = tb[t];
   }
+  // 1問ごとの記録（AIの分析用）：両方を合わせて新しい順に EV_MAX 件
+  if (a.ev || b.ev) { const seen = new Set(), ev = []; for (const e of [...(b.ev || []), ...(a.ev || [])]) { const k = e[0] + '|' + e[1]; if (!seen.has(k)) { seen.add(k); ev.push(e); } } out.ev = ev.sort((x, y) => x[0] - y[0]).slice(-EV_MAX); }
   out.xp = Math.max(a.xp || 0, b.xp || 0);
   out.best = Object.assign({}, b.best); for (const [k, v] of Object.entries(a.best || {})) out.best[k] = Math.max(v || 0, out.best[k] || 0);
   if (Object.keys(b.cards).length > Object.keys(a.cards || {}).length) out.order = b.order || a.order;
@@ -97,11 +99,46 @@ function mergeState(a, b) {
   out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
   return out;
 }
+// =========================================================
+// AIコーチの計画（同期サーバーが1時間ごとに記録を分析して置く・読むだけ）
+//   prio: 苦手度（高いほど先に出す） focus: 期日前でも混ぜる苦手語 flash: 高速モードの制限時間 spot: 抜き打ちの割合 note: ひとこと
+// =========================================================
+const EV_MAX = 4000;
+const Plan = {
+  v: (() => { try { return JSON.parse(localStorage.getItem('tdm-plan')) || null; } catch { return null; } })(),
+  async pull() {
+    try {
+      const r = await fetch(SYNC_URL + SYNC_KEY + '-plan', { cache: 'no-store' }); if (!r.ok) return;
+      const p = await r.json(); if (!p || !p.updated) return;
+      this.v = p; try { localStorage.setItem('tdm-plan', JSON.stringify(p)); } catch {}
+    } catch {}
+  },
+  prio(en) { return (this.v && this.v.prio && this.v.prio[en]) || 0; },
+};
+// 1問の結果を記録（間隔反復・日ごとの数・答えるまでの時間・1問ごとのログ）。md: q=4択 c=カード f=高速
+function record(key, again, ok, ms, md) {
+  const log = dayLog(), today = dayNum(), isW = key[0] === 'w';
+  if (isW) { S.ev = S.ev || []; S.ev.push([Math.floor(Date.now() / 1000), key.slice(2), ok ? 1 : 0, ms == null ? -1 : ms, md + (again ? '!' : '')]); if (S.ev.length > EV_MAX + 200) S.ev = S.ev.slice(-EV_MAX); }
+  if (again) return;
+  const c = S.cards[key] || { b: 0, n: 0, w: 0 };
+  const isNew = c.n === 0; c.n++;
+  if (ok) c.b = isNew ? 2 : Math.min(c.b + 1, INT.length - 1); else { c.b = 1; c.w++; }
+  c.d = today + INT[c.b]; c.l = today; S.cards[key] = c;
+  const f = isW ? ['w', 'wc'] : ['p', 'pc'];
+  log[f[0]]++; if (ok) log[f[1]]++;
+  if (isW && ok && ms != null) {
+    log['rt' + md] = (log['rt' + md] || 0) + ms; log['rn' + md] = (log['rn' + md] || 0) + 1;
+    if (ms <= 1500) log['rf' + md] = (log['rf' + md] || 0) + 1;
+    c.t = Math.round(ms / 100); // 0.1秒単位・最後に正解した時の速さ
+  }
+  return c;
+}
 const SYNC_EVERY = 5 * 60 * 1000; // 5分ごとに裏で送る（画面は読み直さない）
 const Sync = {
   last: 0, busy: false, dirty: false, state: '', hiddenAt: 0,
   async pull() {
     try {
+      Plan.pull();
       const r = await fetch(SYNC_URL + SYNC_KEY, { cache: 'no-store' }); if (!r.ok) return false;
       const remote = await r.json();
       if (remote && remote.cards) { const u = S.updatedAt; S = normalize(mergeState(S, remote)); S.updatedAt = Math.max(u, S.updatedAt); flush(true); }
@@ -109,7 +146,7 @@ const Sync = {
     } catch { return false; }
   },
   async push(keepalive) {
-    if (!keepalive && (this.busy || G)) return false; // 解いている途中は手元の記録を差し替えない（終わってから送る）
+    if (!keepalive && (this.busy || G || F)) return false; // 解いている途中は手元の記録を差し替えない（終わってから送る）
     if (!navigator.onLine) { this.status('offline'); return false; }
     this.busy = true; let ok = false;
     try {
@@ -131,7 +168,7 @@ addEventListener('offline', () => Sync.status('offline'));
 addEventListener('pagehide', () => { flush(); if (Sync.dirty) Sync.push(true); });
 document.addEventListener('visibilitychange', async () => {
   if (document.hidden) { Sync.hiddenAt = Date.now(); flush(); if (Sync.dirty) Sync.push(true); return; }
-  if (!S || G) return;
+  if (!S || G || F) return;
   // 1時間以上たってから開いた時だけ、新しい版があれば読み直す（使っている途中では読み直さない）
   if (Sync.hiddenAt && Date.now() - Sync.hiddenAt > 60 * 60 * 1000 && await newVersion()) { flush(); return location.reload(); }
   if (await Sync.pull()) { show(tab); Sync.push(); } // 別の端末でやった分を開いた時に取り込む
@@ -196,9 +233,16 @@ function build(type, n, exclude) {
     const c = S.cards[k];
     if (!c) fresh.push(k); else if (c.d <= today) due.push(k);
   }
-  due.sort((a, b) => S.cards[a].d - S.cards[b].d || S.cards[a].b - S.cards[b].b);
+  const pr = k => type === 'w' ? Plan.prio(k.slice(2)) : 0; // AIコーチの苦手度が高い語を先に
+  due.sort((a, b) => pr(b) - pr(a) || S.cards[a].d - S.cards[b].d || S.cards[a].b - S.cards[b].b);
   const maxRev = Math.round(n * S.settings.ratio / 100);
   let rev = due.slice(0, maxRev);
+  // 期日前でも苦手語を混ぜる（AIコーチの focus・最大で1回分の20%）
+  if (type === 'w' && Plan.v && Plan.v.focus) {
+    const inRev = new Set(rev), cap = Math.round(n * (Plan.v.boost || .2));
+    const weak = Plan.v.focus.map(en => 'w:' + en).filter(k => S.cards[k] && !inRev.has(k) && !exclude.has(k)).slice(0, Math.max(0, Math.min(cap, n - rev.length)));
+    rev = rev.concat(weak);
+  }
   let nw = fresh.slice(0, n - rev.length);
   if (rev.length + nw.length < n) rev = due.slice(0, n - nw.length); // 新出が尽きたら復習で埋める
   if (rev.length + nw.length < n) { // それでも足りなければ先取り復習

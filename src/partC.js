@@ -230,7 +230,7 @@ let tab = 'sWords';
 document.querySelectorAll('.m').forEach(m => m.innerHTML = $('mascotT').innerHTML);
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
-  document.body.classList.toggle('playing', id === 'play' || id === 'sDone');
+  document.body.classList.toggle('playing', id === 'play' || id === 'sDone' || id === 'fast');
   if (id !== 'play') $('sheet').classList.remove('on');
   if (['sWords', 'sFaces', 'sLog', 'sSet'].includes(id)) { tab = id; document.querySelectorAll('nav label').forEach(b => b.classList.toggle('on', b.dataset.t === id)); }
   if (id === 'sWords') renderHome('w');
@@ -275,6 +275,7 @@ function renderHome(type) {
   const c = counts(type);
   $(pre + 'Learned').textContent = c.learned; $(pre + 'Due').textContent = c.dueTomorrow; $(pre + 'New').textContent = c.unseen;
   if (type === 'p') renderChips();
+  if (type === 'w') { const cn = $('wCoach'), n = Plan.v && Plan.v.note; cn.hidden = !n; if (n) cn.innerHTML = `<b>AIコーチ</b>${esc(n)}`; }
   const md = (S.settings.mode && S.settings.mode[type]) || 'quiz';
   document.querySelectorAll(`.seg[data-type="${type}"] label`).forEach(l => l.classList.toggle('on', l.dataset.m === md));
 }
@@ -442,23 +443,11 @@ function choose(el, reason) {
 const PRAISE = ['すばらしい！', '正解！', 'いいね！', '完璧！', 'その調子！', 'ナイス！'];
 function result(ok, reason, el) {
   const t = S.today[G.type], raw = curKey(), again = raw[0] === '!', key = raw.replace(/^!/, '');
-  const log = dayLog(), today = dayNum();
-  if (!again) {
-    const c = S.cards[key] || { b: 0, n: 0, w: 0 };
-    const isNew = c.n === 0; c.n++;
-    if (ok) c.b = isNew ? 2 : Math.min(c.b + 1, INT.length - 1); else { c.b = 1; c.w++; }
-    c.d = today + INT[c.b]; c.l = today; S.cards[key] = c;
-    const f = G.type === 'w' ? ['w', 'wc'] : ['p', 'pc'];
-    log[f[0]]++; if (ok) log[f[1]]++;
-    // 答えるまでの時間（制限時間がある時だけ測れる）。単語の正解だけを桑田イングリッシュの分析に使う
-    if (G.type === 'w' && ok && G.left != null && G.tLen) {
-      const ms = Math.round((1 - G.left) * G.tLen), md = G.mode === 'card' ? 'c' : 'q';
-      log['rt' + md] = (log['rt' + md] || 0) + ms; log['rn' + md] = (log['rn' + md] || 0) + 1;
-      if (ms <= 1500) log['rf' + md] = (log['rf' + md] || 0) + 1;
-      c.t = Math.round(ms / 100); // 0.1秒単位・最後に正解した時の速さ
-    }
-    G.n++; if (ok) G.ok++;
-  }
+  const log = dayLog();
+  // 答えるまでの時間（制限時間がある時だけ測れる）。単語の正解だけを分析に使う
+  const ms = G.type === 'w' && ok && G.left != null && G.tLen ? Math.round((1 - G.left) * G.tLen) : null;
+  record(key, again, ok, ms, G.mode === 'card' ? 'c' : 'q');
+  if (!again) { G.n++; if (ok) G.ok++; }
   if (!ok && !again) { t.q = t.q.slice(); t.q.splice(Math.min(t.pos + 8, t.q.length), 0, '!' + key); }
   t.pos++;
   if (doneCount(t) >= t.base) log[G.type === 'w' ? 'goalW' : 'goalP'] = true;
@@ -647,6 +636,7 @@ function renderSettings() {
   bind('FaceGoal', 'faceGoal', x => x + '人');
   bind('Ratio', 'ratio', x => x + '%');
   bind('Timer', 'timer', x => x ? x + '秒' : 'なし');
+  bind('Flash', 'flash', x => x ? Math.max(.4, x / 10).toFixed(1) + '秒' : 'AIにおまかせ');
   bind('Eff', 'eff', x => x, () => { clearTimeout(rerenderT); rerenderT = setTimeout(() => SFX.render(), 300); });
   bind('Sp', 'sp', x => x);
   bind('Rate', 'rate', x => (x / 100).toFixed(2) + '×');
@@ -722,9 +712,10 @@ async function boot() {
 
 FX.setup();
 document.querySelectorAll('nav label').forEach(b => onTap(b, () => { wake(); if (b.dataset.t !== tab) Sound.tap(); show(b.dataset.t); }));
-onTap($('wStart'), () => start('w'));
+const wMode = () => (S.settings.mode && S.settings.mode.w) || 'quiz';
+onTap($('wStart'), () => wMode() === 'fast' ? fastStart() : start('w'));
 onTap($('pStart'), () => start('p'));
-onTap($('wMore'), () => { addExtra('w'); start('w'); });
+onTap($('wMore'), () => { addExtra('w'); wMode() === 'fast' ? fastStart() : start('w'); });
 onTap($('pMore'), () => { addExtra('p'); start('p'); });
 onTap($('dMore'), () => { const type = $('dMore')._type || 'w'; addExtra(type); start(type); });
 onTap($('dHome'), () => closePlay());
@@ -760,12 +751,133 @@ document.addEventListener('keydown', e => {
   if (!G.answered && /^[1-4]$/.test(e.key)) { const el = $('opts').children[+e.key - 1]; if (el) choose(el); }
   else if (e.key === 'Enter') { if (G.answered) next(); }
 });
-setInterval(() => { if (S && S.today && S.today.date !== dayStr() && !G) show(tab); }, 60000);
+
+// =========================================================
+// 高速モード（単語だけ）。見た瞬間に「知ってる／知らない」。演出なし・答えるまでの時間を全部記録
+//   知ってる → 意味を一瞬見せて次へ（ときどき2択の抜き打ちで「知ってるつもり」を防ぐ）
+//   知らない・時間切れ → 意味を1秒見せて、6問後にもう一度
+// =========================================================
+let F = null;
+const fastSec = () => S.settings.flash ? Math.max(.4, S.settings.flash / 10) : ((Plan.v && Plan.v.flash) || 1.5);
+function fastStart() {
+  wake(); clearTimeout(autoT);
+  const t = getToday('w'); if (t.pos >= t.q.length) addExtra('w');
+  F = { t: getToday('w'), n: 0, ok: 0, ms: [], phase: '', tid: 0, nid: 0 };
+  show('fast'); $('fdone').hidden = true;
+  fastLoad();
+}
+function fastStats() {
+  const t = F.t, done = doneCount(t);
+  $('fpbar').style.width = (done / Math.max(1, t.goal) * 100) + '%';
+  $('fcnt').textContent = `${done}/${t.goal}`;
+  $('fsec').textContent = `制限 ${fastSec().toFixed(1)}秒` + (S.settings.flash ? '' : '（AI）');
+  const avg = F.ms.length ? F.ms.reduce((a, b) => a + b, 0) / F.ms.length / 1000 : 0;
+  $('facc').textContent = F.n ? `正答 ${Math.round(F.ok / F.n * 100)}%` + (F.ms.length ? `・平均 ${avg.toFixed(2)}秒` : '') : '';
+}
+function fastLoad() {
+  if (!F) return;
+  clearTimeout(F.tid); clearTimeout(F.nid);
+  const t = F.t;
+  if (t.pos >= t.q.length) return fastDone();
+  const raw = t.q[t.pos], key = raw.replace(/^!/, ''), w = wByEn[key.slice(2)];
+  if (!w) { t.pos++; return fastLoad(); }
+  Object.assign(F, { raw, key, again: raw[0] === '!', w, phase: 'ask', spot: null });
+  const fw = $('fword'); fw.textContent = w.en; fw.style.fontSize = w.en.length > 14 ? '32px' : w.en.length > 10 ? '38px' : '44px';
+  const fm = $('fmean'); fm.textContent = ''; fm.className = 'fmean';
+  $('fbtns').hidden = false; $('fchk').hidden = true;
+  fastStats();
+  fastTimer(fastSec(), () => fastAnswer(false, null));
+}
+function fastTimer(sec, onEnd) {
+  const bar = $('ftbar');
+  bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)'; void bar.offsetWidth;
+  bar.style.transition = `transform ${sec}s linear`; bar.style.transform = 'scaleX(0)';
+  F.t0 = performance.now();
+  F.tid = setTimeout(() => { if (F) onEnd(); }, sec * 1000);
+}
+function fastStop() { clearTimeout(F.tid); const bar = $('ftbar'), cs = getComputedStyle(bar).transform; bar.style.transition = 'none'; if (cs && cs !== 'none') bar.style.transform = cs; }
+function fastKnow() {
+  if (!F || F.phase !== 'ask') return;
+  const ms = Math.round(performance.now() - F.t0);
+  if (ms < 120) return; // 前の語の意味を見ている途中の連打（読めていない）は数えない
+  fastStop();
+  // 抜き打ち：初めての語・よく間違える語は多めに確かめる
+  const c = S.cards[F.key], base = Plan.v && Plan.v.spot != null ? Plan.v.spot : .15;
+  const p = !c || (c.w || 0) >= 2 ? Math.max(base, .35) : base;
+  if (Math.random() < p) {
+    const opts = shuffle([{ t: F.w.jp, ok: true }, { t: pickWordOpts(F.w)[0].jp }]);
+    F.phase = 'chk'; F.spot = { ms, opts };
+    ['fc0', 'fc1'].forEach((id, i) => setTx($(id), opts[i].t));
+    const fm = $('fmean'); fm.textContent = '抜き打ち：意味はどっち？'; fm.className = 'fmean q';
+    $('fbtns').hidden = true; $('fchk').hidden = false;
+    fastTimer(2.5, () => fastPick(-1));
+    return;
+  }
+  fastAnswer(true, ms);
+}
+function fastPick(i) {
+  if (!F || F.phase !== 'chk') return;
+  fastStop();
+  const ok = i >= 0 && F.spot.opts[i].ok, log = dayLog();
+  log.sp = (log.sp || 0) + 1; if (!ok) log.spx = (log.spx || 0) + 1; // 抜き打ちの回数と外した回数（自己申告の甘さ）
+  fastAnswer(ok, ok ? F.spot.ms : null, true);
+}
+function fastAnswer(ok, ms, spot) {
+  if (!F || F.phase === 'res') return;
+  fastStop(); F.phase = 'res';
+  const t = F.t, key = F.key, again = F.again;
+  record(key, again, ok, ok ? ms : null, 'f');
+  if (spot) S.ev[S.ev.length - 1][4] = 's' + (again ? '!' : '');
+  if (!again) { F.n++; if (ok) { F.ok++; if (ms != null) F.ms.push(ms); } }
+  const pts = ok ? (again ? 5 : 10) + (ms != null && ms < 1000 ? 5 : 0) : 0;
+  if (pts) { S.xp = (S.xp || 0) + pts; const lg = dayLog(); lg.xp = (lg.xp || 0) + pts; }
+  if (!ok && !again) { t.q = t.q.slice(); t.q.splice(Math.min(t.pos + 6, t.q.length), 0, '!' + key); }
+  t.pos++;
+  if (doneCount(t) >= t.base) dayLog().goalW = true;
+  save();
+  const fm = $('fmean'); fm.textContent = F.w.jp; fm.className = 'fmean ' + (ok ? 'ok' : 'ng');
+  $('fbtns').hidden = false; $('fchk').hidden = true;
+  if (ok) Haptic.ok(1); else { Haptic.ng(); Sound.ng(); }
+  fastStats();
+  F.nid = setTimeout(fastLoad, ok ? 260 : 1100);
+}
+function fastDone() {
+  F.phase = 'done'; fastStop();
+  $('fbtns').hidden = true; $('fchk').hidden = true; $('fdone').hidden = false;
+  $('fword').textContent = ''; $('fmean').textContent = '';
+  const avg = F.ms.length ? F.ms.reduce((a, b) => a + b, 0) / F.ms.length / 1000 : 0, fast = F.ms.filter(x => x <= 1000).length;
+  $('fdT').textContent = `${F.n}語 おわり`;
+  $('fdS').textContent = F.n ? `正答 ${Math.round(F.ok / F.n * 100)}%・平均 ${avg.toFixed(2)}秒・1秒以内 ${F.ms.length ? Math.round(fast / F.ms.length * 100) : 0}%` : '';
+  setTx($('fdMore'), `＋${S.settings.wordExtra}語`);
+  Sound.fanfare();
+}
+function fastClose() {
+  if (F) { clearTimeout(F.tid); clearTimeout(F.nid); }
+  F = null; flush(); if (Sync.dirty) Sync.push();
+  show('sWords');
+}
+// 押した瞬間に反応する（指を離すのを待たない）
+const onDown = (el, fn) => el.addEventListener('pointerdown', e => { if (e.button === 0) { e.preventDefault(); wake(); fn(); } });
+onDown($('fYes'), fastKnow); onDown($('fNo'), () => { if (F && F.phase === 'ask') fastAnswer(false, null); });
+onDown($('fc0'), () => fastPick(0)); onDown($('fc1'), () => fastPick(1));
+$('fstage').addEventListener('pointerdown', () => { if (F && F.phase === 'res') fastLoad(); }); // 意味を見たらタップで先へ
+onTap($('fxClose'), fastClose); onTap($('fdClose'), fastClose);
+onTap($('fdMore'), () => { addExtra('w'); $('fdone').hidden = true; F.t = getToday('w'); fastLoad(); });
+document.addEventListener('keydown', e => {
+  if (!F || !$('fast').classList.contains('on') || e.repeat) return;
+  const k = e.key;
+  if (F.phase === 'ask') { if (k === 'ArrowRight' || k === 'j' || k === ' ') { e.preventDefault(); fastKnow(); } else if (k === 'ArrowLeft' || k === 'f') fastAnswer(false, null); }
+  else if (F.phase === 'chk') { if (k === 'ArrowLeft' || k === '1' || k === 'f') fastPick(0); else if (k === 'ArrowRight' || k === '2' || k === 'j') fastPick(1); }
+  else if (F.phase === 'res') { if (k === ' ' || k === 'Enter') { e.preventDefault(); fastLoad(); } }
+  else if (F.phase === 'done') { if (k === 'Enter') $('fdMore').click(); else if (k === 'Escape') fastClose(); }
+  if (k === 'Escape' && F && F.phase !== 'done') fastClose();
+});
+setInterval(() => { if (S && S.today && S.today.date !== dayStr() && !G && !F) show(tab); }, 60000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 boot().then(() => { if ('speechSynthesis' in window) { Sound.loadVoices(); speechSynthesis.onvoiceschanged = () => Sound.loadVoices(); } });
 if (/debug/.test(location.search)) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99;background:#000;color:#0f0;font:11px monospace;padding:4px;pointer-events:none;white-space:pre-wrap';
   document.body.appendChild(d); setInterval(() => { const pools = Object.values(SFX.pool); d.textContent = `iOS:${isIOS} rendered:${Object.keys(SFX.buf).length} pools:${pools.length} unlocked:${pools.filter(a => a._u).length}/${pools.length} last:${SFX.last || '-'} ctx:${SFX.ctx ? SFX.ctx.state : '-'}`; }, 300); }
-window.__app = { get S() { return S; }, get G() { return G; }, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
+window.__app = { get S() { return S; }, get G() { return G; }, get F() { return F; }, fastStart, Plan, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
 </script>
 </body>
 </html>

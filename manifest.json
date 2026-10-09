@@ -1,6 +1,6 @@
 {
-  "name": "TOEIC Daily Master",
-  "short_name": "TOEIC Daily",
+  "name": "メモリー",
+  "short_name": "メモリー",
   "description": "毎日200語のTOEIC単語＋クリエイターの顔と名前。忘れかけた頃に出る間隔反復。",
   "start_url": "./index.html",
   "scope": "./",
