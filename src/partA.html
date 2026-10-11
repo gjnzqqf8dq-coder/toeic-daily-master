@@ -82,6 +82,17 @@ h1{font-size:24px;font-weight:800;margin:4px 0 16px}
 #fast .timer{margin:8px 0 14px}
 #ftbar{background:var(--owl-d)}
 
+/* 数値化：今週の学習時間・実力ランク（グラフは濃い緑） */
+.wk{margin:0 0 12px;padding:12px 14px;border:2px solid var(--swan);border-radius:12px}
+.wkt{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--wolf)}
+.wkt b{font-size:20px;font-weight:900;color:var(--ink);margin:0 2px} .wkt small{font-size:12px;color:var(--hare)}
+.wk .bar{height:10px;margin-top:8px} .wk .bar i,#wkBar{background:var(--owl-d)}
+.skh{display:flex;justify-content:space-between;align-items:baseline;margin:4px 0 2px}
+.skn{font-size:36px;font-weight:900;color:var(--owl-d);line-height:1} .skh small{color:var(--hare);font-weight:800} .skh b{font-size:14px;color:var(--ink)}
+.skb{margin-top:12px} .skl{display:flex;justify-content:space-between;gap:8px;font-size:13px} .skl span{color:var(--wolf);font-size:12px;text-align:right}
+.seg15{display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin-top:6px} .seg15 i{height:10px;border-radius:3px;background:var(--swan)} .seg15 i.on{background:var(--owl-d)}
+.sttm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center} .sttm span{display:block;font-size:12px;color:var(--wolf)} .sttm b{font-size:17px;font-weight:900;color:var(--ink)}
+
 /* 上のステータス */
 .stats{display:flex;justify-content:space-between;align-items:center;padding:4px 18px 12px;border-bottom:2px solid var(--swan);margin:0 -16px 16px}
 .stat{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800}
@@ -347,6 +358,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="hero"><div class="m"></div><div class="bubble" id="wSay"></div></div>
   <div class="box" data-lvcard></div>
   <div class="seg s3" data-type="w"><label data-m="fast"><input type="checkbox" switch class="hsw">高速</label><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
+  <div class="wk"><div class="wkt"><span>今週 <b id="wkMin">0</b><small id="wkGoal"> / 150分</small></span><span class="wkr">ランク <b id="wkRank">1</b><small> / 15</small></span></div><div class="bar"><i id="wkBar"></i></div></div>
   <div class="coach" id="wCoach" hidden></div>
   <div class="box">
     <div class="cap">今日の単語</div>
@@ -391,6 +403,16 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
     <div class="cap">顔の覚え具合</div><div class="levels" id="lvP"></div>
     <div class="small">赤＝覚えたて → 青・紫＝しっかり定着（1→3→7→14→30→60日）</div>
   </div>
+  <div class="box">
+    <div class="cap">単語の実力</div>
+    <div class="skh"><div><span class="skn" id="skRank">1</span><small> / 15</small></div><b id="skReach"></b></div>
+    <div class="small" id="skSub"></div>
+    <div id="skBands"></div>
+    <div class="small">ランク＝覚えた割合と直近30問の正答率から15段階（帯ごと）。全体は直近50問の正答率と1秒以内の割合も加味</div>
+  </div>
+  <div class="box sttm">
+    <div><span>今週</span><b id="lgWeek">0分</b></div><div><span>総学習時間</span><b id="stTotal">0分</b></div><div><span>学習回数</span><b id="stSess">0回</b></div>
+  </div>
 </section>
 
 <!-- 設定 -->
@@ -400,6 +422,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="set"><span>1日の単語数</span><input type="range" id="stWordGoal" min="50" max="400" step="10"><span class="v" id="vWordGoal"></span></div>
   <div class="set"><span>1日の人数</span><input type="range" id="stFaceGoal" min="10" max="100" step="5"><span class="v" id="vFaceGoal"></span></div>
   <div class="set"><span>復習の上限</span><input type="range" id="stRatio" min="30" max="80" step="5"><span class="v" id="vRatio"></span></div>
+  <div class="set"><span>週の学習目標</span><input type="range" id="stWeek" min="30" max="600" step="30"><span class="v" id="vWeek"></span></div>
   <div class="set"><span>高速モードの制限時間</span><input type="range" id="stFlash" min="0" max="30" step="1"><span class="v" id="vFlash"></span></div>
   <div class="set"><span>制限時間（1問）</span><input type="range" id="stTimer" min="0" max="15" step="1"><span class="v" id="vTimer"></span></div>
   <div class="sec">音と振動</div>

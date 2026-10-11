@@ -21,7 +21,7 @@ function pgroup(p) { return p.g === 'tora' ? 'tora' + p.tier : p.g; }
 // =========================================================
 // 保存（localStorage ＋ IndexedDB の二重化・1問ごとに即保存）
 // =========================================================
-const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, flash: 0, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
+const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, flash: 0, weekGoal: 150, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
 let S;
 function fresh() {
   return { v: 2, updatedAt: 0, cards: {}, days: {}, today: {}, order: shuffle(W.map(w => w.en)), settings: structuredClone(DEF_SETTINGS) };
@@ -81,7 +81,7 @@ function mergeState(a, b) {
   for (const [d, x] of Object.entries(a.days || {})) {
     const o = out.days[d]; if (!o) { out.days[d] = x; continue; }
     const m = Object.assign({}, o, x);
-    for (const f of ['w', 'wc', 'p', 'pc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq', 'rtf', 'rnf', 'rff', 'sp', 'spx']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
+    for (const f of ['w', 'wc', 'p', 'pc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq', 'rtf', 'rnf', 'rff', 'sp', 'spx', 'sec', 'ss']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
     out.days[d] = m;
   }
   // 今日の出題：日付が新しい方、同じ日なら種類ごとに進んでいる方
@@ -123,6 +123,9 @@ const Plan = {
 //   モード: q/c/f（s=旧・抜き打ち）。末尾 ! = 再出題。fx = 高速で○の後に「ひとつ前を間違えた」で✕に直した行
 function record(key, again, ok, ms, md, ms2) {
   const log = dayLog(), today = dayNum(), isW = key[0] === 'w';
+  // 学習時間：答えと答えの間（20秒で頭打ち・1分以上あいたら休憩とみなして2秒だけ）
+  const now = Date.now(), gap = now - lastAct; lastAct = now;
+  log.sec = Math.round(((log.sec || 0) + (gap < 60000 ? Math.min(gap, 20000) : 2000) / 1000) * 10) / 10;
   if (isW) { S.ev = S.ev || []; const e = [Math.floor(Date.now() / 1000), key.slice(2), ok ? 1 : 0, ms == null ? -1 : ms, md + (again ? '!' : '')]; if (ms2 != null) e.push(ms2); S.ev.push(e); if (S.ev.length > EV_MAX + 200) S.ev = S.ev.slice(-EV_MAX); }
   if (again) return;
   const c = S.cards[key] || { b: 0, n: 0, w: 0 };
@@ -150,6 +153,34 @@ function regrade(u) {
   if (u.ms != null) { const md = u.md; log['rt' + md] = Math.max(0, (log['rt' + md] || 0) - u.ms); log['rn' + md] = Math.max(0, (log['rn' + md] || 0) - 1); if (u.ms <= 1500) log['rf' + md] = Math.max(0, (log['rf' + md] || 0) - 1); }
   const c = u.before ? Object.assign({}, u.before) : { b: 0, n: 0, w: 0 };
   c.n++; c.b = 1; c.w++; c.d = u.dn + INT[1]; c.l = u.dn; S.cards[u.key] = c;
+}
+let lastAct = 0;
+// =========================================================
+// 数値化（スタディサプリENGLISHの見せ方を参考）
+//   学習時間・回数・今週の目標 ／ 実力ランク15段階（直近の回答の正答率＋覚えた割合＋速さ）／ 単語の点数帯
+// =========================================================
+const BANDS = [['600点帯', 0, 500], ['730点帯', 500, 1000], ['860点帯', 1000, 1300], ['990点帯', 1300, W.length]];
+const bandOf = (() => { const r = {}; W.forEach((w, i) => { r[w.en] = BANDS.findIndex(b => i >= b[1] && i < b[2]); }); return en => r[en]; })();
+const rank15 = x => Math.max(1, Math.min(15, 1 + Math.round(14 * x)));
+function studyWeek() {
+  const d = new Date(), mon = dayNum() - ((d.getDay() + 6) % 7); let sec = 0, ss = 0;
+  for (let n = mon; n <= dayNum(); n++) { const x = S.days[dayStr(n)]; if (x) { sec += x.sec || 0; ss += x.ss || 0; } }
+  return { min: Math.round(sec / 60), ss, goal: S.settings.weekGoal };
+}
+function studyTotal() { let sec = 0, ss = 0; for (const x of Object.values(S.days)) { sec += x.sec || 0; ss += x.ss || 0; } return { min: Math.round(sec / 60), ss }; }
+function skill() {
+  const ev = (S.ev || []).filter(e => !String(e[4]).includes('!'));
+  const known = BANDS.map(([, a, b]) => W.slice(a, b).filter(w => { const c = S.cards['w:' + w.en]; return c && c.b >= 2; }).length / (b - a));
+  const bands = BANDS.map(([name], i) => {
+    const r = ev.filter(e => bandOf(e[1]) === i).slice(-30), acc = r.length >= 10 ? r.filter(e => e[2]).length / r.length : known[i];
+    return { name, known: Math.round(known[i] * 100), acc: r.length >= 10 ? Math.round(acc * 100) : null, n: r.length, rank: rank15(.5 * known[i] + .5 * acc) };
+  });
+  const last = ev.slice(-50), ok = last.filter(e => e[2]), acc = last.length >= 10 ? ok.length / last.length : null;
+  const timed = ok.filter(e => e[3] > 0), fast = timed.length >= 10 ? timed.filter(e => e[3] <= 1000).length / timed.length : null;
+  const kAll = W.filter(w => { const c = S.cards['w:' + w.en]; return c && c.b >= 2; }).length / W.length;
+  let reached = null; for (let i = 0; i < 4; i++) { if (known[i] >= .8) reached = BANDS[i][0]; else break; }
+  const sec08 = W.filter(w => { const c = S.cards['w:' + w.en]; return c && c.b >= 2 && c.t != null && c.t <= 8; }).length; // TOEICの目安：0.8秒以内に正解
+  return { sec08, rank: rank15(.55 * kAll + .3 * (acc ?? kAll) + .15 * (fast ?? 0)), acc: acc == null ? null : Math.round(acc * 100), fast: fast == null ? null : Math.round(fast * 100), known: Math.round(kAll * W.length), bands, reached };
 }
 const SYNC_EVERY = 5 * 60 * 1000; // 5分ごとに裏で送る（画面は読み直さない）
 const Sync = {

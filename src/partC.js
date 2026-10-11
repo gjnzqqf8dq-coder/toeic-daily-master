@@ -275,6 +275,11 @@ function renderHome(type) {
   const c = counts(type);
   $(pre + 'Learned').textContent = c.learned; $(pre + 'Due').textContent = c.dueTomorrow; $(pre + 'New').textContent = c.unseen;
   if (type === 'p') renderChips();
+  if (type === 'w') { // 今週の学習時間と実力ランク
+    const wk = studyWeek(), sk = skill();
+    $('wkMin').textContent = wk.min; $('wkGoal').textContent = ` / ${wk.goal}分`; $('wkRank').textContent = sk.rank;
+    requestAnimationFrame(() => $('wkBar').style.width = Math.min(100, wk.min / Math.max(1, wk.goal) * 100) + '%');
+  }
   if (type === 'w') { const cn = $('wCoach'), n = Plan.v && Plan.v.note; cn.hidden = !n; if (n) cn.innerHTML = `<b>AIコーチ</b>${esc(n)}`; }
   const md = (S.settings.mode && S.settings.mode[type]) || 'quiz';
   document.querySelectorAll(`.seg[data-type="${type}"] label`).forEach(l => l.classList.toggle('on', l.dataset.m === md));
@@ -306,6 +311,7 @@ function start(type) {
   wake(); clearTimeout(autoT);
   const t = getToday(type);
   if (t.pos >= t.q.length) return;
+  const lg = dayLog(); lg.ss = (lg.ss || 0) + 1; lastAct = Date.now();
   G = { type, mode: (S.settings.mode && S.settings.mode[type]) || 'quiz', combo: 0, maxCombo: 0, ok: 0, n: 0, score: 0, answered: false };
   const c = type === 'w' ? ['var(--owl)', 'var(--owl-d)'] : ['var(--bet)', 'var(--bet-d)'];
   $('play').style.setProperty('--c', c[0]); $('play').style.setProperty('--cd', c[1]);
@@ -605,6 +611,12 @@ function renderLog() {
     g.appendChild(e);
   }
   levels('w', $('lvW')); levels('p', $('lvP'));
+  // 単語の実力（15段階）と学習時間
+  const sk = skill(), wk = studyWeek(), tt = studyTotal(), seg = r => Array.from({ length: 15 }, (_, i) => `<i${i < r ? ' class="on"' : ''}></i>`).join('');
+  $('skRank').textContent = sk.rank; $('skReach').textContent = sk.reached ? `単語の目安 ${sk.reached}` : '単語の目安 ―';
+  $('skSub').textContent = `0.8秒以内 ${sk.sec08} / ${W.length}語・覚えた ${sk.known}語` + (sk.acc != null ? `・直近50問の正答 ${sk.acc}%` : '') + (sk.fast != null ? `・1秒以内 ${sk.fast}%` : '');
+  $('skBands').innerHTML = sk.bands.map(b => `<div class="skb"><div class="skl"><b>${b.name}</b><span>ランク ${b.rank}・覚えた ${b.known}%${b.acc != null ? `・直近正答 ${b.acc}%` : ''}</span></div><div class="seg15">${seg(b.rank)}</div></div>`).join('');
+  $('lgWeek').textContent = `${wk.min} / ${wk.goal}分`; $('stTotal').textContent = `${tt.min >= 60 ? Math.floor(tt.min / 60) + '時間' : ''}${tt.min % 60}分`; $('stSess').textContent = `${tt.ss}回`;
 }
 function levels(type, el) {
   const keys = type === 'w' ? W.map(w => 'w:' + w.en) : P.map(p => 'p:' + p.id);
@@ -636,6 +648,7 @@ function renderSettings() {
   bind('FaceGoal', 'faceGoal', x => x + '人');
   bind('Ratio', 'ratio', x => x + '%');
   bind('Timer', 'timer', x => x ? x + '秒' : 'なし');
+  bind('Week', 'weekGoal', x => x + '分');
   bind('Flash', 'flash', x => x ? Math.max(.4, x / 10).toFixed(1) + '秒' : 'AIにおまかせ');
   bind('Eff', 'eff', x => x, () => { clearTimeout(rerenderT); rerenderT = setTimeout(() => SFX.render(), 300); });
   bind('Sp', 'sp', x => x);
@@ -763,6 +776,7 @@ let F = null;
 const fastSec = () => S.settings.flash ? Math.max(.4, S.settings.flash / 10) : ((Plan.v && Plan.v.flash) || 1.5);
 function fastStart() {
   wake(); clearTimeout(autoT);
+  { const lg = dayLog(); lg.ss = (lg.ss || 0) + 1; lastAct = Date.now(); }
   const t = getToday('w'); if (t.pos >= t.q.length) addExtra('w');
   F = { t: getToday('w'), n: 0, ok: 0, ms: [], phase: '', tid: 0, nid: 0, prev: null };
   show('fast'); $('fdone').hidden = true;
