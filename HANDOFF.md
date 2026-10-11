@@ -94,3 +94,4 @@
   - 単語は選んでいるモード（高速なら高速）で回る。種類の分を終えた時点で次へ（load/fastLoad の先頭で判定）。足りなければ addExtra、それでも尽きたら S.today.dx[type] でその種類はある分だけ
   - レッスン中は左上に「今日 n/150」。全部終わると完了画面（今日の150問 クリア！）→ホームのボタンは「今日はクリア」
 - 確認：`node tools/qa_trivia.mjs <dir>`（~/webtool で実行・同期は止めてQA用キー qa-test-trivia-0000001・iPhone 375×812 と Chrome）
+- 注意：Playwright は Service Worker 経由の通信を ctx.route で止められない（WebKit）。同期を止めたい確認は newContext に serviceWorkers:'block' を付ける（qa_trivia は対応済み・ほかの qa_* は未対応＝QA用キーで同期サーバーに届いている）
