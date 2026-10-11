@@ -232,10 +232,11 @@ function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   document.body.classList.toggle('playing', id === 'play' || id === 'sDone' || id === 'fast');
   if (id !== 'play') $('sheet').classList.remove('on');
-  if (['sWords', 'sFaces', 'sLog', 'sSet'].includes(id)) { tab = id; document.querySelectorAll('nav label').forEach(b => b.classList.toggle('on', b.dataset.t === id)); }
+  if (['sWords', 'sFaces', 'sLog', 'sAna', 'sSet'].includes(id)) { tab = id; document.querySelectorAll('nav label').forEach(b => b.classList.toggle('on', b.dataset.t === id)); }
   if (id === 'sWords') renderHome('w');
   if (id === 'sFaces') renderHome('p');
   if (id === 'sLog') renderLog();
+  if (id === 'sAna') renderAna();
   if (id === 'sSet') renderSettings();
   if (id !== 'play') renderHud();
 }
@@ -618,6 +619,117 @@ function renderLog() {
   $('skBands').innerHTML = sk.bands.map(b => `<div class="skb"><div class="skl"><b>${b.name}</b><span>ランク ${b.rank}・覚えた ${b.known}%${b.acc != null ? `・直近正答 ${b.acc}%` : ''}</span></div><div class="seg15">${seg(b.rank)}</div></div>`).join('');
   $('lgWeek').textContent = `${wk.min} / ${wk.goal}分`; $('stTotal').textContent = `${tt.min >= 60 ? Math.floor(tt.min / 60) + '時間' : ''}${tt.min % 60}分`; $('stSess').textContent = `${tt.ss}回`;
 }
+// =========================================================
+// 分析（数値とグラフ）：端末の記録だけから計算する（推測の数字は出さない）
+//   日ごとの数 = S.days ／ 1問ごとの記録 = S.ev（単語のみ・2026-10-08〜・最新4,000件）／ 覚え具合 = S.cards
+// =========================================================
+const AN_TARGET = 500; // 回答時間の目標（ミリ秒）
+let anMode = '';
+const anJp = (() => { let m = null; return en => { if (!m) { m = {}; W.forEach(w => m[w.en] = w.jp); } return m[en] || ''; }; })();
+const anPct = (a, b) => b ? Math.round(a / b * 100) : null;
+const anSec = ms => ms == null ? '―' : (ms / 1000).toFixed(2);
+function anNice(v) { if (v <= 0) return 10; const m = Math.pow(10, Math.floor(Math.log10(v))); for (const f of [1, 2, 2.5, 5, 10]) if (f * m >= v) return f * m; return 10 * m; }
+// 単語の点数帯：記録タブの skill() があればそれを使う（同じ基準：帯の8割を「覚えた」で到達）
+function anReached() {
+  if (typeof skill === 'function') { try { return skill().reached || null; } catch {} }
+  const B = [['600点帯', 0, 500], ['730点帯', 500, 1000], ['860点帯', 1000, 1300], ['990点帯', 1300, W.length]]; let r = null;
+  for (const [name, a, b] of B) { const k = W.slice(a, b).filter(w => { const c = S.cards['w:' + w.en]; return c && c.b >= 2; }).length; if (k >= .8 * (b - a)) r = name; else break; }
+  return r;
+}
+function anTiles() {
+  const x = S.days[dayStr()], n = x ? (x.w || 0) + (x.p || 0) : 0, c = x ? (x.wc || 0) + (x.pc || 0) : 0;
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0); const s0 = t0.getTime() / 1000;
+  const tm = (S.ev || []).filter(e => e[0] >= s0 && e[2] === 1 && e[3] >= 0).map(e => e[3]);
+  const avg = tm.length ? tm.reduce((a, b) => a + b, 0) / tm.length : null;
+  const known = W.filter(w => { const k = S.cards['w:' + w.en]; return k && k.b >= 2; }).length;
+  const rc = anReached(), st = streak(), acc = anPct(c, n);
+  const tile = (lab, val, sub, cls = '') => `<div><span>${lab}</span><b class="${cls}">${val}</b><em>${sub}</em></div>`;
+  $('anTiles').innerHTML =
+    tile('今日の回答', n ? `${n}<small>問</small>` : '0<small>問</small>', n ? `単語${x.w || 0}・顔${x.p || 0}` : '記録なし', n ? '' : 'na') +
+    tile('今日の正答率', acc == null ? '―' : `${acc}<small>%</small>`, acc == null ? '記録なし' : `${c} / ${n}問`, acc == null ? 'na' : 'g') +
+    tile('平均回答時間', avg == null ? '―' : `${anSec(avg)}<small>秒</small>`, avg == null ? '記録なし' : `単語の正解${tm.length}問`, avg == null ? 'na' : '') +
+    tile('連続日数', `${st}<small>日</small>`, st ? '途切れず継続中' : '記録なし', st ? 'o' : 'na') +
+    tile('覚えた単語', `${known}<small>/${W.length}</small>`, `全体の${anPct(known, W.length)}%`, 'g') +
+    tile('推定到達点', rc || '―', rc ? '単語の目安' : '各帯8割で到達', rc ? 'g' : 'na');
+}
+function anDaily() {
+  const N = 30, d0 = dayNum() - N + 1, R = [];
+  for (let i = 0; i < N; i++) { const ds = dayStr(d0 + i), x = S.days[ds] || {}; const w = x.w || 0, p = x.p || 0, c = (x.wc || 0) + (x.pc || 0); R.push({ ds, w, p, n: w + p, acc: w + p ? c / (w + p) : null }); }
+  const act = R.filter(r => r.n);
+  $('anDailyLg').hidden = !act.length;
+  if (!act.length) { $('anDaily').innerHTML = '<div class="anna">直近30日は記録なし</div>'; $('anDailySum').textContent = ''; return; }
+  const VW = 330, VH = 170, L = 30, Rr = 30, T = 10, B = 22, cw = VW - L - Rr, ch = VH - T - B, bw = cw / N, mx = anNice(Math.max(...R.map(r => r.n)));
+  const y = v => T + ch - v / mx * ch, ya = a => T + ch - a * ch;
+  let s = '';
+  for (const f of [0, .5, 1]) s += `<line class="gl" x1="${L}" x2="${VW - Rr}" y1="${ya(f)}" y2="${ya(f)}"/><text x="${L - 4}" y="${ya(f) + 3.5}" text-anchor="end">${Math.round(mx * f)}</text><text x="${VW - Rr + 4}" y="${ya(f) + 3.5}">${f * 100}%</text>`;
+  R.forEach((r, i) => {
+    const x = L + i * bw + bw * .15, w = bw * .7;
+    if (r.w) s += `<rect x="${x}" y="${y(r.w)}" width="${w}" height="${T + ch - y(r.w)}" rx="1.5" fill="var(--owl)"/>`;
+    if (r.p) s += `<rect x="${x}" y="${y(r.n)}" width="${w}" height="${y(r.w) - y(r.n)}" rx="1.5" fill="var(--bet)"/>`;
+    if ((N - 1 - i) % 7 === 0) { const [, m, d] = r.ds.split('-'); s += `<text x="${L + i * bw + bw / 2}" y="${VH - 6}" text-anchor="middle">${+m}/${+d}</text>`; }
+  });
+  let path = '', pen = false; R.forEach((r, i) => { if (r.acc == null) { pen = false; return; } path += `${pen ? 'L' : 'M'}${(L + i * bw + bw / 2).toFixed(1)} ${ya(r.acc).toFixed(1)}`; pen = true; });
+  s += `<path d="${path}" fill="none" stroke="var(--eel)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  R.forEach((r, i) => { if (r.acc != null) s += `<circle cx="${(L + i * bw + bw / 2).toFixed(1)}" cy="${ya(r.acc).toFixed(1)}" r="2.6" fill="#fff" stroke="var(--eel)" stroke-width="1.6"/>`; });
+  $('anDaily').innerHTML = `<svg class="anc" viewBox="0 0 ${VW} ${VH}">${s}</svg>`;
+  const tot = act.reduce((a, r) => a + r.n, 0), ok = act.reduce((a, r) => a + r.acc * r.n, 0), best = act.reduce((a, r) => r.n > a.n ? r : a);
+  const [, bm, bd] = best.ds.split('-');
+  $('anDailySum').innerHTML = `学習した日 <b>${act.length}</b>/30日・合計 <b>${tot}</b>問・平均正答率 <b>${Math.round(ok / tot * 100)}%</b><br>いちばん解いた日 ${+bm}/${+bd}（${best.n}問）`;
+}
+function anTime() {
+  const MD = [['f', '高速'], ['q', '4択'], ['c', 'カード']];
+  const rows = md => (S.ev || []).filter(e => e[2] === 1 && e[3] >= 0 && String(e[4])[0] === md).slice(-500);
+  const cnt = Object.fromEntries(MD.map(([m]) => [m, rows(m).length]));
+  if (!anMode || !cnt[anMode]) anMode = MD.map(m => m[0]).sort((a, b) => cnt[b] - cnt[a])[0];
+  const el = $('anMode'); el.innerHTML = MD.map(([m, l]) => `<button data-m="${m}" class="${m === anMode ? 'on' : ''}"${cnt[m] ? '' : ' disabled'}>${l}</button>`).join('');
+  el.querySelectorAll('button').forEach(b => onTap(b, () => { anMode = b.dataset.m; anTime(); }));
+  const ms = rows(anMode).map(e => e[3]);
+  if (!ms.length) { $('anTime').innerHTML = '<div class="anna">回答時間の記録なし</div>'; $('anTimeSum').textContent = ''; return; }
+  const BIN = [[0, 500, '〜0.5'], [500, 1000, '〜1'], [1000, 1500, '〜1.5'], [1500, 2000, '〜2'], [2000, 3000, '〜3'], [3000, 4000, '〜4'], [4000, 6000, '〜6'], [6000, 1e9, '6〜']];
+  const h = BIN.map(([a, b]) => ms.filter(v => v >= a && v < b).length);
+  const VW = 330, VH = 140, L = 30, T = 14, B = 20, cw = VW - L - 4, ch = VH - T - B, bw = cw / BIN.length, mx = anNice(Math.max(...h));
+  let s = '';
+  for (const f of [0, .5, 1]) { const yy = T + ch - f * ch; s += `<line class="gl" x1="${L}" x2="${VW - 4}" y1="${yy}" y2="${yy}"/><text x="${L - 4}" y="${yy + 3.5}" text-anchor="end">${Math.round(mx * f)}</text>`; }
+  h.forEach((v, i) => {
+    const x = L + i * bw + bw * .12, w = bw * .76, hh = v / mx * ch;
+    if (v) s += `<rect x="${x}" y="${T + ch - hh}" width="${w}" height="${hh}" rx="3" fill="${i === 0 ? 'var(--owl)' : i < 2 ? 'var(--owl-l)' : 'var(--swan)'}"/>`;
+    if (v) s += `<text x="${x + w / 2}" y="${T + ch - hh - 3}" text-anchor="middle" style="fill:var(--wolf)">${Math.round(v / ms.length * 100)}%</text>`;
+    s += `<text x="${x + w / 2}" y="${VH - 5}" text-anchor="middle">${BIN[i][2]}</text>`;
+  });
+  $('anTime').innerHTML = `<svg class="anc" viewBox="0 0 ${VW} ${VH}">${s}</svg>`;
+  const so = ms.slice().sort((a, b) => a - b), med = so[Math.floor(so.length / 2)], avg = ms.reduce((a, b) => a + b, 0) / ms.length;
+  const lab = anMode === 'f' ? '出てから裏返すまで' : '出てから答えるまで';
+  $('anTimeSum').innerHTML = `0.5秒以内 <b>${anPct(h[0], ms.length)}%</b>・中央値 <b>${anSec(med)}秒</b>・平均 ${anSec(avg)}秒<br><span class="small">直近${ms.length}問（${lab}・単位は秒）</span>`;
+}
+function anWeak() {
+  const miss = {}; for (const e of S.ev || []) if (!e[2]) miss[e[1]] = (miss[e[1]] || 0) + 1;
+  const L = W.map(w => ({ en: w.en, c: S.cards['w:' + w.en] })).filter(o => o.c && o.c.w > 0)
+    .sort((a, b) => b.c.w - a.c.w || b.c.w / b.c.n - a.c.w / a.c.n || (miss[b.en] || 0) - (miss[a.en] || 0)).slice(0, 10);
+  $('anWeak').innerHTML = L.length ? L.map((o, i) => `<div><span class="r">${i + 1}</span><div class="w"><b>${esc(o.en)}</b><span>${esc(anJp(o.en))}</span></div><div class="x">✕${o.c.w}<small>${o.c.n}回中${o.c.b === 1 ? '・要復習' : ''}</small></div></div>`).join('') : '<div class="anna">間違えた単語の記録なし</div>';
+}
+function anMastery() {
+  const C = [['未学習', 'var(--swan)'], ['要復習', 'var(--car)'], ['学習中', 'var(--fox)'], ['定着', 'var(--owl)']];
+  const grp = keys => { const n = [0, 0, 0, 0]; keys.forEach(k => { const c = S.cards[k]; n[!c || !c.n ? 0 : c.b <= 1 ? 1 : c.b <= 3 ? 2 : 3]++; }); return n; };
+  const one = (lab, keys) => { const n = grp(keys), t = keys.length || 1;
+    return `<div class="anh" style="margin:10px 0 0"><b style="font-size:14px">${lab}</b><span class="small">${keys.length}${lab === '単語' ? '語' : '人'}</span></div><div class="anms">${n.map((v, i) => v ? `<i style="width:${v / t * 100}%;background:${C[i][1]}"></i>` : '').join('')}</div>` +
+      `<div class="anmr">${n.map((v, i) => `<div><i style="background:${C[i][1]}"></i>${C[i][0]}<b>${v}</b>${Math.round(v / t * 100)}%</div>`).join('')}</div>`; };
+  $('anMastery').innerHTML = one('単語', W.map(w => 'w:' + w.en)) + one('顔', P.map(p => 'p:' + p.id));
+}
+function anHeat() {
+  const ev = S.ev || [];
+  if (!ev.length) { $('anHeat').innerHTML = '<div class="anna">1問ごとの記録なし</div>'; $('anHeatSum').textContent = ''; $('anHmN').textContent = ''; return; }
+  const g = Array.from({ length: 7 }, () => new Array(24).fill(0)), hr = new Array(24).fill(0);
+  for (const e of ev) { const d = new Date(e[0] * 1000), wd = (d.getDay() + 6) % 7, h = d.getHours(); g[wd][h]++; hr[h]++; }
+  const mx = Math.max(...g.flat());
+  let s = '';
+  '月火水木金土日'.split('').forEach((l, r) => { s += `<span>${l}</span>` + g[r].map((v, h) => `<i title="${l} ${h}時 ${v}問"${v ? ` style="background:rgba(88,204,2,${(.18 + .82 * v / mx).toFixed(2)})"` : ''}></i>`).join(''); });
+  s += '<span></span>' + [0, 6, 12, 18].map(h => `<span class="hx">${h}時</span>`).join('');
+  $('anHeat').innerHTML = `<div class="anhm">${s}</div>`;
+  const pk = hr.indexOf(Math.max(...hr)), d0 = new Date(ev[0][0] * 1000);
+  $('anHmN').textContent = `${d0.getMonth() + 1}/${d0.getDate()}〜・${ev.length}問`;
+  $('anHeatSum').innerHTML = `いちばん解いている時間 <b>${pk}時台</b>（${anPct(hr[pk], ev.length)}%）`;
+}
+function renderAna() { anTiles(); anDaily(); anTime(); anWeak(); anMastery(); anHeat(); }
 function levels(type, el) {
   const keys = type === 'w' ? W.map(w => 'w:' + w.en) : P.map(p => 'p:' + p.id);
   const n = new Array(INT.length + 1).fill(0);

@@ -93,6 +93,41 @@ h1{font-size:24px;font-weight:800;margin:4px 0 16px}
 .seg15{display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin-top:6px} .seg15 i{height:10px;border-radius:3px;background:var(--swan)} .seg15 i.on{background:var(--owl-d)}
 .sttm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center} .sttm span{display:block;font-size:12px;color:var(--wolf)} .sttm b{font-size:17px;font-weight:900;color:var(--ink)}
 
+/* 分析（数値とグラフ）：SVGを手で描く・動きなし */
+.antl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:16px}
+.antl>div{border:2px solid var(--swan);border-bottom-width:4px;border-radius:14px;padding:10px 8px 8px;min-width:0}
+.antl span{display:block;font-size:11px;color:var(--wolf);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.antl b{display:block;font-size:22px;font-weight:900;color:var(--ink);line-height:1.25;margin-top:2px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.antl b small{font-size:12px;color:var(--hare);margin-left:1px}
+.antl em{display:block;font-style:normal;font-size:11px;color:var(--hare);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.antl b.g{color:var(--owl-d)} .antl b.o{color:var(--fox)} .antl b.na{color:var(--hare);font-size:18px}
+.anh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.anh .cap{flex:none} .anh .small{text-align:right}
+.anc{display:block;width:100%;height:auto;overflow:visible}
+.anc text{fill:var(--hare);font-size:10px;font-weight:800;font-family:inherit}
+.anc .gl{stroke:var(--swan);stroke-width:1}
+.anlg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--wolf);margin-top:6px}
+.anlg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.anlg i.ln{height:3px;border-radius:2px;vertical-align:2px}
+.ansum{font-size:13px;color:var(--ink);margin-top:8px;line-height:1.6} .ansum b{font-weight:900}
+.anmd{display:flex;gap:6px;margin:2px 0 8px} .anmd button{flex:1;height:32px;border:2px solid var(--swan);border-radius:10px;font-size:13px;font-weight:800;color:var(--wolf)}
+.anmd button.on{border-color:#84d8ff;background:var(--eel-p);color:var(--eel-d)} .anmd button:disabled{opacity:.4}
+.anwk{display:flex;flex-direction:column}
+.anwk>div{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:2px solid var(--polar);min-width:0}
+.anwk>div:first-child{border-top:0}
+.anwk .r{flex:none;width:18px;font-size:12px;color:var(--hare);text-align:right}
+.anwk .w{flex:1;min-width:0} .anwk .w b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.anwk .w span{display:block;font-size:11px;color:var(--wolf);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.anwk .x{flex:none;text-align:right;font-size:13px;color:var(--car-d);font-variant-numeric:tabular-nums} .anwk .x small{display:block;font-size:11px;color:var(--hare)}
+.anms{display:flex;height:16px;border-radius:99px;overflow:hidden;background:var(--swan);margin:6px 0 4px} .anms i{display:block;height:100%}
+.anmr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;font-size:11px;color:var(--wolf);margin-bottom:12px}
+.anmr b{display:block;font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums} .anmr i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px}
+.anhm{display:grid;grid-template-columns:18px repeat(24,minmax(0,1fr));gap:2px;align-items:center}
+.anhm i{display:block;aspect-ratio:1/1;border-radius:2px;background:var(--polar)}
+.anhm span{font-size:10px;color:var(--hare);text-align:center;line-height:1}
+.anhm .hx{grid-column:span 6;text-align:left}
+.anna{padding:18px 0;text-align:center;font-size:13px;color:var(--hare)}
+
 /* 上のステータス */
 .stats{display:flex;justify-content:space-between;align-items:center;padding:4px 18px 12px;border-bottom:2px solid var(--swan);margin:0 -16px 16px}
 .stat{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800}
@@ -327,6 +362,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
  <symbol id="i-book" viewBox="0 0 32 32"><path d="M2.5 7.4c4.2-1.9 8.8-1.7 12.5.8v19.4c-3.7-2.5-8.3-2.7-12.5-.8z" fill="#58cc02"/><path d="M29.5 7.4c-4.2-1.9-8.8-1.7-12.5.8v19.4c3.7-2.5 8.3-2.7 12.5-.8z" fill="#89e219"/><rect x="14.6" y="8" width="2.8" height="19.6" rx="1.2" fill="#58a700"/><path d="M5.6 12.2c2.4-.8 4.7-.6 6.6.4M5.6 16.4c2.4-.8 4.7-.6 6.6.4M19.8 12.6c1.9-1 4.2-1.2 6.6-.4" stroke="#d7ffb8" stroke-width="1.8" stroke-linecap="round" fill="none"/></symbol>
  <symbol id="i-face" viewBox="0 0 32 32"><rect x="4.5" y="3" width="23" height="26.5" rx="6" fill="#a568cc"/><rect x="4.5" y="2.5" width="23" height="24.5" rx="6" fill="#ce82ff"/><circle cx="16" cy="12" r="5.2" fill="#fff"/><path d="M7.6 25.6c1.3-5 4.6-7.3 8.4-7.3s7.1 2.3 8.4 7.3z" fill="#fff"/></symbol>
  <symbol id="i-cal" viewBox="0 0 32 32"><rect x="3.5" y="6" width="25" height="23.5" rx="6" fill="#e5e5e5"/><rect x="3.5" y="5" width="25" height="22.5" rx="6" fill="#fff" stroke="#e5e5e5" stroke-width="1.5"/><path d="M3.5 11a6 6 0 0 1 6-6h13a6 6 0 0 1 6 6z" fill="#ff4b4b"/><rect x="9" y="2.2" width="3" height="6" rx="1.5" fill="#ea2b2b"/><rect x="20" y="2.2" width="3" height="6" rx="1.5" fill="#ea2b2b"/><path d="M10.5 18.8l3.6 3.6 7.4-7.4" stroke="#58cc02" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+ <symbol id="i-chart" viewBox="0 0 32 32"><rect x="3.5" y="4" width="25" height="25.5" rx="6" fill="#e5e5e5"/><rect x="3.5" y="3" width="25" height="24" rx="6" fill="#fff" stroke="#e5e5e5" stroke-width="1.5"/><rect x="8" y="15" width="4.2" height="8" rx="1.6" fill="#ce82ff"/><rect x="13.9" y="10.5" width="4.2" height="12.5" rx="1.6" fill="#58cc02"/><rect x="19.8" y="13" width="4.2" height="10" rx="1.6" fill="#1cb0f6"/><path d="M8.5 11.5 15.5 7l6.8 3.2" stroke="#ffc800" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
  <symbol id="i-gear" viewBox="0 0 32 32"><path d="M13.5 2.5h5l.9 3.8 2.6 1.1 3.3-2.1 3.5 3.5-2.1 3.3 1.1 2.6 3.8.9v5l-3.8.9-1.1 2.6 2.1 3.3-3.5 3.5-3.3-2.1-2.6 1.1-.9 3.8h-5l-.9-3.8-2.6-1.1-3.3 2.1-3.5-3.5 2.1-3.3-1.1-2.6-3.8-.9v-5l3.8-.9 1.1-2.6-2.1-3.3 3.5-3.5 3.3 2.1 2.6-1.1z" fill="#afafaf"/><circle cx="16" cy="16" r="6.4" fill="#e5e5e5"/><circle cx="16" cy="16" r="3.6" fill="#fff"/></symbol>
  <symbol id="i-star" viewBox="0 0 32 32"><path d="M16 2.6l4.1 8.3 9.1 1.3-6.6 6.4 1.6 9.1L16 23.4l-8.2 4.3 1.6-9.1-6.6-6.4 9.1-1.3z" fill="#ffc800" stroke="#f5b100" stroke-width="1.6" stroke-linejoin="round"/></symbol>
  <symbol id="i-trophy" viewBox="0 0 32 32"><path d="M8 4h16v8a8 8 0 0 1-16 0z" fill="#ffc800"/><path d="M8 7H4.5a4.5 4.5 0 0 0 4.5 7M24 7h3.5a4.5 4.5 0 0 1-4.5 7" stroke="#f5b100" stroke-width="2.6" fill="none" stroke-linecap="round"/><rect x="14" y="19" width="4" height="5" fill="#f5b100"/><rect x="9" y="24" width="14" height="4.5" rx="2" fill="#f5b100"/></symbol>
@@ -412,6 +448,38 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   </div>
   <div class="box sttm">
     <div><span>今週</span><b id="lgWeek">0分</b></div><div><span>総学習時間</span><b id="stTotal">0分</b></div><div><span>学習回数</span><b id="stSess">0回</b></div>
+  </div>
+</section>
+
+<!-- 分析（数値とグラフ） -->
+<section class="screen" id="sAna">
+  <h1>分析</h1>
+  <div class="antl" id="anTiles"></div>
+  <div class="box">
+    <div class="anh"><div class="cap">日別の回答数と正答率</div><div class="small">直近30日</div></div>
+    <div id="anDaily"></div>
+    <div class="anlg" id="anDailyLg"><span><i style="background:var(--owl)"></i>単語</span><span><i style="background:var(--bet)"></i>顔</span><span><i class="ln" style="background:var(--eel)"></i>正答率</span></div>
+    <div class="ansum" id="anDailySum"></div>
+  </div>
+  <div class="box">
+    <div class="anh"><div class="cap">回答時間の分布（単語・正解）</div><div class="small">目標 0.5秒</div></div>
+    <div class="anmd" id="anMode"></div>
+    <div id="anTime"></div>
+    <div class="ansum" id="anTimeSum"></div>
+  </div>
+  <div class="box">
+    <div class="anh"><div class="cap">よく間違える単語</div><div class="small">✕の回数順・上位10</div></div>
+    <div class="anwk" id="anWeak"></div>
+  </div>
+  <div class="box">
+    <div class="cap">習熟度の内訳</div>
+    <div id="anMastery"></div>
+    <div class="small">要復習＝前回✕／学習中＝次の復習まで3〜7日／定着＝14日以上あけて大丈夫</div>
+  </div>
+  <div class="box">
+    <div class="anh"><div class="cap">解いている時間帯（単語）</div><div class="small" id="anHmN"></div></div>
+    <div id="anHeat"></div>
+    <div class="ansum" id="anHeatSum"></div>
   </div>
 </section>
 
@@ -505,6 +573,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <label data-t="sWords" class="on"><input type="checkbox" switch class="hsw"><svg><use href="#i-book"/></svg></label>
   <label data-t="sFaces"><input type="checkbox" switch class="hsw"><svg><use href="#i-face"/></svg></label>
   <label data-t="sLog"><input type="checkbox" switch class="hsw"><svg><use href="#i-cal"/></svg></label>
+  <label data-t="sAna"><input type="checkbox" switch class="hsw"><svg><use href="#i-chart"/></svg></label>
   <label data-t="sSet"><input type="checkbox" switch class="hsw"><svg><use href="#i-gear"/></svg></label>
 </nav>
 <canvas id="fx"></canvas>
@@ -738,7 +807,7 @@ document.addEventListener('visibilitychange', async () => {
   if (Sync.hiddenAt && Date.now() - Sync.hiddenAt > 60 * 60 * 1000 && await newVersion()) { flush(); return location.reload(); }
   if (await Sync.pull()) { show(tab); Sync.push(); } // 別の端末でやった分を開いた時に取り込む
 });
-const BUILD = '1791709757';
+const BUILD = '1791709995';
 async function newVersion() {
   try { const t = await (await fetch('./?chk=' + Date.now(), { cache: 'no-store' })).text(); const m = t.match(/const BUILD = '(\w+)'/); return !!(m && m[1] !== BUILD && BUILD !== '__' + 'BUILD__'); } catch { return false; }
 }
@@ -1086,10 +1155,11 @@ function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   document.body.classList.toggle('playing', id === 'play' || id === 'sDone' || id === 'fast');
   if (id !== 'play') $('sheet').classList.remove('on');
-  if (['sWords', 'sFaces', 'sLog', 'sSet'].includes(id)) { tab = id; document.querySelectorAll('nav label').forEach(b => b.classList.toggle('on', b.dataset.t === id)); }
+  if (['sWords', 'sFaces', 'sLog', 'sAna', 'sSet'].includes(id)) { tab = id; document.querySelectorAll('nav label').forEach(b => b.classList.toggle('on', b.dataset.t === id)); }
   if (id === 'sWords') renderHome('w');
   if (id === 'sFaces') renderHome('p');
   if (id === 'sLog') renderLog();
+  if (id === 'sAna') renderAna();
   if (id === 'sSet') renderSettings();
   if (id !== 'play') renderHud();
 }
@@ -1472,6 +1542,117 @@ function renderLog() {
   $('skBands').innerHTML = sk.bands.map(b => `<div class="skb"><div class="skl"><b>${b.name}</b><span>ランク ${b.rank}・覚えた ${b.known}%${b.acc != null ? `・直近正答 ${b.acc}%` : ''}</span></div><div class="seg15">${seg(b.rank)}</div></div>`).join('');
   $('lgWeek').textContent = `${wk.min} / ${wk.goal}分`; $('stTotal').textContent = `${tt.min >= 60 ? Math.floor(tt.min / 60) + '時間' : ''}${tt.min % 60}分`; $('stSess').textContent = `${tt.ss}回`;
 }
+// =========================================================
+// 分析（数値とグラフ）：端末の記録だけから計算する（推測の数字は出さない）
+//   日ごとの数 = S.days ／ 1問ごとの記録 = S.ev（単語のみ・2026-10-08〜・最新4,000件）／ 覚え具合 = S.cards
+// =========================================================
+const AN_TARGET = 500; // 回答時間の目標（ミリ秒）
+let anMode = '';
+const anJp = (() => { let m = null; return en => { if (!m) { m = {}; W.forEach(w => m[w.en] = w.jp); } return m[en] || ''; }; })();
+const anPct = (a, b) => b ? Math.round(a / b * 100) : null;
+const anSec = ms => ms == null ? '―' : (ms / 1000).toFixed(2);
+function anNice(v) { if (v <= 0) return 10; const m = Math.pow(10, Math.floor(Math.log10(v))); for (const f of [1, 2, 2.5, 5, 10]) if (f * m >= v) return f * m; return 10 * m; }
+// 単語の点数帯：記録タブの skill() があればそれを使う（同じ基準：帯の8割を「覚えた」で到達）
+function anReached() {
+  if (typeof skill === 'function') { try { return skill().reached || null; } catch {} }
+  const B = [['600点帯', 0, 500], ['730点帯', 500, 1000], ['860点帯', 1000, 1300], ['990点帯', 1300, W.length]]; let r = null;
+  for (const [name, a, b] of B) { const k = W.slice(a, b).filter(w => { const c = S.cards['w:' + w.en]; return c && c.b >= 2; }).length; if (k >= .8 * (b - a)) r = name; else break; }
+  return r;
+}
+function anTiles() {
+  const x = S.days[dayStr()], n = x ? (x.w || 0) + (x.p || 0) : 0, c = x ? (x.wc || 0) + (x.pc || 0) : 0;
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0); const s0 = t0.getTime() / 1000;
+  const tm = (S.ev || []).filter(e => e[0] >= s0 && e[2] === 1 && e[3] >= 0).map(e => e[3]);
+  const avg = tm.length ? tm.reduce((a, b) => a + b, 0) / tm.length : null;
+  const known = W.filter(w => { const k = S.cards['w:' + w.en]; return k && k.b >= 2; }).length;
+  const rc = anReached(), st = streak(), acc = anPct(c, n);
+  const tile = (lab, val, sub, cls = '') => `<div><span>${lab}</span><b class="${cls}">${val}</b><em>${sub}</em></div>`;
+  $('anTiles').innerHTML =
+    tile('今日の回答', n ? `${n}<small>問</small>` : '0<small>問</small>', n ? `単語${x.w || 0}・顔${x.p || 0}` : '記録なし', n ? '' : 'na') +
+    tile('今日の正答率', acc == null ? '―' : `${acc}<small>%</small>`, acc == null ? '記録なし' : `${c} / ${n}問`, acc == null ? 'na' : 'g') +
+    tile('平均回答時間', avg == null ? '―' : `${anSec(avg)}<small>秒</small>`, avg == null ? '記録なし' : `単語の正解${tm.length}問`, avg == null ? 'na' : '') +
+    tile('連続日数', `${st}<small>日</small>`, st ? '途切れず継続中' : '記録なし', st ? 'o' : 'na') +
+    tile('覚えた単語', `${known}<small>/${W.length}</small>`, `全体の${anPct(known, W.length)}%`, 'g') +
+    tile('推定到達点', rc || '―', rc ? '単語の目安' : '各帯8割で到達', rc ? 'g' : 'na');
+}
+function anDaily() {
+  const N = 30, d0 = dayNum() - N + 1, R = [];
+  for (let i = 0; i < N; i++) { const ds = dayStr(d0 + i), x = S.days[ds] || {}; const w = x.w || 0, p = x.p || 0, c = (x.wc || 0) + (x.pc || 0); R.push({ ds, w, p, n: w + p, acc: w + p ? c / (w + p) : null }); }
+  const act = R.filter(r => r.n);
+  $('anDailyLg').hidden = !act.length;
+  if (!act.length) { $('anDaily').innerHTML = '<div class="anna">直近30日は記録なし</div>'; $('anDailySum').textContent = ''; return; }
+  const VW = 330, VH = 170, L = 30, Rr = 30, T = 10, B = 22, cw = VW - L - Rr, ch = VH - T - B, bw = cw / N, mx = anNice(Math.max(...R.map(r => r.n)));
+  const y = v => T + ch - v / mx * ch, ya = a => T + ch - a * ch;
+  let s = '';
+  for (const f of [0, .5, 1]) s += `<line class="gl" x1="${L}" x2="${VW - Rr}" y1="${ya(f)}" y2="${ya(f)}"/><text x="${L - 4}" y="${ya(f) + 3.5}" text-anchor="end">${Math.round(mx * f)}</text><text x="${VW - Rr + 4}" y="${ya(f) + 3.5}">${f * 100}%</text>`;
+  R.forEach((r, i) => {
+    const x = L + i * bw + bw * .15, w = bw * .7;
+    if (r.w) s += `<rect x="${x}" y="${y(r.w)}" width="${w}" height="${T + ch - y(r.w)}" rx="1.5" fill="var(--owl)"/>`;
+    if (r.p) s += `<rect x="${x}" y="${y(r.n)}" width="${w}" height="${y(r.w) - y(r.n)}" rx="1.5" fill="var(--bet)"/>`;
+    if ((N - 1 - i) % 7 === 0) { const [, m, d] = r.ds.split('-'); s += `<text x="${L + i * bw + bw / 2}" y="${VH - 6}" text-anchor="middle">${+m}/${+d}</text>`; }
+  });
+  let path = '', pen = false; R.forEach((r, i) => { if (r.acc == null) { pen = false; return; } path += `${pen ? 'L' : 'M'}${(L + i * bw + bw / 2).toFixed(1)} ${ya(r.acc).toFixed(1)}`; pen = true; });
+  s += `<path d="${path}" fill="none" stroke="var(--eel)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  R.forEach((r, i) => { if (r.acc != null) s += `<circle cx="${(L + i * bw + bw / 2).toFixed(1)}" cy="${ya(r.acc).toFixed(1)}" r="2.6" fill="#fff" stroke="var(--eel)" stroke-width="1.6"/>`; });
+  $('anDaily').innerHTML = `<svg class="anc" viewBox="0 0 ${VW} ${VH}">${s}</svg>`;
+  const tot = act.reduce((a, r) => a + r.n, 0), ok = act.reduce((a, r) => a + r.acc * r.n, 0), best = act.reduce((a, r) => r.n > a.n ? r : a);
+  const [, bm, bd] = best.ds.split('-');
+  $('anDailySum').innerHTML = `学習した日 <b>${act.length}</b>/30日・合計 <b>${tot}</b>問・平均正答率 <b>${Math.round(ok / tot * 100)}%</b><br>いちばん解いた日 ${+bm}/${+bd}（${best.n}問）`;
+}
+function anTime() {
+  const MD = [['f', '高速'], ['q', '4択'], ['c', 'カード']];
+  const rows = md => (S.ev || []).filter(e => e[2] === 1 && e[3] >= 0 && String(e[4])[0] === md).slice(-500);
+  const cnt = Object.fromEntries(MD.map(([m]) => [m, rows(m).length]));
+  if (!anMode || !cnt[anMode]) anMode = MD.map(m => m[0]).sort((a, b) => cnt[b] - cnt[a])[0];
+  const el = $('anMode'); el.innerHTML = MD.map(([m, l]) => `<button data-m="${m}" class="${m === anMode ? 'on' : ''}"${cnt[m] ? '' : ' disabled'}>${l}</button>`).join('');
+  el.querySelectorAll('button').forEach(b => onTap(b, () => { anMode = b.dataset.m; anTime(); }));
+  const ms = rows(anMode).map(e => e[3]);
+  if (!ms.length) { $('anTime').innerHTML = '<div class="anna">回答時間の記録なし</div>'; $('anTimeSum').textContent = ''; return; }
+  const BIN = [[0, 500, '〜0.5'], [500, 1000, '〜1'], [1000, 1500, '〜1.5'], [1500, 2000, '〜2'], [2000, 3000, '〜3'], [3000, 4000, '〜4'], [4000, 6000, '〜6'], [6000, 1e9, '6〜']];
+  const h = BIN.map(([a, b]) => ms.filter(v => v >= a && v < b).length);
+  const VW = 330, VH = 140, L = 30, T = 14, B = 20, cw = VW - L - 4, ch = VH - T - B, bw = cw / BIN.length, mx = anNice(Math.max(...h));
+  let s = '';
+  for (const f of [0, .5, 1]) { const yy = T + ch - f * ch; s += `<line class="gl" x1="${L}" x2="${VW - 4}" y1="${yy}" y2="${yy}"/><text x="${L - 4}" y="${yy + 3.5}" text-anchor="end">${Math.round(mx * f)}</text>`; }
+  h.forEach((v, i) => {
+    const x = L + i * bw + bw * .12, w = bw * .76, hh = v / mx * ch;
+    if (v) s += `<rect x="${x}" y="${T + ch - hh}" width="${w}" height="${hh}" rx="3" fill="${i === 0 ? 'var(--owl)' : i < 2 ? 'var(--owl-l)' : 'var(--swan)'}"/>`;
+    if (v) s += `<text x="${x + w / 2}" y="${T + ch - hh - 3}" text-anchor="middle" style="fill:var(--wolf)">${Math.round(v / ms.length * 100)}%</text>`;
+    s += `<text x="${x + w / 2}" y="${VH - 5}" text-anchor="middle">${BIN[i][2]}</text>`;
+  });
+  $('anTime').innerHTML = `<svg class="anc" viewBox="0 0 ${VW} ${VH}">${s}</svg>`;
+  const so = ms.slice().sort((a, b) => a - b), med = so[Math.floor(so.length / 2)], avg = ms.reduce((a, b) => a + b, 0) / ms.length;
+  const lab = anMode === 'f' ? '出てから裏返すまで' : '出てから答えるまで';
+  $('anTimeSum').innerHTML = `0.5秒以内 <b>${anPct(h[0], ms.length)}%</b>・中央値 <b>${anSec(med)}秒</b>・平均 ${anSec(avg)}秒<br><span class="small">直近${ms.length}問（${lab}・単位は秒）</span>`;
+}
+function anWeak() {
+  const miss = {}; for (const e of S.ev || []) if (!e[2]) miss[e[1]] = (miss[e[1]] || 0) + 1;
+  const L = W.map(w => ({ en: w.en, c: S.cards['w:' + w.en] })).filter(o => o.c && o.c.w > 0)
+    .sort((a, b) => b.c.w - a.c.w || b.c.w / b.c.n - a.c.w / a.c.n || (miss[b.en] || 0) - (miss[a.en] || 0)).slice(0, 10);
+  $('anWeak').innerHTML = L.length ? L.map((o, i) => `<div><span class="r">${i + 1}</span><div class="w"><b>${esc(o.en)}</b><span>${esc(anJp(o.en))}</span></div><div class="x">✕${o.c.w}<small>${o.c.n}回中${o.c.b === 1 ? '・要復習' : ''}</small></div></div>`).join('') : '<div class="anna">間違えた単語の記録なし</div>';
+}
+function anMastery() {
+  const C = [['未学習', 'var(--swan)'], ['要復習', 'var(--car)'], ['学習中', 'var(--fox)'], ['定着', 'var(--owl)']];
+  const grp = keys => { const n = [0, 0, 0, 0]; keys.forEach(k => { const c = S.cards[k]; n[!c || !c.n ? 0 : c.b <= 1 ? 1 : c.b <= 3 ? 2 : 3]++; }); return n; };
+  const one = (lab, keys) => { const n = grp(keys), t = keys.length || 1;
+    return `<div class="anh" style="margin:10px 0 0"><b style="font-size:14px">${lab}</b><span class="small">${keys.length}${lab === '単語' ? '語' : '人'}</span></div><div class="anms">${n.map((v, i) => v ? `<i style="width:${v / t * 100}%;background:${C[i][1]}"></i>` : '').join('')}</div>` +
+      `<div class="anmr">${n.map((v, i) => `<div><i style="background:${C[i][1]}"></i>${C[i][0]}<b>${v}</b>${Math.round(v / t * 100)}%</div>`).join('')}</div>`; };
+  $('anMastery').innerHTML = one('単語', W.map(w => 'w:' + w.en)) + one('顔', P.map(p => 'p:' + p.id));
+}
+function anHeat() {
+  const ev = S.ev || [];
+  if (!ev.length) { $('anHeat').innerHTML = '<div class="anna">1問ごとの記録なし</div>'; $('anHeatSum').textContent = ''; $('anHmN').textContent = ''; return; }
+  const g = Array.from({ length: 7 }, () => new Array(24).fill(0)), hr = new Array(24).fill(0);
+  for (const e of ev) { const d = new Date(e[0] * 1000), wd = (d.getDay() + 6) % 7, h = d.getHours(); g[wd][h]++; hr[h]++; }
+  const mx = Math.max(...g.flat());
+  let s = '';
+  '月火水木金土日'.split('').forEach((l, r) => { s += `<span>${l}</span>` + g[r].map((v, h) => `<i title="${l} ${h}時 ${v}問"${v ? ` style="background:rgba(88,204,2,${(.18 + .82 * v / mx).toFixed(2)})"` : ''}></i>`).join(''); });
+  s += '<span></span>' + [0, 6, 12, 18].map(h => `<span class="hx">${h}時</span>`).join('');
+  $('anHeat').innerHTML = `<div class="anhm">${s}</div>`;
+  const pk = hr.indexOf(Math.max(...hr)), d0 = new Date(ev[0][0] * 1000);
+  $('anHmN').textContent = `${d0.getMonth() + 1}/${d0.getDate()}〜・${ev.length}問`;
+  $('anHeatSum').innerHTML = `いちばん解いている時間 <b>${pk}時台</b>（${anPct(hr[pk], ev.length)}%）`;
+}
+function renderAna() { anTiles(); anDaily(); anTime(); anWeak(); anMastery(); anHeat(); }
 function levels(type, el) {
   const keys = type === 'w' ? W.map(w => 'w:' + w.en) : P.map(p => 'p:' + p.id);
   const n = new Array(INT.length + 1).fill(0);
