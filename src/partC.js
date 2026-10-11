@@ -276,6 +276,7 @@ function renderHome(type) {
   const c = counts(type);
   $(pre + 'Learned').textContent = c.learned; $(pre + 'Due').textContent = c.dueTomorrow; $(pre + 'New').textContent = c.unseen;
   if (type === 'p') renderChips();
+  if (type === 'w') homeAna();
   if (type === 'w') { // 今週の学習時間と実力ランク
     const wk = studyWeek(), sk = skill();
     $('wkMin').textContent = wk.min; $('wkGoal').textContent = ` / ${wk.goal}分`; $('wkRank').textContent = sk.rank;
@@ -729,6 +730,17 @@ function anHeat() {
   $('anHmN').textContent = `${d0.getMonth() + 1}/${d0.getDate()}〜・${ev.length}問`;
   $('anHeatSum').innerHTML = `いちばん解いている時間 <b>${pk}時台</b>（${anPct(hr[pk], ev.length)}%）`;
 }
+// ホームの実力カード：TOEICの語彙レベル（skill の到達判定）・直近7日の正答率・回答速度の中央値・点数帯ごとの覚えた割合
+function homeAna() {
+  const sk = skill();
+  $('hkLv').innerHTML = sk.reached ? `<b>${sk.reached}</b><span>の語彙が身についている</span>` : `<b class="na">600点帯の手前</b><span>600点帯の語彙 ${sk.bands[0].known}%</span>`;
+  let n = 0, c = 0; for (let i = 0; i < 7; i++) { const x = S.days[dayStr(dayNum() - i)]; if (x) { n += x.w || 0; c += x.wc || 0; } }
+  const ms = (S.ev || []).filter(e => e[2] === 1 && e[3] >= 0).slice(-200).map(e => e[3]).sort((a, b) => a - b), med = ms.length ? ms[Math.floor(ms.length / 2)] : null;
+  const st = (lab, val, sub, cls = '') => `<div><span>${lab}</span><b class="${val == null ? 'na' : ''}">${val == null ? '記録なし' : val}</b><em class="${cls}">${sub}</em></div>`;
+  $('hkSt').innerHTML = st('平均正答率（7日）', n ? `${Math.round(c / n * 100)}<small>%</small>` : null, n ? `単語 ${c} / ${n}問` : '直近7日の単語') +
+    st('回答速度（中央値）', med == null ? null : `${(med / 1000).toFixed(2)}<small>秒</small>`, med == null ? '目標 0.5秒' : med <= AN_TARGET ? '目標0.5秒を達成' : `目標0.5秒より +${((med - AN_TARGET) / 1000).toFixed(2)}秒`, med != null && med <= AN_TARGET ? 'ok' : '');
+  $('hkBd').innerHTML = sk.bands.map(b => `<span>${b.name}</span><div class="t"><i class="${b.known >= 80 ? 'on' : ''}" style="width:${b.known}%"></i></div><b>${b.known}%</b>`).join('') + `<span></span><span class="small" style="grid-column:span 2">点数帯ごとの覚えた割合（線＝8割で到達）</span>`;
+}
 function renderAna() { anTiles(); anDaily(); anTime(); anWeak(); anMastery(); anHeat(); }
 function levels(type, el) {
   const keys = type === 'w' ? W.map(w => 'w:' + w.en) : P.map(p => 'p:' + p.id);
@@ -836,6 +848,7 @@ async function boot() {
 }
 
 FX.setup();
+onTap($('hk'), () => { wake(); Sound.tap(); show('sAna'); });
 document.querySelectorAll('nav label').forEach(b => onTap(b, () => { wake(); if (b.dataset.t !== tab) Sound.tap(); show(b.dataset.t); }));
 const wMode = () => (S.settings.mode && S.settings.mode.w) || 'quiz';
 onTap($('wStart'), () => wMode() === 'fast' ? fastStart() : start('w'));

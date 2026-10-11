@@ -93,6 +93,20 @@ h1{font-size:24px;font-weight:800;margin:4px 0 16px}
 .seg15{display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin-top:6px} .seg15 i{height:10px;border-radius:3px;background:var(--swan)} .seg15 i.on{background:var(--owl-d)}
 .sttm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center} .sttm span{display:block;font-size:12px;color:var(--wolf)} .sttm b{font-size:17px;font-weight:900;color:var(--ink)}
 
+/* ホームの実力カード（押すと分析へ） */
+.hk{display:block;margin:12px 0 0;cursor:pointer}
+.hk:active{transform:translateY(2px)}
+.hkt{display:flex;justify-content:space-between;align-items:center} .hkt .cap{display:flex;align-items:center;gap:2px} .hkt .go{display:flex;align-items:center;font-size:12px;color:var(--eel-d)} .hkt .go svg{width:14px;height:14px}
+.hkl{display:flex;align-items:baseline;gap:8px;margin:2px 0 8px} .hkl b{font-size:28px;font-weight:900;color:var(--owl-d);line-height:1.15} .hkl b.na{color:var(--hare);font-size:22px} .hkl span{font-size:12px;color:var(--wolf)}
+.hks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.hks>div{background:var(--polar);border-radius:12px;padding:8px 10px;min-width:0}
+.hks span{display:block;font-size:11px;color:var(--wolf)} .hks b{display:block;font-size:20px;font-weight:900;line-height:1.3;font-variant-numeric:tabular-nums} .hks b small{font-size:12px;color:var(--hare);margin-left:1px} .hks b.na{color:var(--hare);font-size:16px}
+.hks em{display:block;font-style:normal;font-size:11px;color:var(--hare);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .hks em.ok{color:var(--owl-d)}
+.hkb{display:grid;grid-template-columns:52px 1fr 34px;gap:4px 8px;align-items:center;font-size:11px;color:var(--wolf)}
+.hkb .t{position:relative;height:8px;border-radius:99px;background:var(--swan)} .hkb .t i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--owl)} .hkb .t i.on{background:var(--owl-d)}
+.hkb .t::after{content:"";position:absolute;left:80%;top:-2px;bottom:-2px;width:2px;border-radius:1px;background:var(--hare)}
+.hkb b{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+
 /* 分析（数値とグラフ）：SVGを手で描く・動きなし */
 .antl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:16px}
 .antl>div{border:2px solid var(--swan);border-bottom-width:4px;border-radius:14px;padding:10px 8px 8px;min-width:0}
@@ -404,6 +418,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   </div>
   <label class="btn" id="wStart"><input type="checkbox" switch class="hsw"><span class="tx">スタート</span></label>
   <label class="btn eel" id="wMore" style="margin-top:12px;display:none"><input type="checkbox" switch class="hsw"><span class="tx">＋100語</span></label>
+  <div class="box hk" id="hk"><div class="hkt"><div class="cap">いまの実力（単語）</div><div class="go">分析<svg><use href="#i-chev"/></svg></div></div><div class="hkl" id="hkLv"></div><div class="hks" id="hkSt"></div><div class="hkb" id="hkBd"></div></div>
   <div class="trio"><div><b id="wLearned">0</b><span>定着</span></div><div><b id="wDue">0</b><span>明日の復習</span></div><div><b id="wNew">0</b><span>未出題</span></div></div>
 </section>
 
@@ -807,7 +822,7 @@ document.addEventListener('visibilitychange', async () => {
   if (Sync.hiddenAt && Date.now() - Sync.hiddenAt > 60 * 60 * 1000 && await newVersion()) { flush(); return location.reload(); }
   if (await Sync.pull()) { show(tab); Sync.push(); } // 別の端末でやった分を開いた時に取り込む
 });
-const BUILD = '1791709995';
+const BUILD = '1791710551';
 async function newVersion() {
   try { const t = await (await fetch('./?chk=' + Date.now(), { cache: 'no-store' })).text(); const m = t.match(/const BUILD = '(\w+)'/); return !!(m && m[1] !== BUILD && BUILD !== '__' + 'BUILD__'); } catch { return false; }
 }
@@ -1199,6 +1214,7 @@ function renderHome(type) {
   const c = counts(type);
   $(pre + 'Learned').textContent = c.learned; $(pre + 'Due').textContent = c.dueTomorrow; $(pre + 'New').textContent = c.unseen;
   if (type === 'p') renderChips();
+  if (type === 'w') homeAna();
   if (type === 'w') { // 今週の学習時間と実力ランク
     const wk = studyWeek(), sk = skill();
     $('wkMin').textContent = wk.min; $('wkGoal').textContent = ` / ${wk.goal}分`; $('wkRank').textContent = sk.rank;
@@ -1652,6 +1668,17 @@ function anHeat() {
   $('anHmN').textContent = `${d0.getMonth() + 1}/${d0.getDate()}〜・${ev.length}問`;
   $('anHeatSum').innerHTML = `いちばん解いている時間 <b>${pk}時台</b>（${anPct(hr[pk], ev.length)}%）`;
 }
+// ホームの実力カード：TOEICの語彙レベル（skill の到達判定）・直近7日の正答率・回答速度の中央値・点数帯ごとの覚えた割合
+function homeAna() {
+  const sk = skill();
+  $('hkLv').innerHTML = sk.reached ? `<b>${sk.reached}</b><span>の語彙が身についている</span>` : `<b class="na">600点帯の手前</b><span>600点帯の語彙 ${sk.bands[0].known}%</span>`;
+  let n = 0, c = 0; for (let i = 0; i < 7; i++) { const x = S.days[dayStr(dayNum() - i)]; if (x) { n += x.w || 0; c += x.wc || 0; } }
+  const ms = (S.ev || []).filter(e => e[2] === 1 && e[3] >= 0).slice(-200).map(e => e[3]).sort((a, b) => a - b), med = ms.length ? ms[Math.floor(ms.length / 2)] : null;
+  const st = (lab, val, sub, cls = '') => `<div><span>${lab}</span><b class="${val == null ? 'na' : ''}">${val == null ? '記録なし' : val}</b><em class="${cls}">${sub}</em></div>`;
+  $('hkSt').innerHTML = st('平均正答率（7日）', n ? `${Math.round(c / n * 100)}<small>%</small>` : null, n ? `単語 ${c} / ${n}問` : '直近7日の単語') +
+    st('回答速度（中央値）', med == null ? null : `${(med / 1000).toFixed(2)}<small>秒</small>`, med == null ? '目標 0.5秒' : med <= AN_TARGET ? '目標0.5秒を達成' : `目標0.5秒より +${((med - AN_TARGET) / 1000).toFixed(2)}秒`, med != null && med <= AN_TARGET ? 'ok' : '');
+  $('hkBd').innerHTML = sk.bands.map(b => `<span>${b.name}</span><div class="t"><i class="${b.known >= 80 ? 'on' : ''}" style="width:${b.known}%"></i></div><b>${b.known}%</b>`).join('') + `<span></span><span class="small" style="grid-column:span 2">点数帯ごとの覚えた割合（線＝8割で到達）</span>`;
+}
 function renderAna() { anTiles(); anDaily(); anTime(); anWeak(); anMastery(); anHeat(); }
 function levels(type, el) {
   const keys = type === 'w' ? W.map(w => 'w:' + w.en) : P.map(p => 'p:' + p.id);
@@ -1759,6 +1786,7 @@ async function boot() {
 }
 
 FX.setup();
+onTap($('hk'), () => { wake(); Sound.tap(); show('sAna'); });
 document.querySelectorAll('nav label').forEach(b => onTap(b, () => { wake(); if (b.dataset.t !== tab) Sound.tap(); show(b.dataset.t); }));
 const wMode = () => (S.settings.mode && S.settings.mode.w) || 'quiz';
 onTap($('wStart'), () => wMode() === 'fast' ? fastStart() : start('w'));
