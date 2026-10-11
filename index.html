@@ -94,6 +94,12 @@ h1{font-size:24px;font-weight:800;margin:4px 0 16px}
 .sttm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center} .sttm span{display:block;font-size:12px;color:var(--wolf)} .sttm b{font-size:17px;font-weight:900;color:var(--ink)}
 
 /* ホームの実力カード（押すと分析へ） */
+.tdl{margin:12px 0 10px;font-size:14px;color:var(--wolf);text-align:center} .tdl b{font-size:17px;font-weight:900;color:var(--owl-d);margin:0 1px}
+.hkg{display:flex;align-items:center;gap:8px;margin:-2px 0 10px;min-width:0}
+.hkg select{flex:none;font:inherit;font-size:13px;font-weight:800;color:var(--eel-d);background:var(--eel-p);border:2px solid #84d8ff;border-radius:10px;height:32px;padding:0 8px;-webkit-appearance:none;appearance:none}
+.hkg span{min-width:0;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .hkg span b{font-weight:900} .hkg span.ok{color:var(--owl-d)}
+.hkb span.g{color:var(--eel-d);font-weight:900} .hkb .t.g{box-shadow:0 0 0 2px #84d8ff}
+
 .hk{display:block;margin:12px 0 0;cursor:pointer}
 .hk:active{transform:translateY(2px)}
 .hkt{display:flex;justify-content:space-between;align-items:center} .hkt .cap{display:flex;align-items:center;gap:2px} .hkt .go{display:flex;align-items:center;font-size:12px;color:var(--eel-d)} .hkt .go svg{width:14px;height:14px}
@@ -409,16 +415,10 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="box" data-lvcard></div>
   <div class="seg s3" data-type="w"><label data-m="fast"><input type="checkbox" switch class="hsw">高速</label><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
   <div class="wk"><div class="wkt"><span>今週 <b id="wkMin">0</b><small id="wkGoal"> / 150分</small></span><span class="wkr">ランク <b id="wkRank">1</b><small> / 15</small></span></div><div class="bar"><i id="wkBar"></i></div></div>
-  <div class="coach" id="wCoach" hidden></div>
-  <div class="box">
-    <div class="cap">今日の単語</div>
-    <div class="big"><span id="wDone">0</span><small id="wOf"> / 100</small></div>
-    <div class="bar"><i id="wBar"></i></div>
-    <div class="pills" id="wMix"></div>
-  </div>
+  <div class="tdl">今日 <b id="wDone">0</b><span id="wOf"> / 100</span>語<i id="wBar" hidden></i><span id="wMix" hidden></span></div>
   <label class="btn" id="wStart"><input type="checkbox" switch class="hsw"><span class="tx">スタート</span></label>
   <label class="btn eel" id="wMore" style="margin-top:12px;display:none"><input type="checkbox" switch class="hsw"><span class="tx">＋100語</span></label>
-  <div class="box hk" id="hk"><div class="hkt"><div class="cap">いまの実力（単語）</div><div class="go">分析<svg><use href="#i-chev"/></svg></div></div><div class="hkl" id="hkLv"></div><div class="hks" id="hkSt"></div><div class="hkb" id="hkBd"></div></div>
+  <div class="box hk" id="hk"><div class="hkt"><div class="cap">いまの実力（単語）</div><div class="go">分析<svg><use href="#i-chev"/></svg></div></div><div class="hkl" id="hkLv"></div><div class="hkg"><select id="hkSel" aria-label="目標の点数帯"><option value="">目標：未設定</option><option value="600点帯">目標 600点帯</option><option value="730点帯">目標 730点帯</option><option value="860点帯">目標 860点帯</option><option value="990点帯">目標 990点帯</option></select><span id="hkGoal"></span></div><div class="hks" id="hkSt"></div><div class="hkb" id="hkBd"></div></div>
   <div class="trio"><div><b id="wLearned">0</b><span>定着</span></div><div><b id="wDue">0</b><span>明日の復習</span></div><div><b id="wNew">0</b><span>未出題</span></div></div>
 </section>
 
@@ -621,7 +621,7 @@ function pgroup(p) { return p.g === 'tora' ? 'tora' + p.tier : p.g; }
 // =========================================================
 // 保存（localStorage ＋ IndexedDB の二重化・1問ごとに即保存）
 // =========================================================
-const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, flash: 0, weekGoal: 150, mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
+const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, flash: 0, weekGoal: 150, goalBand: '860点帯', mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
 let S;
 function fresh() {
   return { v: 2, updatedAt: 0, cards: {}, days: {}, today: {}, order: shuffle(W.map(w => w.en)), settings: structuredClone(DEF_SETTINGS) };
@@ -822,7 +822,7 @@ document.addEventListener('visibilitychange', async () => {
   if (Sync.hiddenAt && Date.now() - Sync.hiddenAt > 60 * 60 * 1000 && await newVersion()) { flush(); return location.reload(); }
   if (await Sync.pull()) { show(tab); Sync.push(); } // 別の端末でやった分を開いた時に取り込む
 });
-const BUILD = '1791710551';
+const BUILD = '1791710762';
 async function newVersion() {
   try { const t = await (await fetch('./?chk=' + Date.now(), { cache: 'no-store' })).text(); const m = t.match(/const BUILD = '(\w+)'/); return !!(m && m[1] !== BUILD && BUILD !== '__' + 'BUILD__'); } catch { return false; }
 }
@@ -1220,7 +1220,7 @@ function renderHome(type) {
     $('wkMin').textContent = wk.min; $('wkGoal').textContent = ` / ${wk.goal}分`; $('wkRank').textContent = sk.rank;
     requestAnimationFrame(() => $('wkBar').style.width = Math.min(100, wk.min / Math.max(1, wk.goal) * 100) + '%');
   }
-  if (type === 'w') { const cn = $('wCoach'), n = Plan.v && Plan.v.note; cn.hidden = !n; if (n) cn.innerHTML = `<b>AIコーチ</b>${esc(n)}`; }
+  if (type === 'w') { const cn = $('wCoach'), n = Plan.v && Plan.v.note; if (cn) { cn.hidden = !n; if (n) cn.innerHTML = `<b>AIコーチ</b>${esc(n)}`; } } // ホームからは外した（2026-10-11）
   const md = (S.settings.mode && S.settings.mode[type]) || 'quiz';
   document.querySelectorAll(`.seg[data-type="${type}"] label`).forEach(l => l.classList.toggle('on', l.dataset.m === md));
 }
@@ -1677,7 +1677,11 @@ function homeAna() {
   const st = (lab, val, sub, cls = '') => `<div><span>${lab}</span><b class="${val == null ? 'na' : ''}">${val == null ? '記録なし' : val}</b><em class="${cls}">${sub}</em></div>`;
   $('hkSt').innerHTML = st('平均正答率（7日）', n ? `${Math.round(c / n * 100)}<small>%</small>` : null, n ? `単語 ${c} / ${n}問` : '直近7日の単語') +
     st('回答速度（中央値）', med == null ? null : `${(med / 1000).toFixed(2)}<small>秒</small>`, med == null ? '目標 0.5秒' : med <= AN_TARGET ? '目標0.5秒を達成' : `目標0.5秒より +${((med - AN_TARGET) / 1000).toFixed(2)}秒`, med != null && med <= AN_TARGET ? 'ok' : '');
-  $('hkBd').innerHTML = sk.bands.map(b => `<span>${b.name}</span><div class="t"><i class="${b.known >= 80 ? 'on' : ''}" style="width:${b.known}%"></i></div><b>${b.known}%</b>`).join('') + `<span></span><span class="small" style="grid-column:span 2">点数帯ごとの覚えた割合（線＝8割で到達）</span>`;
+  const gb = S.settings.goalBand || '', gi = BANDS.findIndex(b => b[0] === gb); $('hkSel').value = gi >= 0 ? gb : '';
+  if (gi < 0) { $('hkGoal').className = ''; $('hkGoal').textContent = '点数帯を選ぶ'; }
+  else { const [, a, z] = BANDS[gi], k = W.slice(a, z).filter(w => { const c = S.cards['w:' + w.en]; return c && c.b >= 2; }).length, need = Math.ceil((z - a) * .8) - k;
+    $('hkGoal').className = need <= 0 ? 'ok' : ''; $('hkGoal').innerHTML = need <= 0 ? `${gb}の8割を達成` : `まで あと<b>${need}</b>語（${Math.round(k / (z - a) * 100)}%）`; }
+  $('hkBd').innerHTML = sk.bands.map(b => `<span class="${b.name === gb ? 'g' : ''}">${b.name}</span><div class="t${b.name === gb ? ' g' : ''}"><i class="${b.known >= 80 ? 'on' : ''}" style="width:${b.known}%"></i></div><b>${b.known}%</b>`).join('') + `<span></span><span class="small" style="grid-column:span 2">点数帯ごとの覚えた割合（線＝8割で到達）</span>`;
 }
 function renderAna() { anTiles(); anDaily(); anTime(); anWeak(); anMastery(); anHeat(); }
 function levels(type, el) {
@@ -1786,7 +1790,8 @@ async function boot() {
 }
 
 FX.setup();
-onTap($('hk'), () => { wake(); Sound.tap(); show('sAna'); });
+onTap($('hk'), e => { if (e.target.closest('select')) return; wake(); Sound.tap(); show('sAna'); });
+$('hkSel').addEventListener('change', e => { S.settings.goalBand = e.target.value; save(); homeAna(); });
 document.querySelectorAll('nav label').forEach(b => onTap(b, () => { wake(); if (b.dataset.t !== tab) Sound.tap(); show(b.dataset.t); }));
 const wMode = () => (S.settings.mode && S.settings.mode.w) || 'quiz';
 onTap($('wStart'), () => wMode() === 'fast' ? fastStart() : start('w'));

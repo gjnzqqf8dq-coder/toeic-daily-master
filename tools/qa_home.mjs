@@ -15,6 +15,9 @@ for (const [name, eng, opt] of [['ios', webkit, { ...devices['iPhone 13'] }], ['
     S.ev = Array.from({ length: 300 }, (_, k) => [Math.floor(now - 3000 + k), W[k].en, rnd() < .8 ? 1 : 0, Math.round(300 + rnd() * 900), 'f']);
     W.slice(0, 900).forEach((w, i) => S.cards['w:' + w.en] = { b: i < 450 ? 4 : rnd() < .5 ? 2 : 1, n: 2, w: 1, d: 0, l: 0 }); A.show('sWords'); });
   await sleep(400); const r2 = await of(); await shot('data');
+  await p.selectOption('#hkSel', '730点帯'); await sleep(200);
+  const g = await p.evaluate(() => [window.__app.S.settings.goalBand, document.querySelector('.screen.on').id, document.getElementById('hkGoal').textContent, !!document.getElementById('wCoach'), document.getElementById('wDone').parentElement.textContent].join(' | '));
+  console.log(name, 'goal:', g);
   if (opt.hasTouch) await p.tap('#hk'); else await p.click('#hk'); await sleep(300);
   const on = await p.evaluate(() => document.querySelector('.screen.on').id + '/' + document.querySelector('nav label.on').dataset.t);
   console.log(name, 'overflow', r1, r2, 'tap->', on, 'errors', JSON.stringify(errs)); await b.close();

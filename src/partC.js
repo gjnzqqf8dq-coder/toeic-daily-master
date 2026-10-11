@@ -282,7 +282,7 @@ function renderHome(type) {
     $('wkMin').textContent = wk.min; $('wkGoal').textContent = ` / ${wk.goal}分`; $('wkRank').textContent = sk.rank;
     requestAnimationFrame(() => $('wkBar').style.width = Math.min(100, wk.min / Math.max(1, wk.goal) * 100) + '%');
   }
-  if (type === 'w') { const cn = $('wCoach'), n = Plan.v && Plan.v.note; cn.hidden = !n; if (n) cn.innerHTML = `<b>AIコーチ</b>${esc(n)}`; }
+  if (type === 'w') { const cn = $('wCoach'), n = Plan.v && Plan.v.note; if (cn) { cn.hidden = !n; if (n) cn.innerHTML = `<b>AIコーチ</b>${esc(n)}`; } } // ホームからは外した（2026-10-11）
   const md = (S.settings.mode && S.settings.mode[type]) || 'quiz';
   document.querySelectorAll(`.seg[data-type="${type}"] label`).forEach(l => l.classList.toggle('on', l.dataset.m === md));
 }
@@ -739,7 +739,11 @@ function homeAna() {
   const st = (lab, val, sub, cls = '') => `<div><span>${lab}</span><b class="${val == null ? 'na' : ''}">${val == null ? '記録なし' : val}</b><em class="${cls}">${sub}</em></div>`;
   $('hkSt').innerHTML = st('平均正答率（7日）', n ? `${Math.round(c / n * 100)}<small>%</small>` : null, n ? `単語 ${c} / ${n}問` : '直近7日の単語') +
     st('回答速度（中央値）', med == null ? null : `${(med / 1000).toFixed(2)}<small>秒</small>`, med == null ? '目標 0.5秒' : med <= AN_TARGET ? '目標0.5秒を達成' : `目標0.5秒より +${((med - AN_TARGET) / 1000).toFixed(2)}秒`, med != null && med <= AN_TARGET ? 'ok' : '');
-  $('hkBd').innerHTML = sk.bands.map(b => `<span>${b.name}</span><div class="t"><i class="${b.known >= 80 ? 'on' : ''}" style="width:${b.known}%"></i></div><b>${b.known}%</b>`).join('') + `<span></span><span class="small" style="grid-column:span 2">点数帯ごとの覚えた割合（線＝8割で到達）</span>`;
+  const gb = S.settings.goalBand || '', gi = BANDS.findIndex(b => b[0] === gb); $('hkSel').value = gi >= 0 ? gb : '';
+  if (gi < 0) { $('hkGoal').className = ''; $('hkGoal').textContent = '点数帯を選ぶ'; }
+  else { const [, a, z] = BANDS[gi], k = W.slice(a, z).filter(w => { const c = S.cards['w:' + w.en]; return c && c.b >= 2; }).length, need = Math.ceil((z - a) * .8) - k;
+    $('hkGoal').className = need <= 0 ? 'ok' : ''; $('hkGoal').innerHTML = need <= 0 ? `${gb}の8割を達成` : `まで あと<b>${need}</b>語（${Math.round(k / (z - a) * 100)}%）`; }
+  $('hkBd').innerHTML = sk.bands.map(b => `<span class="${b.name === gb ? 'g' : ''}">${b.name}</span><div class="t${b.name === gb ? ' g' : ''}"><i class="${b.known >= 80 ? 'on' : ''}" style="width:${b.known}%"></i></div><b>${b.known}%</b>`).join('') + `<span></span><span class="small" style="grid-column:span 2">点数帯ごとの覚えた割合（線＝8割で到達）</span>`;
 }
 function renderAna() { anTiles(); anDaily(); anTime(); anWeak(); anMastery(); anHeat(); }
 function levels(type, el) {
@@ -848,7 +852,8 @@ async function boot() {
 }
 
 FX.setup();
-onTap($('hk'), () => { wake(); Sound.tap(); show('sAna'); });
+onTap($('hk'), e => { if (e.target.closest('select')) return; wake(); Sound.tap(); show('sAna'); });
+$('hkSel').addEventListener('change', e => { S.settings.goalBand = e.target.value; save(); homeAna(); });
 document.querySelectorAll('nav label').forEach(b => onTap(b, () => { wake(); if (b.dataset.t !== tab) Sound.tap(); show(b.dataset.t); }));
 const wMode = () => (S.settings.mode && S.settings.mode.w) || 'quiz';
 onTap($('wStart'), () => wMode() === 'fast' ? fastStart() : start('w'));
