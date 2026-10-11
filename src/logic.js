@@ -12,6 +12,12 @@ const hasFace = p => !p.stub && !!p.img && !/_stub\./.test(p.img);
 const W = window.WORDS, P = window.PEOPLE.filter(hasFace);
 const pById = Object.fromEntries(P.map(p => [p.id, p]));
 const wByEn = Object.fromEntries(W.map(w => [w.en, w]));
+// 常識クイズ（quiz.js）: { id, cat, k(種類・4択の誤答は同じ種類から), q(問い), a(答え), r(読み), note, src(出典URL・画面には出さない) }
+const K = window.TRIVIA || [];
+const kById = Object.fromEntries(K.map(x => [x.id, x]));
+const KCATS = { kpop: 'K-POP', chara: 'キャラクター', trend: '流行語・トレンド', jiji: '時事の基本' };
+// 種類ごとの呼び名・色（単語 w / 顔 p / 常識 k）
+const TY = { w: { scr: 'sWords', u: '語', name: '単語' }, p: { scr: 'sFaces', u: '人', name: '顔と名前' }, k: { scr: 'sQuiz', u: '問', name: '常識クイズ' } };
 
 function dayNum(d = new Date()) { return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000); }
 function dayStr(n = dayNum()) { return new Date(n * 86400000).toISOString().slice(0, 10); }
@@ -21,7 +27,7 @@ function pgroup(p) { return p.g === 'tora' ? 'tora' + p.tier : p.g; }
 // =========================================================
 // 保存（localStorage ＋ IndexedDB の二重化・1問ごとに即保存）
 // =========================================================
-const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, flash: 0, weekGoal: 150, goalBand: '860点帯', mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
+const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, flash: 0, weekGoal: 150, goalBand: '860点帯', mode: { w: 'quiz', p: 'quiz', k: 'quiz' }, kGoal: 30, kExtra: 30, kcats: { kpop: true, chara: true, trend: true, jiji: true }, daily: { w: 100, p: 20, k: 30 }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
 let S;
 function fresh() {
   return { v: 2, updatedAt: 0, cards: {}, days: {}, today: {}, order: shuffle(W.map(w => w.en)), settings: structuredClone(DEF_SETTINGS) };
@@ -81,7 +87,7 @@ function mergeState(a, b) {
   for (const [d, x] of Object.entries(a.days || {})) {
     const o = out.days[d]; if (!o) { out.days[d] = x; continue; }
     const m = Object.assign({}, o, x);
-    for (const f of ['w', 'wc', 'p', 'pc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq', 'rtf', 'rnf', 'rff', 'sp', 'spx', 'sec', 'ss']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
+    for (const f of ['w', 'wc', 'p', 'pc', 'k', 'kc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq', 'rtf', 'rnf', 'rff', 'sp', 'spx', 'sec', 'ss']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
     out.days[d] = m;
   }
   // 今日の出題：日付が新しい方、同じ日なら種類ごとに進んでいる方
@@ -89,7 +95,7 @@ function mergeState(a, b) {
   if ((tb.date || '') > (ta.date || '')) out.today = tb;
   else if (tb.date === ta.date) {
     out.today = Object.assign({}, ta);
-    for (const t of ['w', 'p']) if (tb[t] && (!ta[t] || (tb[t].pos || 0) > (ta[t].pos || 0))) out.today[t] = tb[t];
+    for (const t of ['w', 'p', 'k']) if (tb[t] && (!ta[t] || (tb[t].pos || 0) > (ta[t].pos || 0))) out.today[t] = tb[t];
   }
   // 1問ごとの記録（AIの分析用）：両方を合わせて新しい順に EV_MAX 件
   //   同じ行（秒＋英語）が両方にあれば、「ひとつ前を間違えた」で直した方（モードに x）を残す
@@ -132,7 +138,7 @@ function record(key, again, ok, ms, md, ms2) {
   const isNew = c.n === 0; c.n++;
   if (ok) c.b = isNew ? 2 : Math.min(c.b + 1, INT.length - 1); else { c.b = 1; c.w++; }
   c.d = today + INT[c.b]; c.l = today; S.cards[key] = c;
-  const f = isW ? ['w', 'wc'] : ['p', 'pc'];
+  const f = isW ? ['w', 'wc'] : key[0] === 'k' ? ['k', 'kc'] : ['p', 'pc'];
   log[f[0]]++; if (ok) log[f[1]]++;
   if (isW && ok && ms != null) {
     log['rt' + md] = (log['rt' + md] || 0) + ms; log['rn' + md] = (log['rn' + md] || 0) + 1;
@@ -234,6 +240,12 @@ function normalize(s) {
   s = Object.assign(f, s);
   s.settings = Object.assign(structuredClone(DEF_SETTINGS), s.settings || {});
   s.settings.groups = Object.assign(structuredClone(DEF_SETTINGS.groups), (s.settings.groups) || {});
+  for (const f of ['mode', 'kcats', 'daily']) s.settings[f] = Object.assign(structuredClone(DEF_SETTINGS[f]), s.settings[f] || {});
+  // 常識クイズの出題順（人ごとに1回だけ混ぜて固定・カテゴリが偏らないように交互に並べる。問題が増えたら後ろに足す）
+  if (!Array.isArray(s.korder)) s.korder = [];
+  { const have = new Set(s.korder), add = shuffle(K.filter(x => !have.has(x.id))), by = {};
+    add.forEach(x => (by[x.cat] = by[x.cat] || []).push(x.id));
+    const cats = Object.keys(by); for (let i = 0; cats.some(c => by[c].length); i++) { const c = cats[i % cats.length]; if (by[c].length) s.korder.push(by[c].shift()); } }
   // 新しい単語が増えた場合に備えて出題順へ追加
   const known = new Set(s.order); W.forEach(w => { if (!known.has(w.en)) s.order.push(w.en); });
   // 今日の顔の出題から写真なしの人を外す（外した分だけ進み位置もずらす）
@@ -268,6 +280,7 @@ function migrateV1(s) {
 // =========================================================
 function deckKeys(type) {
   if (type === 'w') return S.order.map(en => 'w:' + en);
+  if (type === 'k') { const c = S.settings.kcats; return S.korder.filter(id => kById[id] && c[kById[id].cat]).map(id => 'k:' + id); }
   const g = S.settings.groups;
   const rank = { tc: -1, toraA: 0, tcy: 0.5, idea: 1, peer: 2, toraB: 3 }; // 広告祭(10/9〜)が近いので必修を先に
   return P.filter(p => g[pgroup(p)] || (p.also || []).some(x => g[x])).sort((a, b) => rank[pgroup(a)] - rank[pgroup(b)] || b.pri - a.pri).map(p => 'p:' + p.id);
@@ -315,7 +328,7 @@ function getToday(type) {
   const ds = dayStr();
   if (!S.today || S.today.date !== ds) S.today = { date: ds };
   if (!S.today[type]) {
-    const goal = type === 'w' ? S.settings.wordGoal : S.settings.faceGoal;
+    const goal = type === 'w' ? S.settings.wordGoal : type === 'k' ? S.settings.kGoal : S.settings.faceGoal;
     const b = build(type, goal, new Set());
     S.today[type] = { q: b.list, pos: 0, goal, base: b.list.length, rev: b.rev, nw: b.nw, extra: 0 };
     save();
@@ -324,7 +337,7 @@ function getToday(type) {
 }
 function addExtra(type) {
   const t = getToday(type);
-  const n = type === 'w' ? S.settings.wordExtra : S.settings.faceExtra;
+  const n = type === 'w' ? S.settings.wordExtra : type === 'k' ? S.settings.kExtra : S.settings.faceExtra;
   const used = new Set(t.q.map(k => k.replace(/^!/, '')));
   const b = build(type, n, used);
   t.q = t.q.concat(b.list); t.goal += b.list.length; t.extra += b.list.length;
@@ -335,4 +348,17 @@ function dayLog() {
   const ds = dayStr();
   return S.days[ds] || (S.days[ds] = { w: 0, wc: 0, p: 0, pc: 0 });
 }
+// =========================================================
+// 今日の単語カード（ホームの1ボタンで 単語→顔→常識 を続けて回す）
+//   各種類の「今日の出題」をそのまま使い、決めた数（設定 daily）だけ進める。途中でやめても各種類の進み位置が残るので続きから
+// =========================================================
+function dailySegs() {
+  const d = S.settings.daily;
+  return ['w', 'p', 'k'].map(type => {
+    const t = getToday(type), done = doneCount(t);
+    const tgt = S.today.dx && S.today.dx[type] ? Math.min(d[type] || 0, done) : (d[type] || 0); // dx = 出す問題が尽きた（範囲を絞った等）→ ある分だけ
+    return { type, done: Math.min(done, tgt), tgt };
+  }).filter(x => x.tgt > 0);
+}
+function dailyProg() { const s = dailySegs(); return { segs: s, done: s.reduce((a, x) => a + x.done, 0), goal: s.reduce((a, x) => a + x.tgt, 0) }; }
 

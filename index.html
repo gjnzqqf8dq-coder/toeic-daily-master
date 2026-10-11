@@ -39,6 +39,7 @@ label{touch-action:manipulation}
 .screen{flex:1;display:none;flex-direction:column;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;padding:calc(var(--st) + 10px) 16px 24px;min-height:0;width:100%}
 .screen.on{display:flex}
 #sFaces{--c:var(--bet);--cd:var(--bet-d);--cp:var(--bet-p)}
+#sQuiz{--c:var(--fox);--cd:var(--fox-d);--cp:#fff0d5}
 @media (min-width:640px){
   .screen{padding-left:max(16px,calc(50vw - 300px));padding-right:max(16px,calc(50vw - 300px))}
   .stats{margin-left:calc(-1 * max(16px,calc(50vw - 300px)) - 0px);margin-right:calc(-1 * max(16px,calc(50vw - 300px)));padding-left:max(18px,calc(50vw - 298px));padding-right:max(18px,calc(50vw - 298px))}
@@ -191,11 +192,35 @@ h1{font-size:24px;font-weight:800;margin:4px 0 16px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .chip{position:relative;padding:8px 12px;border-radius:12px;border:2px solid var(--swan);border-bottom-width:4px;font-size:13px;font-weight:800;color:var(--wolf)}
 .chip.on{border-color:var(--bet);color:var(--bet-d);background:var(--bet-p)}
+#kChips .chip.on{border-color:var(--fox);color:var(--fox-d);background:#fff0d5}
+/* 今日の単語カード（ホームの1ボタン） */
+.dly{border-color:#84d8ff;background:var(--eel-p);padding:14px 16px}
+.dly .dlt{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.dly .dlt b{font-size:17px;font-weight:900;color:var(--ink)}
+.dly .dlt span{font-size:15px;font-weight:800;color:var(--eel-d);font-variant-numeric:tabular-nums}
+.dly .bar{--c:var(--eel);margin:8px 0 8px;background:#fff}
+.dly .dls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.dly .dls i{font-style:normal;font-size:12px;font-weight:800;padding:3px 9px;border-radius:99px;background:#fff;color:var(--wolf)}
+.dly .dls i.fin{color:var(--owl-d);background:var(--owl-p)}
+.dly .btn{--c:var(--eel);--cd:var(--eel-d)}
+.dlyn{font-size:12px;font-weight:800;color:var(--eel-d);background:var(--eel-p);border-radius:8px;padding:3px 8px;white-space:nowrap}
+/* 常識クイズの問い */
+.prompt.pk{flex-direction:column;align-items:stretch;gap:8px}
+.kcat{align-self:flex-start;font-size:12px;font-weight:800;color:#fff;background:var(--fox);border-radius:8px;padding:2px 8px}
+.ktext{font-size:20px;font-weight:800;line-height:1.5;word-break:break-word}
+.face .ktext{font-size:21px}
+.face .kans{font-size:28px;font-weight:900;line-height:1.3;color:var(--ink)}
+.face .kr,.sh-b .kr{font-size:14px;color:var(--wolf);font-weight:700}
+.face .knote{font-size:15px;line-height:1.55;color:var(--ink);font-weight:700}
+.sh-b .knote{font-size:14px;margin-top:4px}
 
 /* タブバー */
 nav{display:flex;border-top:2px solid var(--swan);background:#fff;padding:6px 8px calc(var(--sb) + 6px);gap:6px}
-nav label{position:relative;flex:1;height:52px;border-radius:12px;border:2px solid transparent;display:flex;align-items:center;justify-content:center}
-nav label svg{width:32px;height:32px}
+nav label{position:relative;flex:1;min-width:0;height:56px;border-radius:12px;border:2px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+nav label svg{width:28px;height:28px;flex:none}
+nav label span{font-size:10px;font-weight:800;color:var(--hare);white-space:nowrap;line-height:1}
+nav label.on span{color:var(--eel-d)}
+@media (max-width:360px){nav{gap:2px;padding-left:4px;padding-right:4px} nav label span{font-size:9px}}
 nav label.on{border-color:#84d8ff;background:var(--eel-p)}
 nav label:not(.on) svg{filter:saturate(.35);opacity:.75}
 body.playing nav{display:none}
@@ -381,6 +406,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
  <symbol id="i-crown" viewBox="0 0 32 32"><path d="M3.5 9.5 10 15.6 16 6l6 9.6 6.5-6.1-2.3 14.6H5.8z" fill="#ffc800"/><rect x="5.6" y="21.4" width="20.8" height="5.2" rx="2" fill="#f5b100"/><circle cx="16" cy="5.6" r="2.6" fill="#ff4b4b"/><circle cx="3.6" cy="9.4" r="2.2" fill="#ffc800"/><circle cx="28.4" cy="9.4" r="2.2" fill="#ffc800"/><circle cx="16" cy="17.2" r="2.2" fill="#1cb0f6"/></symbol>
  <symbol id="i-book" viewBox="0 0 32 32"><path d="M2.5 7.4c4.2-1.9 8.8-1.7 12.5.8v19.4c-3.7-2.5-8.3-2.7-12.5-.8z" fill="#58cc02"/><path d="M29.5 7.4c-4.2-1.9-8.8-1.7-12.5.8v19.4c3.7-2.5 8.3-2.7 12.5-.8z" fill="#89e219"/><rect x="14.6" y="8" width="2.8" height="19.6" rx="1.2" fill="#58a700"/><path d="M5.6 12.2c2.4-.8 4.7-.6 6.6.4M5.6 16.4c2.4-.8 4.7-.6 6.6.4M19.8 12.6c1.9-1 4.2-1.2 6.6-.4" stroke="#d7ffb8" stroke-width="1.8" stroke-linecap="round" fill="none"/></symbol>
  <symbol id="i-face" viewBox="0 0 32 32"><rect x="4.5" y="3" width="23" height="26.5" rx="6" fill="#a568cc"/><rect x="4.5" y="2.5" width="23" height="24.5" rx="6" fill="#ce82ff"/><circle cx="16" cy="12" r="5.2" fill="#fff"/><path d="M7.6 25.6c1.3-5 4.6-7.3 8.4-7.3s7.1 2.3 8.4 7.3z" fill="#fff"/></symbol>
+ <symbol id="i-quiz" viewBox="0 0 32 32"><path d="M5 9a6 6 0 0 1 6-6h10a6 6 0 0 1 6 6v9a6 6 0 0 1-6 6h-6.5L9 29v-5.2A6 6 0 0 1 5 18z" fill="#cc7a00"/><path d="M5 8a6 6 0 0 1 6-6h10a6 6 0 0 1 6 6v9a6 6 0 0 1-6 6h-6.5L9 28v-5.2A6 6 0 0 1 5 17z" fill="#ff9600"/><path d="M12.6 9.6c.4-2 1.9-3 3.6-3 2 0 3.5 1.3 3.5 3.1 0 2.6-3.4 2.8-3.4 5.2" stroke="#fff" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16.3" cy="19" r="1.8" fill="#fff"/></symbol>
  <symbol id="i-cal" viewBox="0 0 32 32"><rect x="3.5" y="6" width="25" height="23.5" rx="6" fill="#e5e5e5"/><rect x="3.5" y="5" width="25" height="22.5" rx="6" fill="#fff" stroke="#e5e5e5" stroke-width="1.5"/><path d="M3.5 11a6 6 0 0 1 6-6h13a6 6 0 0 1 6 6z" fill="#ff4b4b"/><rect x="9" y="2.2" width="3" height="6" rx="1.5" fill="#ea2b2b"/><rect x="20" y="2.2" width="3" height="6" rx="1.5" fill="#ea2b2b"/><path d="M10.5 18.8l3.6 3.6 7.4-7.4" stroke="#58cc02" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
  <symbol id="i-chart" viewBox="0 0 32 32"><rect x="3.5" y="4" width="25" height="25.5" rx="6" fill="#e5e5e5"/><rect x="3.5" y="3" width="25" height="24" rx="6" fill="#fff" stroke="#e5e5e5" stroke-width="1.5"/><rect x="8" y="15" width="4.2" height="8" rx="1.6" fill="#ce82ff"/><rect x="13.9" y="10.5" width="4.2" height="12.5" rx="1.6" fill="#58cc02"/><rect x="19.8" y="13" width="4.2" height="10" rx="1.6" fill="#1cb0f6"/><path d="M8.5 11.5 15.5 7l6.8 3.2" stroke="#ffc800" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
  <symbol id="i-gear" viewBox="0 0 32 32"><path d="M13.5 2.5h5l.9 3.8 2.6 1.1 3.3-2.1 3.5 3.5-2.1 3.3 1.1 2.6 3.8.9v5l-3.8.9-1.1 2.6 2.1 3.3-3.5 3.5-3.3-2.1-2.6 1.1-.9 3.8h-5l-.9-3.8-2.6-1.1-3.3 2.1-3.5-3.5 2.1-3.3-1.1-2.6-3.8-.9v-5l3.8-.9 1.1-2.6-2.1-3.3 3.5-3.5 3.3 2.1 2.6-1.1z" fill="#afafaf"/><circle cx="16" cy="16" r="6.4" fill="#e5e5e5"/><circle cx="16" cy="16" r="3.6" fill="#fff"/></symbol>
@@ -412,6 +438,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 <section class="screen on" id="sWords">
   <div class="stats"><span class="stat fire" data-streak><svg><use href="#i-fire"/></svg><b>0</b></span><span class="stat bolt" data-xp><svg><use href="#i-bolt"/></svg><b>0</b></span><span class="stat lv" data-lv><svg><use href="#i-crown"/></svg><b>1</b></span></div>
   <div class="hero"><div class="m"></div><div class="bubble" id="wSay"></div></div>
+  <div class="box dly" id="dly"><div class="dlt"><b>今日の単語カード</b><span id="dlyN">0 / 150問</span></div><div class="bar"><i id="dlyBar"></i></div><div class="dls" id="dlyS"></div><label class="btn" id="dlyGo"><input type="checkbox" switch class="hsw"><span class="tx">今日の単語カード</span></label></div>
   <div class="box" data-lvcard></div>
   <div class="seg s3" data-type="w"><label data-m="fast"><input type="checkbox" switch class="hsw">高速</label><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
   <div class="wk"><div class="wkt"><span>今週 <b id="wkMin">0</b><small id="wkGoal"> / 150分</small></span><span class="wkr">ランク <b id="wkRank">1</b><small> / 15</small></span></div><div class="bar"><i id="wkBar"></i></div></div>
@@ -438,6 +465,23 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <label class="btn" id="pStart"><input type="checkbox" switch class="hsw"><span class="tx">スタート</span></label>
   <label class="btn eel" id="pMore" style="margin-top:12px;display:none"><input type="checkbox" switch class="hsw"><span class="tx">＋20人</span></label>
   <div class="trio"><div><b id="pLearned">0</b><span>定着</span></div><div><b id="pDue">0</b><span>明日の復習</span></div><div><b id="pNew">0</b><span>未出題</span></div></div>
+</section>
+
+<!-- 常識クイズ -->
+<section class="screen" id="sQuiz">
+  <div class="stats"><span class="stat fire" data-streak><svg><use href="#i-fire"/></svg><b>0</b></span><span class="stat bolt" data-xp><svg><use href="#i-bolt"/></svg><b>0</b></span><span class="stat lv" data-lv><svg><use href="#i-crown"/></svg><b>1</b></span></div>
+  <div class="hero"><div class="m"></div><div class="bubble" id="kSay"></div></div>
+  <div class="chips" id="kChips"></div>
+  <div class="seg" data-type="k"><label data-m="quiz"><input type="checkbox" switch class="hsw">4択</label><label data-m="card"><input type="checkbox" switch class="hsw">暗記カード</label></div>
+  <div class="box">
+    <div class="cap">今日の常識クイズ</div>
+    <div class="big"><span id="kDone">0</span><small id="kOf"> / 30</small></div>
+    <div class="bar"><i id="kBar"></i></div>
+    <div class="pills" id="kMix"></div>
+  </div>
+  <label class="btn" id="kStart"><input type="checkbox" switch class="hsw"><span class="tx">スタート</span></label>
+  <label class="btn eel" id="kMore" style="margin-top:12px;display:none"><input type="checkbox" switch class="hsw"><span class="tx">＋30問</span></label>
+  <div class="trio"><div><b id="kLearned">0</b><span>定着</span></div><div><b id="kDue">0</b><span>明日の復習</span></div><div><b id="kNew">0</b><span>未出題</span></div></div>
 </section>
 
 <!-- 記録 -->
@@ -504,6 +548,12 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
   <div class="sec">量</div>
   <div class="set"><span>1日の単語数</span><input type="range" id="stWordGoal" min="50" max="400" step="10"><span class="v" id="vWordGoal"></span></div>
   <div class="set"><span>1日の人数</span><input type="range" id="stFaceGoal" min="10" max="100" step="5"><span class="v" id="vFaceGoal"></span></div>
+  <div class="set"><span>1日の常識クイズ</span><input type="range" id="stKGoal" min="10" max="100" step="5"><span class="v" id="vKGoal"></span></div>
+  <div class="sec">今日の単語カード（ホームの1ボタン）</div>
+  <div class="set"><span>単語</span><input type="range" id="stDW" min="0" max="300" step="10"><span class="v" id="vDW"></span></div>
+  <div class="set"><span>顔と名前</span><input type="range" id="stDP" min="0" max="100" step="5"><span class="v" id="vDP"></span></div>
+  <div class="set"><span>常識クイズ</span><input type="range" id="stDK" min="0" max="100" step="5"><span class="v" id="vDK"></span></div>
+  <div class="sec">ほかの設定</div>
   <div class="set"><span>復習の上限</span><input type="range" id="stRatio" min="30" max="80" step="5"><span class="v" id="vRatio"></span></div>
   <div class="set"><span>週の学習目標</span><input type="range" id="stWeek" min="30" max="600" step="30"><span class="v" id="vWeek"></span></div>
   <div class="set"><span>高速モードの制限時間</span><input type="range" id="stFlash" min="0" max="30" step="1"><span class="v" id="vFlash"></span></div>
@@ -529,7 +579,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
     <div class="bar"><i id="fpbar"></i></div>
     <span class="fcnt" id="fcnt">0</span>
   </div>
-  <div class="fmeta"><span id="fsec"></span><span id="facc"></span></div>
+  <div class="fmeta"><span class="dlyn" id="dlyF" hidden></span><span id="fsec"></span><span id="facc"></span></div>
   <div class="fstage" id="fstage"><div class="fword" id="fword"></div><div class="fmean" id="fmean"></div></div>
   <div class="timer" id="ftimer"><i id="ftbar"></i></div>
   <div class="fbtns" id="fbtns"><label class="btn eel" id="fGo"><input type="checkbox" switch class="hsw"><span class="tx">裏返す</span></label></div>
@@ -545,7 +595,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
     <div class="combo zero" id="combo"><svg><use href="#i-fire"/></svg><span>0</span></div>
   </div>
   <div id="lesson">
-    <div class="lmeta"><span class="tag new" id="tag">NEW</span><span class="mult" id="mult">×1</span><span class="score" id="score"><svg><use href="#i-bolt"/></svg><b>0</b></span></div>
+    <div class="lmeta"><span class="tag new" id="tag">NEW</span><span class="dlyn" id="dlyP" hidden></span><span class="mult" id="mult">×1</span><span class="score" id="score"><svg><use href="#i-bolt"/></svg><b>0</b></span></div>
     <div class="q" id="qText">この単語の意味は？</div>
     <div class="prompt" id="prompt"></div>
     <div class="timer" id="timer"><i id="tbar"></i></div>
@@ -585,11 +635,12 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 </section>
 
 <nav id="nav">
-  <label data-t="sWords" class="on"><input type="checkbox" switch class="hsw"><svg><use href="#i-book"/></svg></label>
-  <label data-t="sFaces"><input type="checkbox" switch class="hsw"><svg><use href="#i-face"/></svg></label>
-  <label data-t="sLog"><input type="checkbox" switch class="hsw"><svg><use href="#i-cal"/></svg></label>
-  <label data-t="sAna"><input type="checkbox" switch class="hsw"><svg><use href="#i-chart"/></svg></label>
-  <label data-t="sSet"><input type="checkbox" switch class="hsw"><svg><use href="#i-gear"/></svg></label>
+  <label data-t="sWords" class="on"><input type="checkbox" switch class="hsw"><svg><use href="#i-book"/></svg><span>単語</span></label>
+  <label data-t="sFaces"><input type="checkbox" switch class="hsw"><svg><use href="#i-face"/></svg><span>顔と名前</span></label>
+  <label data-t="sQuiz"><input type="checkbox" switch class="hsw"><svg><use href="#i-quiz"/></svg><span>常識</span></label>
+  <label data-t="sLog"><input type="checkbox" switch class="hsw"><svg><use href="#i-cal"/></svg><span>記録</span></label>
+  <label data-t="sAna"><input type="checkbox" switch class="hsw"><svg><use href="#i-chart"/></svg><span>分析</span></label>
+  <label data-t="sSet"><input type="checkbox" switch class="hsw"><svg><use href="#i-gear"/></svg><span>設定</span></label>
 </nav>
 <canvas id="fx"></canvas>
 <div id="lvup"><div style="font-size:20px;font-weight:900">LEVEL UP!</div><div class="n" id="lvN">2</div><div class="t" id="lvT"></div><div style="margin-top:28px;font-size:14px;opacity:.85">タップで続ける</div></div>
@@ -597,6 +648,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:55}
 
 <script src="words.js?v=9"></script>
 <script src="people.js?v=12"></script>
+<script src="quiz.js?v=1"></script>
 <script>
 'use strict';
 // =========================================================
@@ -612,6 +664,12 @@ const hasFace = p => !p.stub && !!p.img && !/_stub\./.test(p.img);
 const W = window.WORDS, P = window.PEOPLE.filter(hasFace);
 const pById = Object.fromEntries(P.map(p => [p.id, p]));
 const wByEn = Object.fromEntries(W.map(w => [w.en, w]));
+// 常識クイズ（quiz.js）: { id, cat, k(種類・4択の誤答は同じ種類から), q(問い), a(答え), r(読み), note, src(出典URL・画面には出さない) }
+const K = window.TRIVIA || [];
+const kById = Object.fromEntries(K.map(x => [x.id, x]));
+const KCATS = { kpop: 'K-POP', chara: 'キャラクター', trend: '流行語・トレンド', jiji: '時事の基本' };
+// 種類ごとの呼び名・色（単語 w / 顔 p / 常識 k）
+const TY = { w: { scr: 'sWords', u: '語', name: '単語' }, p: { scr: 'sFaces', u: '人', name: '顔と名前' }, k: { scr: 'sQuiz', u: '問', name: '常識クイズ' } };
 
 function dayNum(d = new Date()) { return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000); }
 function dayStr(n = dayNum()) { return new Date(n * 86400000).toISOString().slice(0, 10); }
@@ -621,7 +679,7 @@ function pgroup(p) { return p.g === 'tora' ? 'tora' + p.tier : p.g; }
 // =========================================================
 // 保存（localStorage ＋ IndexedDB の二重化・1問ごとに即保存）
 // =========================================================
-const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, flash: 0, weekGoal: 150, goalBand: '860点帯', mode: { w: 'quiz', p: 'quiz' }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
+const DEF_SETTINGS = { wordGoal: 100, wordExtra: 100, faceGoal: 40, faceExtra: 20, ratio: 60, eff: 70, sp: 90, rate: 90, voice: '', auto: true, hap: true, timer: 6, flash: 0, weekGoal: 150, goalBand: '860点帯', mode: { w: 'quiz', p: 'quiz', k: 'quiz' }, kGoal: 30, kExtra: 30, kcats: { kpop: true, chara: true, trend: true, jiji: true }, daily: { w: 100, p: 20, k: 30 }, ja: false, name: false, groups: { tc: true, idea: true, peer: true, toraA: true, toraB: false, tcy: true } };
 let S;
 function fresh() {
   return { v: 2, updatedAt: 0, cards: {}, days: {}, today: {}, order: shuffle(W.map(w => w.en)), settings: structuredClone(DEF_SETTINGS) };
@@ -681,7 +739,7 @@ function mergeState(a, b) {
   for (const [d, x] of Object.entries(a.days || {})) {
     const o = out.days[d]; if (!o) { out.days[d] = x; continue; }
     const m = Object.assign({}, o, x);
-    for (const f of ['w', 'wc', 'p', 'pc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq', 'rtf', 'rnf', 'rff', 'sp', 'spx', 'sec', 'ss']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
+    for (const f of ['w', 'wc', 'p', 'pc', 'k', 'kc', 'xp', 'rtc', 'rnc', 'rfc', 'rtq', 'rnq', 'rfq', 'rtf', 'rnf', 'rff', 'sp', 'spx', 'sec', 'ss']) if (o[f] != null || x[f] != null) m[f] = Math.max(o[f] || 0, x[f] || 0);
     out.days[d] = m;
   }
   // 今日の出題：日付が新しい方、同じ日なら種類ごとに進んでいる方
@@ -689,7 +747,7 @@ function mergeState(a, b) {
   if ((tb.date || '') > (ta.date || '')) out.today = tb;
   else if (tb.date === ta.date) {
     out.today = Object.assign({}, ta);
-    for (const t of ['w', 'p']) if (tb[t] && (!ta[t] || (tb[t].pos || 0) > (ta[t].pos || 0))) out.today[t] = tb[t];
+    for (const t of ['w', 'p', 'k']) if (tb[t] && (!ta[t] || (tb[t].pos || 0) > (ta[t].pos || 0))) out.today[t] = tb[t];
   }
   // 1問ごとの記録（AIの分析用）：両方を合わせて新しい順に EV_MAX 件
   //   同じ行（秒＋英語）が両方にあれば、「ひとつ前を間違えた」で直した方（モードに x）を残す
@@ -732,7 +790,7 @@ function record(key, again, ok, ms, md, ms2) {
   const isNew = c.n === 0; c.n++;
   if (ok) c.b = isNew ? 2 : Math.min(c.b + 1, INT.length - 1); else { c.b = 1; c.w++; }
   c.d = today + INT[c.b]; c.l = today; S.cards[key] = c;
-  const f = isW ? ['w', 'wc'] : ['p', 'pc'];
+  const f = isW ? ['w', 'wc'] : key[0] === 'k' ? ['k', 'kc'] : ['p', 'pc'];
   log[f[0]]++; if (ok) log[f[1]]++;
   if (isW && ok && ms != null) {
     log['rt' + md] = (log['rt' + md] || 0) + ms; log['rn' + md] = (log['rn' + md] || 0) + 1;
@@ -822,7 +880,7 @@ document.addEventListener('visibilitychange', async () => {
   if (Sync.hiddenAt && Date.now() - Sync.hiddenAt > 60 * 60 * 1000 && await newVersion()) { flush(); return location.reload(); }
   if (await Sync.pull()) { show(tab); Sync.push(); } // 別の端末でやった分を開いた時に取り込む
 });
-const BUILD = '1791710762';
+const BUILD = '1791728110';
 async function newVersion() {
   try { const t = await (await fetch('./?chk=' + Date.now(), { cache: 'no-store' })).text(); const m = t.match(/const BUILD = '(\w+)'/); return !!(m && m[1] !== BUILD && BUILD !== '__' + 'BUILD__'); } catch { return false; }
 }
@@ -834,6 +892,12 @@ function normalize(s) {
   s = Object.assign(f, s);
   s.settings = Object.assign(structuredClone(DEF_SETTINGS), s.settings || {});
   s.settings.groups = Object.assign(structuredClone(DEF_SETTINGS.groups), (s.settings.groups) || {});
+  for (const f of ['mode', 'kcats', 'daily']) s.settings[f] = Object.assign(structuredClone(DEF_SETTINGS[f]), s.settings[f] || {});
+  // 常識クイズの出題順（人ごとに1回だけ混ぜて固定・カテゴリが偏らないように交互に並べる。問題が増えたら後ろに足す）
+  if (!Array.isArray(s.korder)) s.korder = [];
+  { const have = new Set(s.korder), add = shuffle(K.filter(x => !have.has(x.id))), by = {};
+    add.forEach(x => (by[x.cat] = by[x.cat] || []).push(x.id));
+    const cats = Object.keys(by); for (let i = 0; cats.some(c => by[c].length); i++) { const c = cats[i % cats.length]; if (by[c].length) s.korder.push(by[c].shift()); } }
   // 新しい単語が増えた場合に備えて出題順へ追加
   const known = new Set(s.order); W.forEach(w => { if (!known.has(w.en)) s.order.push(w.en); });
   // 今日の顔の出題から写真なしの人を外す（外した分だけ進み位置もずらす）
@@ -868,6 +932,7 @@ function migrateV1(s) {
 // =========================================================
 function deckKeys(type) {
   if (type === 'w') return S.order.map(en => 'w:' + en);
+  if (type === 'k') { const c = S.settings.kcats; return S.korder.filter(id => kById[id] && c[kById[id].cat]).map(id => 'k:' + id); }
   const g = S.settings.groups;
   const rank = { tc: -1, toraA: 0, tcy: 0.5, idea: 1, peer: 2, toraB: 3 }; // 広告祭(10/9〜)が近いので必修を先に
   return P.filter(p => g[pgroup(p)] || (p.also || []).some(x => g[x])).sort((a, b) => rank[pgroup(a)] - rank[pgroup(b)] || b.pri - a.pri).map(p => 'p:' + p.id);
@@ -915,7 +980,7 @@ function getToday(type) {
   const ds = dayStr();
   if (!S.today || S.today.date !== ds) S.today = { date: ds };
   if (!S.today[type]) {
-    const goal = type === 'w' ? S.settings.wordGoal : S.settings.faceGoal;
+    const goal = type === 'w' ? S.settings.wordGoal : type === 'k' ? S.settings.kGoal : S.settings.faceGoal;
     const b = build(type, goal, new Set());
     S.today[type] = { q: b.list, pos: 0, goal, base: b.list.length, rev: b.rev, nw: b.nw, extra: 0 };
     save();
@@ -924,7 +989,7 @@ function getToday(type) {
 }
 function addExtra(type) {
   const t = getToday(type);
-  const n = type === 'w' ? S.settings.wordExtra : S.settings.faceExtra;
+  const n = type === 'w' ? S.settings.wordExtra : type === 'k' ? S.settings.kExtra : S.settings.faceExtra;
   const used = new Set(t.q.map(k => k.replace(/^!/, '')));
   const b = build(type, n, used);
   t.q = t.q.concat(b.list); t.goal += b.list.length; t.extra += b.list.length;
@@ -935,6 +1000,19 @@ function dayLog() {
   const ds = dayStr();
   return S.days[ds] || (S.days[ds] = { w: 0, wc: 0, p: 0, pc: 0 });
 }
+// =========================================================
+// 今日の単語カード（ホームの1ボタンで 単語→顔→常識 を続けて回す）
+//   各種類の「今日の出題」をそのまま使い、決めた数（設定 daily）だけ進める。途中でやめても各種類の進み位置が残るので続きから
+// =========================================================
+function dailySegs() {
+  const d = S.settings.daily;
+  return ['w', 'p', 'k'].map(type => {
+    const t = getToday(type), done = doneCount(t);
+    const tgt = S.today.dx && S.today.dx[type] ? Math.min(d[type] || 0, done) : (d[type] || 0); // dx = 出す問題が尽きた（範囲を絞った等）→ ある分だけ
+    return { type, done: Math.min(done, tgt), tgt };
+  }).filter(x => x.tgt > 0);
+}
+function dailyProg() { const s = dailySegs(); return { segs: s, done: s.reduce((a, x) => a + x.done, 0), goal: s.reduce((a, x) => a + x.tgt, 0) }; }
 
 
 // =========================================================
@@ -1170,9 +1248,10 @@ function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   document.body.classList.toggle('playing', id === 'play' || id === 'sDone' || id === 'fast');
   if (id !== 'play') $('sheet').classList.remove('on');
-  if (['sWords', 'sFaces', 'sLog', 'sAna', 'sSet'].includes(id)) { tab = id; document.querySelectorAll('nav label').forEach(b => b.classList.toggle('on', b.dataset.t === id)); }
+  if (['sWords', 'sFaces', 'sQuiz', 'sLog', 'sAna', 'sSet'].includes(id)) { tab = id; document.querySelectorAll('nav label').forEach(b => b.classList.toggle('on', b.dataset.t === id)); }
   if (id === 'sWords') renderHome('w');
   if (id === 'sFaces') renderHome('p');
+  if (id === 'sQuiz') renderHome('k');
   if (id === 'sLog') renderLog();
   if (id === 'sAna') renderAna();
   if (id === 'sSet') renderSettings();
@@ -1186,14 +1265,14 @@ function renderHud() {
   document.querySelectorAll('[data-xp] b').forEach(e => e.textContent = todayXp());
   document.querySelectorAll('[data-lv] b').forEach(e => e.textContent = lvOf(S.xp || 0));
   document.querySelectorAll('[data-lvcard]').forEach(e => {
-    const type = e.closest('#sFaces') ? 'p' : 'w';
+    const type = e.closest('#sFaces') ? 'p' : e.closest('#sQuiz') ? 'k' : 'w';
     e.innerHTML = lvHTML(S.xp || 0, `<div class="best">ベスト<b>${(S.best && S.best[type]) || 0}</b></div>`);
   });
 }
 function say(type, done, goal, fin) {
-  const u = type === 'w' ? '語' : '人', rem = goal - done;
+  const u = TY[type].u, rem = goal - done;
   if (fin) return ['今日はクリア！明日も待ってるね', 'えらい！おかわりもできるよ', '完璧！この調子'][done % 3];
-  if (done === 0) return type === 'w' ? `今日は${goal}語。いこう！` : `今日は${goal}人。顔と名前、覚えよう！`;
+  if (done === 0) return type === 'w' ? `今日は${goal}語。いこう！` : type === 'k' ? `今日は${goal}問。流行と常識、おさえよう！` : `今日は${goal}人。顔と名前、覚えよう！`;
   if (rem <= 20) return `ラストスパート！あと${rem}${u}`;
   if (done / goal >= .5) return `半分こえた！あと${rem}${u}`;
   return `いい調子！あと${rem}${u}`;
@@ -1206,15 +1285,16 @@ function renderHome(type) {
   requestAnimationFrame(() => $(pre + 'Bar').style.width = (done / Math.max(1, t.goal) * 100) + '%');
   $(pre + 'Mix').innerHTML = `<span class="pill n">新しい ${t.nw}</span><span class="pill r">復習 ${t.rev}</span>` + (t.extra ? `<span class="pill">追加 ${t.extra}</span>` : '');
   $(pre + 'Say').textContent = say(type, done, t.goal, fin);
-  document.querySelector(`#${type === 'w' ? 'sWords' : 'sFaces'} .mascot`).classList.toggle('joy', fin);
+  document.querySelector(`#${TY[type].scr} .mascot`).classList.toggle('joy', fin);
   const sb = $(pre + 'Start');
   setTx(sb, fin ? '今日はクリア' : done > 0 ? '続きから' : 'スタート'); sb.classList.toggle('dis', fin);
   $(pre + 'More').style.display = fin ? 'flex' : 'none';
-  setTx($(pre + 'More'), `＋${type === 'w' ? S.settings.wordExtra + '語' : S.settings.faceExtra + '人'}`);
+  setTx($(pre + 'More'), `＋${extraN(type)}${TY[type].u}`);
   const c = counts(type);
   $(pre + 'Learned').textContent = c.learned; $(pre + 'Due').textContent = c.dueTomorrow; $(pre + 'New').textContent = c.unseen;
   if (type === 'p') renderChips();
-  if (type === 'w') homeAna();
+  if (type === 'k') renderKChips();
+  if (type === 'w') { homeAna(); renderDaily(); }
   if (type === 'w') { // 今週の学習時間と実力ランク
     const wk = studyWeek(), sk = skill();
     $('wkMin').textContent = wk.min; $('wkGoal').textContent = ` / ${wk.goal}分`; $('wkRank').textContent = sk.rank;
@@ -1223,6 +1303,69 @@ function renderHome(type) {
   if (type === 'w') { const cn = $('wCoach'), n = Plan.v && Plan.v.note; if (cn) { cn.hidden = !n; if (n) cn.innerHTML = `<b>AIコーチ</b>${esc(n)}`; } } // ホームからは外した（2026-10-11）
   const md = (S.settings.mode && S.settings.mode[type]) || 'quiz';
   document.querySelectorAll(`.seg[data-type="${type}"] label`).forEach(l => l.classList.toggle('on', l.dataset.m === md));
+}
+const extraN = type => type === 'w' ? S.settings.wordExtra : type === 'k' ? S.settings.kExtra : S.settings.faceExtra;
+// 常識クイズのカテゴリ（押して出題範囲を切り替え）
+function renderKChips() {
+  const box = $('kChips'); box.innerHTML = '';
+  const n = {}; K.forEach(x => { n[x.cat] = (n[x.cat] || 0) + 1; });
+  for (const [c, label] of Object.entries(KCATS)) {
+    if (!n[c]) continue;
+    const b = document.createElement('label');
+    b.className = 'chip' + (S.settings.kcats[c] ? ' on' : '');
+    b.innerHTML = hswHTML() + `<span class="tx">${label} ${n[c]}</span>`;
+    onTap(b, () => {
+      wake(); Sound.tap();
+      S.settings.kcats[c] = !S.settings.kcats[c];
+      if (!Object.keys(KCATS).some(x => S.settings.kcats[x] && n[x])) S.settings.kcats[c] = true;
+      const t = S.today.k; if (t && t.pos === 0) delete S.today.k;
+      save(); renderHome('k');
+      if (t && t.pos > 0) toast('明日の出題から反映します');
+    });
+    box.appendChild(b);
+  }
+}
+// ホームの「今日の単語カード」：単語→顔→常識を1本で（数は設定の daily）
+function renderDaily() {
+  const d = dailyProg(), fin = d.goal > 0 && d.done >= d.goal;
+  $('dlyN').textContent = `${d.done} / ${d.goal}問`;
+  requestAnimationFrame(() => $('dlyBar').style.width = (d.done / Math.max(1, d.goal) * 100) + '%');
+  $('dlyS').innerHTML = d.segs.map(x => `<i class="${x.done >= x.tgt ? 'fin' : ''}">${TY[x.type].name} ${x.done}/${x.tgt}</i>`).join('');
+  const b = $('dlyGo'); setTx(b, fin ? '今日はクリア' : d.done > 0 ? '続きから' : '今日の単語カード'); b.classList.toggle('dis', fin);
+}
+let D = null; // 今日の単語カードを回している間だけ { n, ok, score, combo }
+function dailyStart() {
+  wake();
+  const d = dailyProg(); if (d.done >= d.goal) return;
+  D = { n: 0, ok: 0, score: 0, combo: 0, segs: 0 };
+  dailyRun();
+}
+function dailyRun() {
+  if (!D) return;
+  for (const x of dailySegs()) {
+    if (x.done >= x.tgt) continue;
+    let t = getToday(x.type);
+    if (t.pos >= t.q.length) { addExtra(x.type); t = getToday(x.type); }
+    if (t.pos >= t.q.length) { S.today.dx = Object.assign({}, S.today.dx, { [x.type]: true }); save(); continue; } // 出せる問題が尽きた
+    if (D.segs++) toast(`つぎは ${TY[x.type].name} ${x.tgt - x.done}${TY[x.type].u}`);
+    if (x.type === 'w' && wMode() === 'fast') fastStart(); else start(x.type);
+    return;
+  }
+  dailyFinish();
+}
+function dailyLeft(type) { const x = dailySegs().find(s => s.type === type); return !x || x.done >= x.tgt; }
+function dailyTally(g) { if (!D || !g) return; D.n += g.n || 0; D.ok += g.ok || 0; D.score += g.score || 0; D.combo = Math.max(D.combo, g.maxCombo || 0); }
+function dailyNext() { // いまの種類の分が終わった → 次の種類へ
+  if (G) { stopTimer(); clearTimeout(autoT); dailyTally(G); G = null; }
+  if (F) { clearTimeout(F.tid); clearTimeout(F.nid); dailyTally({ n: F.n, ok: F.ok, score: F.score || 0 }); F = null; }
+  dailyRun();
+}
+function dailyLabel() { if (!D) return ''; const d = dailyProg(); return `今日 ${d.done}/${d.goal}`; }
+function dailyFinish() {
+  const d = dailyProg(); dayLog().goalD = true; save();
+  const r = D || { n: 0, ok: 0, score: 0, combo: 0 }; D = null;
+  showDone({ type: 'w', title: `今日の${d.goal}問 クリア！`, sub: d.segs.map(x => `${TY[x.type].name} ${x.done}`).join('・'), xp: r.score, acc: r.n ? Math.round(r.ok / r.n * 100) : 100, combo: r.combo, rec: false, more: false });
+  if (Sync.dirty) Sync.push();
 }
 function renderChips() {
   const box = $('gChips'); box.innerHTML = '';
@@ -1253,7 +1396,7 @@ function start(type) {
   if (t.pos >= t.q.length) return;
   const lg = dayLog(); lg.ss = (lg.ss || 0) + 1; lastAct = Date.now();
   G = { type, mode: (S.settings.mode && S.settings.mode[type]) || 'quiz', combo: 0, maxCombo: 0, ok: 0, n: 0, score: 0, answered: false };
-  const c = type === 'w' ? ['var(--owl)', 'var(--owl-d)'] : ['var(--bet)', 'var(--bet-d)'];
+  const c = { w: ['var(--owl)', 'var(--owl-d)'], p: ['var(--bet)', 'var(--bet-d)'], k: ['var(--fox)', 'var(--fox-d)'] }[type];
   $('play').style.setProperty('--c', c[0]); $('play').style.setProperty('--cd', c[1]);
   $('score').querySelector('b').textContent = 0; setMult(false); setCombo(false);
   show('play');
@@ -1267,6 +1410,17 @@ function pickWordOpts(w) {
   cand.sort((a, b) => Math.abs(a.jp.length - len) - Math.abs(b.jp.length - len));
   return shuffle(cand.slice(0, 8)).slice(0, 3);
 }
+// 常識クイズの誤答：同じカテゴリ・同じ種類から（足りなければカテゴリ内→全体）
+function pickKOpts(x) {
+  const ok = y => y.id !== x.id && y.a !== x.a;
+  let pool = K.filter(y => ok(y) && y.cat === x.cat && y.k === x.k);
+  if (pool.length < 3) pool = pool.concat(shuffle(K.filter(y => ok(y) && y.cat === x.cat && y.k !== x.k)));
+  if (pool.length < 3) pool = pool.concat(shuffle(K.filter(y => ok(y) && y.cat !== x.cat)));
+  const out = []; for (const y of shuffle(pool.slice(0, Math.max(3, pool.length)))) { if (!out.some(o => o.a === y.a)) out.push(y); if (out.length === 3) break; }
+  return out;
+}
+const kPrompt = x => `<span class="kcat">${esc(KCATS[x.cat] || '')}</span><div class="ktext">${esc(x.q)}</div>`;
+const kBack = x => `<div class="kans">${esc(x.a)}</div>` + (x.r ? `<div class="kr">${esc(x.r)}</div>` : '') + (x.note ? `<div class="knote">${esc(x.note)}</div>` : '');
 function pickFaceOpts(p) {
   const g = pgroup(p);
   let pool = P.filter(x => x.id !== p.id && pgroup(x) === g);
@@ -1275,7 +1429,9 @@ function pickFaceOpts(p) {
 }
 function load() {
   const t = S.today[G.type];
+  if (D && dailyLeft(G.type)) return dailyNext();
   if (t.pos >= t.q.length) return finish();
+  { const e = $('dlyP'); e.hidden = !D; if (D) e.textContent = dailyLabel(); }
   const raw = curKey(), again = raw[0] === '!', key = raw.replace(/^!/, ''), c = S.cards[key];
   G.answered = false; G.left = null;
   const tag = $('tag');
@@ -1299,6 +1455,14 @@ function load() {
     onTap($('spk'), () => { wake(); speakWord(); });
     list = shuffle([{ t: w.jp, ok: true }, ...pickWordOpts(w).map(x => ({ t: x.jp }))]);
     if (S.settings.auto) setTimeout(speakWord, 120);
+  } else if (G.type === 'k') {
+    const x = kById[key.slice(2)];
+    if (!x) { t.pos++; return load(); } // 問題データから消えた問い
+    G.ans = x;
+    $('qText').textContent = /^(what|meaning|abbr)$/.test(x.k) ? 'これはなに？' : '答えはどれ？';
+    prompt.className = 'prompt pk';
+    prompt.innerHTML = kPrompt(x);
+    list = shuffle([{ t: x.a, ok: true }, ...pickKOpts(x).map(y => ({ t: y.a }))]);
   } else {
     const p = pById[key.slice(2)];
     G.ans = p;
@@ -1331,6 +1495,12 @@ function loadCard(t, key) {
     $('spk').onclick = e => { e.preventDefault(); e.stopPropagation(); wake(); speakWord(); };
     fb.innerHTML = `<div class="en">${esc(w.en)}</div><div class="mean">${esc(w.jp)}</div>`;
     if (S.settings.auto) setTimeout(speakWord, 120);
+  } else if (G.type === 'k') {
+    const x = kById[key.slice(2)]; G.ans = x;
+    if (!x) { t.pos++; return load(); }
+    $('qText').textContent = '答え、言える？';
+    fa.innerHTML = kPrompt(x);
+    fb.innerHTML = kBack(x);
   } else {
     const p = pById[key.slice(2)]; G.ans = p;
     $('qText').textContent = 'この人、だれ？';
@@ -1396,7 +1566,7 @@ function result(ok, reason, el) {
   if (!again) { G.n++; if (ok) G.ok++; }
   if (!ok && !again) { t.q = t.q.slice(); t.q.splice(Math.min(t.pos + 8, t.q.length), 0, '!' + key); }
   t.pos++;
-  if (doneCount(t) >= t.base) log[G.type === 'w' ? 'goalW' : 'goalP'] = true;
+  if (doneCount(t) >= t.base) log[{ w: 'goalW', p: 'goalP', k: 'goalK' }[G.type]] = true;
   const m0 = MULT(G.combo);
   G.combo = ok ? G.combo + 1 : 0; G.maxCombo = Math.max(G.maxCombo, G.combo);
   const m = MULT(G.combo);
@@ -1440,6 +1610,7 @@ function showSheet(ok, reason, pts, fast) {
   $('shT').textContent = ok ? PRAISE[Math.random() * PRAISE.length | 0] : reason === 'time' ? '時間切れ！' : reason === 'skip' ? '正解はこちら' : 'おしい！';
   $('shPts').innerHTML = ok ? `${ICON('bolt')}+${pts}` : '';
   if (G.type === 'w') $('shB').innerHTML = ok ? `<span class="ans">${esc(a.en)}</span>　${esc(a.jp)}` : `<div class="lb">正解：</div><div class="ans">${esc(a.jp)}</div><div>${esc(a.en)}</div>`;
+  else if (G.type === 'k') $('shB').innerHTML = (ok ? '' : '<div class="lb">正解：</div>') + `<div class="ans">${esc(a.a)}</div>` + (a.r ? `<div class="kr">${esc(a.r)}</div>` : '') + (a.note ? `<div class="knote">${esc(a.note)}</div>` : '');
   else $('shB').innerHTML = profHTML(a);
   setTx($('bNext'), ok ? 'つぎへ' : 'わかった');
   requestAnimationFrame(() => sh.classList.add('on'));
@@ -1491,16 +1662,21 @@ function stopTimer() {
 
 function finish() {
   stopTimer();
+  if (D) return dailyNext();
   const type = G.type, t = S.today[type];
   const acc = G.n ? Math.round(G.ok / G.n * 100) : 100, xp = G.score;
   S.best = S.best || {}; const rec = xp > (S.best[type] || 0) && xp > 0; if (rec) { S.best[type] = xp; save(); }
+  const c = counts(type);
+  showDone({ type, title: `${doneCount(t)}${TY[type].u} クリア！`, sub: `定着 ${c.learned} ／ 明日の復習 ${c.dueTomorrow}`, xp, acc, combo: G.maxCombo, rec, more: true });
+}
+function showDone({ type, title, sub, xp, acc, combo, rec, more }) {
   show('sDone');
   const d = $('sDone');
-  d.style.setProperty('--c', type === 'w' ? 'var(--owl)' : 'var(--bet)'); d.style.setProperty('--cd', type === 'w' ? 'var(--owl-d)' : 'var(--bet-d)');
+  const col = { w: ['var(--owl)', 'var(--owl-d)'], p: ['var(--bet)', 'var(--bet-d)'], k: ['var(--fox)', 'var(--fox-d)'] }[type];
+  d.style.setProperty('--c', col[0]); d.style.setProperty('--cd', col[1]);
   const m = d.querySelector('.mascot'); m.classList.add('joy'); m.classList.remove('jump'); void m.offsetWidth; m.classList.add('jump');
-  $('dTitle').textContent = type === 'w' ? `${doneCount(t)}語 クリア！` : `${doneCount(t)}人 クリア！`;
-  const c = counts(type);
-  $('dSub').textContent = `定着 ${c.learned} ／ 明日の復習 ${c.dueTomorrow}`;
+  $('dTitle').textContent = title;
+  $('dSub').textContent = sub;
   d.querySelectorAll('.dstat').forEach(e => e.classList.remove('on'));
   $('dXp').textContent = 0; $('dAcc').textContent = '0%'; $('dCombo').textContent = 0;
   $('dRec').classList.remove('on'); if (rec) setTimeout(() => { $('dRec').classList.add('on'); Sound.multUp(4); Haptic.up(); }, 1250);
@@ -1508,13 +1684,13 @@ function finish() {
   lc.innerHTML = lvHTML(Math.max(0, xpNow - xp)); setTimeout(() => { lc.innerHTML = lvHTML(xpNow); }, 1100);
   const st = streak(), sp = $('dStreak'); sp.classList.remove('on'); sp.innerHTML = `${ICON('fire')}${st}日連続！`;
   Sound.fanfare(); Haptic.big(); FX.confetti();
-  [[$('dXp'), xp, v => v], [$('dAcc'), acc, v => v + '%'], [$('dCombo'), G.maxCombo, v => v]].forEach(([el, v, f], i) =>
+  [[$('dXp'), xp, v => v], [$('dAcc'), acc, v => v + '%'], [$('dCombo'), combo, v => v]].forEach(([el, v, f], i) =>
     setTimeout(() => { d.querySelectorAll('.dstat')[i].classList.add('on'); Sound.tap(); countUp(el, v, f); }, 500 + i * 260));
   setTimeout(() => { if (st > 0) sp.classList.add('on'); }, 1400);
-  setTx($('dMore'), `＋${type === 'w' ? S.settings.wordExtra + '語' : S.settings.faceExtra + '人'}`);
-  $('dMore')._type = type;
+  setTx($('dMore'), `＋${extraN(type)}${TY[type].u}`);
+  $('dMore')._type = type; $('dMore')._daily = !more; $('dMore').style.display = more ? '' : 'none';
 }
-function closePlay() { stopTimer(); const type = G ? G.type : (tab === 'sFaces' ? 'p' : 'w'); clearTimeout(autoT); G = null; try { speechSynthesis.cancel(); } catch {} if (Sync.dirty && Date.now() - Sync.last > SYNC_EVERY) Sync.push(); show(type === 'w' ? 'sWords' : 'sFaces'); }
+function closePlay() { stopTimer(); const daily = !!D; D = null; const type = G ? G.type : (tab === 'sFaces' ? 'p' : tab === 'sQuiz' ? 'k' : 'w'); clearTimeout(autoT); G = null; try { speechSynthesis.cancel(); } catch {} if (Sync.dirty && Date.now() - Sync.last > SYNC_EVERY) Sync.push(); show(daily || ($('sDone').classList.contains('on') && $('dMore')._daily) ? 'sWords' : TY[type].scr); }
 
 // =========================================================
 // 記録
@@ -1712,6 +1888,9 @@ function renderSettings() {
   };
   bind('WordGoal', 'wordGoal', x => x + '語');
   bind('FaceGoal', 'faceGoal', x => x + '人');
+  bind('KGoal', 'kGoal', x => x + '問');
+  const bindD = (id, key, u) => { const el = $('st' + id), v = $('v' + id); el.value = s.daily[key]; v.textContent = s.daily[key] + u; el.oninput = () => { s.daily = Object.assign({}, s.daily, { [key]: +el.value }); v.textContent = s.daily[key] + u; save(); }; };
+  bindD('DW', 'w', '語'); bindD('DP', 'p', '人'); bindD('DK', 'k', '問');
   bind('Ratio', 'ratio', x => x + '%');
   bind('Timer', 'timer', x => x ? x + '秒' : 'なし');
   bind('Week', 'weekGoal', x => x + '分');
@@ -1796,6 +1975,9 @@ document.querySelectorAll('nav label').forEach(b => onTap(b, () => { wake(); if 
 const wMode = () => (S.settings.mode && S.settings.mode.w) || 'quiz';
 onTap($('wStart'), () => wMode() === 'fast' ? fastStart() : start('w'));
 onTap($('pStart'), () => start('p'));
+onTap($('kStart'), () => start('k'));
+onTap($('kMore'), () => { addExtra('k'); start('k'); });
+onTap($('dlyGo'), () => dailyStart());
 onTap($('wMore'), () => { addExtra('w'); wMode() === 'fast' ? fastStart() : start('w'); });
 onTap($('pMore'), () => { addExtra('p'); start('p'); });
 onTap($('dMore'), () => { const type = $('dMore')._type || 'w'; addExtra(type); start(type); });
@@ -1811,7 +1993,7 @@ onTap($('bNg'), () => cardGrade(false));
 document.querySelectorAll('.seg label').forEach(l => onTap(l, () => {
   wake(); Sound.tap();
   const type = l.closest('.seg').dataset.type;
-  S.settings.mode = Object.assign({ w: 'quiz', p: 'quiz' }, S.settings.mode, { [type]: l.dataset.m }); save(); renderHome(type);
+  S.settings.mode = Object.assign({ w: 'quiz', p: 'quiz', k: 'quiz' }, S.settings.mode, { [type]: l.dataset.m }); save(); renderHome(type);
 }));
 $('xClose').onclick = () => closePlay();
 $('cPrev').onclick = () => { cal.m--; if (cal.m < 0) { cal.m = 11; cal.y--; } renderLog(); };
@@ -1846,7 +2028,7 @@ function fastStart() {
   wake(); clearTimeout(autoT);
   { const lg = dayLog(); lg.ss = (lg.ss || 0) + 1; lastAct = Date.now(); }
   const t = getToday('w'); if (t.pos >= t.q.length) addExtra('w');
-  F = { t: getToday('w'), n: 0, ok: 0, ms: [], phase: '', tid: 0, nid: 0, prev: null };
+  F = { t: getToday('w'), n: 0, ok: 0, ms: [], phase: '', tid: 0, nid: 0, prev: null, score: 0 };
   show('fast'); $('fdone').hidden = true;
   fastPrevUI();
   fastLoad();
@@ -1856,6 +2038,7 @@ function fastStats() {
   $('fpbar').style.width = (done / Math.max(1, t.goal) * 100) + '%';
   $('fcnt').textContent = `${done}/${t.goal}`;
   $('fsec').textContent = `制限 ${fastSec().toFixed(1)}秒` + (S.settings.flash ? '' : '（AI）');
+  { const e = $('dlyF'); e.hidden = !D; if (D) e.textContent = dailyLabel(); }
   const avg = F.ms.length ? F.ms.reduce((a, b) => a + b, 0) / F.ms.length / 1000 : 0;
   $('facc').textContent = F.n ? `正答 ${Math.round(F.ok / F.n * 100)}%` + (F.ms.length ? `・平均 ${avg.toFixed(2)}秒` : '') : '';
 }
@@ -1866,7 +2049,8 @@ function fastLoad() {
   if (!F) return;
   clearTimeout(F.tid); clearTimeout(F.nid);
   const t = F.t;
-  if (t.pos >= t.q.length) return fastDone();
+  if (D && dailyLeft('w')) return dailyNext();
+  if (t.pos >= t.q.length) return D ? dailyNext() : fastDone();
   const raw = t.q[t.pos], key = raw.replace(/^!/, ''), w = wByEn[key.slice(2)];
   if (!w) { t.pos++; return fastLoad(); }
   Object.assign(F, { raw, key, again: raw[0] === '!', w, phase: 'ask', flipMs: null, flipAt: 0 });
@@ -1907,7 +2091,7 @@ function fastAnswer(ok, ms, ms2) {
   const ev = S.ev[S.ev.length - 1];
   if (!again) { F.n++; if (ok) { F.ok++; if (ms != null) F.ms.push(ms); } }
   const pts = ok ? (again ? 5 : 10) + (ms != null && ms < 1000 ? 5 : 0) : 0;
-  if (pts) { S.xp = (S.xp || 0) + pts; const lg = dayLog(); lg.xp = (lg.xp || 0) + pts; }
+  if (pts) { S.xp = (S.xp || 0) + pts; F.score += pts; const lg = dayLog(); lg.xp = (lg.xp || 0) + pts; }
   if (!ok && !again) { t.q = t.q.slice(); t.q.splice(Math.min(t.pos + 6, t.q.length), 0, '!' + key); }
   t.pos++;
   if (doneCount(t) >= t.base) dayLog().goalW = true;
@@ -1931,6 +2115,7 @@ function fastUndo() {
   const u = F && F.prev; if (!u || u.done) return;
   u.done = true;
   regrade(u);
+  if (u.pts) F.score = Math.max(0, (F.score || 0) - u.pts);
   if (!u.again) {
     F.ok = Math.max(0, F.ok - 1); const i = F.ms.lastIndexOf(u.ms); if (i >= 0) F.ms.splice(i, 1);
     const t = F.t; t.q = t.q.slice();
@@ -1955,7 +2140,7 @@ function fastDone() {
 }
 function fastClose() {
   if (F) { clearTimeout(F.tid); clearTimeout(F.nid); }
-  F = null; flush(); if (Sync.dirty) Sync.push();
+  F = null; D = null; flush(); if (Sync.dirty) Sync.push();
   show('sWords');
 }
 // 押した瞬間に反応する（指を離すのを待たない）
@@ -1979,7 +2164,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 boot().then(() => { if ('speechSynthesis' in window) { Sound.loadVoices(); speechSynthesis.onvoiceschanged = () => Sound.loadVoices(); } });
 if (/debug/.test(location.search)) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99;background:#000;color:#0f0;font:11px monospace;padding:4px;pointer-events:none;white-space:pre-wrap';
   document.body.appendChild(d); setInterval(() => { const pools = Object.values(SFX.pool); d.textContent = `iOS:${isIOS} rendered:${Object.keys(SFX.buf).length} pools:${pools.length} unlocked:${pools.filter(a => a._u).length}/${pools.length} last:${SFX.last || '-'} ctx:${SFX.ctx ? SFX.ctx.state : '-'}`; }, 300); }
-window.__app = { get S() { return S; }, get G() { return G; }, get F() { return F; }, fastStart, fastUndo, P, Plan, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
+window.__app = { get S() { return S; }, get G() { return G; }, get F() { return F; }, get D() { return D; }, dailyProg, dailyStart, K, fastStart, fastUndo, P, Plan, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
 </script>
 </body>
 </html>

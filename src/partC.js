@@ -232,9 +232,10 @@ function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   document.body.classList.toggle('playing', id === 'play' || id === 'sDone' || id === 'fast');
   if (id !== 'play') $('sheet').classList.remove('on');
-  if (['sWords', 'sFaces', 'sLog', 'sAna', 'sSet'].includes(id)) { tab = id; document.querySelectorAll('nav label').forEach(b => b.classList.toggle('on', b.dataset.t === id)); }
+  if (['sWords', 'sFaces', 'sQuiz', 'sLog', 'sAna', 'sSet'].includes(id)) { tab = id; document.querySelectorAll('nav label').forEach(b => b.classList.toggle('on', b.dataset.t === id)); }
   if (id === 'sWords') renderHome('w');
   if (id === 'sFaces') renderHome('p');
+  if (id === 'sQuiz') renderHome('k');
   if (id === 'sLog') renderLog();
   if (id === 'sAna') renderAna();
   if (id === 'sSet') renderSettings();
@@ -248,14 +249,14 @@ function renderHud() {
   document.querySelectorAll('[data-xp] b').forEach(e => e.textContent = todayXp());
   document.querySelectorAll('[data-lv] b').forEach(e => e.textContent = lvOf(S.xp || 0));
   document.querySelectorAll('[data-lvcard]').forEach(e => {
-    const type = e.closest('#sFaces') ? 'p' : 'w';
+    const type = e.closest('#sFaces') ? 'p' : e.closest('#sQuiz') ? 'k' : 'w';
     e.innerHTML = lvHTML(S.xp || 0, `<div class="best">ベスト<b>${(S.best && S.best[type]) || 0}</b></div>`);
   });
 }
 function say(type, done, goal, fin) {
-  const u = type === 'w' ? '語' : '人', rem = goal - done;
+  const u = TY[type].u, rem = goal - done;
   if (fin) return ['今日はクリア！明日も待ってるね', 'えらい！おかわりもできるよ', '完璧！この調子'][done % 3];
-  if (done === 0) return type === 'w' ? `今日は${goal}語。いこう！` : `今日は${goal}人。顔と名前、覚えよう！`;
+  if (done === 0) return type === 'w' ? `今日は${goal}語。いこう！` : type === 'k' ? `今日は${goal}問。流行と常識、おさえよう！` : `今日は${goal}人。顔と名前、覚えよう！`;
   if (rem <= 20) return `ラストスパート！あと${rem}${u}`;
   if (done / goal >= .5) return `半分こえた！あと${rem}${u}`;
   return `いい調子！あと${rem}${u}`;
@@ -268,15 +269,16 @@ function renderHome(type) {
   requestAnimationFrame(() => $(pre + 'Bar').style.width = (done / Math.max(1, t.goal) * 100) + '%');
   $(pre + 'Mix').innerHTML = `<span class="pill n">新しい ${t.nw}</span><span class="pill r">復習 ${t.rev}</span>` + (t.extra ? `<span class="pill">追加 ${t.extra}</span>` : '');
   $(pre + 'Say').textContent = say(type, done, t.goal, fin);
-  document.querySelector(`#${type === 'w' ? 'sWords' : 'sFaces'} .mascot`).classList.toggle('joy', fin);
+  document.querySelector(`#${TY[type].scr} .mascot`).classList.toggle('joy', fin);
   const sb = $(pre + 'Start');
   setTx(sb, fin ? '今日はクリア' : done > 0 ? '続きから' : 'スタート'); sb.classList.toggle('dis', fin);
   $(pre + 'More').style.display = fin ? 'flex' : 'none';
-  setTx($(pre + 'More'), `＋${type === 'w' ? S.settings.wordExtra + '語' : S.settings.faceExtra + '人'}`);
+  setTx($(pre + 'More'), `＋${extraN(type)}${TY[type].u}`);
   const c = counts(type);
   $(pre + 'Learned').textContent = c.learned; $(pre + 'Due').textContent = c.dueTomorrow; $(pre + 'New').textContent = c.unseen;
   if (type === 'p') renderChips();
-  if (type === 'w') homeAna();
+  if (type === 'k') renderKChips();
+  if (type === 'w') { homeAna(); renderDaily(); }
   if (type === 'w') { // 今週の学習時間と実力ランク
     const wk = studyWeek(), sk = skill();
     $('wkMin').textContent = wk.min; $('wkGoal').textContent = ` / ${wk.goal}分`; $('wkRank').textContent = sk.rank;
@@ -285,6 +287,69 @@ function renderHome(type) {
   if (type === 'w') { const cn = $('wCoach'), n = Plan.v && Plan.v.note; if (cn) { cn.hidden = !n; if (n) cn.innerHTML = `<b>AIコーチ</b>${esc(n)}`; } } // ホームからは外した（2026-10-11）
   const md = (S.settings.mode && S.settings.mode[type]) || 'quiz';
   document.querySelectorAll(`.seg[data-type="${type}"] label`).forEach(l => l.classList.toggle('on', l.dataset.m === md));
+}
+const extraN = type => type === 'w' ? S.settings.wordExtra : type === 'k' ? S.settings.kExtra : S.settings.faceExtra;
+// 常識クイズのカテゴリ（押して出題範囲を切り替え）
+function renderKChips() {
+  const box = $('kChips'); box.innerHTML = '';
+  const n = {}; K.forEach(x => { n[x.cat] = (n[x.cat] || 0) + 1; });
+  for (const [c, label] of Object.entries(KCATS)) {
+    if (!n[c]) continue;
+    const b = document.createElement('label');
+    b.className = 'chip' + (S.settings.kcats[c] ? ' on' : '');
+    b.innerHTML = hswHTML() + `<span class="tx">${label} ${n[c]}</span>`;
+    onTap(b, () => {
+      wake(); Sound.tap();
+      S.settings.kcats[c] = !S.settings.kcats[c];
+      if (!Object.keys(KCATS).some(x => S.settings.kcats[x] && n[x])) S.settings.kcats[c] = true;
+      const t = S.today.k; if (t && t.pos === 0) delete S.today.k;
+      save(); renderHome('k');
+      if (t && t.pos > 0) toast('明日の出題から反映します');
+    });
+    box.appendChild(b);
+  }
+}
+// ホームの「今日の単語カード」：単語→顔→常識を1本で（数は設定の daily）
+function renderDaily() {
+  const d = dailyProg(), fin = d.goal > 0 && d.done >= d.goal;
+  $('dlyN').textContent = `${d.done} / ${d.goal}問`;
+  requestAnimationFrame(() => $('dlyBar').style.width = (d.done / Math.max(1, d.goal) * 100) + '%');
+  $('dlyS').innerHTML = d.segs.map(x => `<i class="${x.done >= x.tgt ? 'fin' : ''}">${TY[x.type].name} ${x.done}/${x.tgt}</i>`).join('');
+  const b = $('dlyGo'); setTx(b, fin ? '今日はクリア' : d.done > 0 ? '続きから' : '今日の単語カード'); b.classList.toggle('dis', fin);
+}
+let D = null; // 今日の単語カードを回している間だけ { n, ok, score, combo }
+function dailyStart() {
+  wake();
+  const d = dailyProg(); if (d.done >= d.goal) return;
+  D = { n: 0, ok: 0, score: 0, combo: 0, segs: 0 };
+  dailyRun();
+}
+function dailyRun() {
+  if (!D) return;
+  for (const x of dailySegs()) {
+    if (x.done >= x.tgt) continue;
+    let t = getToday(x.type);
+    if (t.pos >= t.q.length) { addExtra(x.type); t = getToday(x.type); }
+    if (t.pos >= t.q.length) { S.today.dx = Object.assign({}, S.today.dx, { [x.type]: true }); save(); continue; } // 出せる問題が尽きた
+    if (D.segs++) toast(`つぎは ${TY[x.type].name} ${x.tgt - x.done}${TY[x.type].u}`);
+    if (x.type === 'w' && wMode() === 'fast') fastStart(); else start(x.type);
+    return;
+  }
+  dailyFinish();
+}
+function dailyLeft(type) { const x = dailySegs().find(s => s.type === type); return !x || x.done >= x.tgt; }
+function dailyTally(g) { if (!D || !g) return; D.n += g.n || 0; D.ok += g.ok || 0; D.score += g.score || 0; D.combo = Math.max(D.combo, g.maxCombo || 0); }
+function dailyNext() { // いまの種類の分が終わった → 次の種類へ
+  if (G) { stopTimer(); clearTimeout(autoT); dailyTally(G); G = null; }
+  if (F) { clearTimeout(F.tid); clearTimeout(F.nid); dailyTally({ n: F.n, ok: F.ok, score: F.score || 0 }); F = null; }
+  dailyRun();
+}
+function dailyLabel() { if (!D) return ''; const d = dailyProg(); return `今日 ${d.done}/${d.goal}`; }
+function dailyFinish() {
+  const d = dailyProg(); dayLog().goalD = true; save();
+  const r = D || { n: 0, ok: 0, score: 0, combo: 0 }; D = null;
+  showDone({ type: 'w', title: `今日の${d.goal}問 クリア！`, sub: d.segs.map(x => `${TY[x.type].name} ${x.done}`).join('・'), xp: r.score, acc: r.n ? Math.round(r.ok / r.n * 100) : 100, combo: r.combo, rec: false, more: false });
+  if (Sync.dirty) Sync.push();
 }
 function renderChips() {
   const box = $('gChips'); box.innerHTML = '';
@@ -315,7 +380,7 @@ function start(type) {
   if (t.pos >= t.q.length) return;
   const lg = dayLog(); lg.ss = (lg.ss || 0) + 1; lastAct = Date.now();
   G = { type, mode: (S.settings.mode && S.settings.mode[type]) || 'quiz', combo: 0, maxCombo: 0, ok: 0, n: 0, score: 0, answered: false };
-  const c = type === 'w' ? ['var(--owl)', 'var(--owl-d)'] : ['var(--bet)', 'var(--bet-d)'];
+  const c = { w: ['var(--owl)', 'var(--owl-d)'], p: ['var(--bet)', 'var(--bet-d)'], k: ['var(--fox)', 'var(--fox-d)'] }[type];
   $('play').style.setProperty('--c', c[0]); $('play').style.setProperty('--cd', c[1]);
   $('score').querySelector('b').textContent = 0; setMult(false); setCombo(false);
   show('play');
@@ -329,6 +394,17 @@ function pickWordOpts(w) {
   cand.sort((a, b) => Math.abs(a.jp.length - len) - Math.abs(b.jp.length - len));
   return shuffle(cand.slice(0, 8)).slice(0, 3);
 }
+// 常識クイズの誤答：同じカテゴリ・同じ種類から（足りなければカテゴリ内→全体）
+function pickKOpts(x) {
+  const ok = y => y.id !== x.id && y.a !== x.a;
+  let pool = K.filter(y => ok(y) && y.cat === x.cat && y.k === x.k);
+  if (pool.length < 3) pool = pool.concat(shuffle(K.filter(y => ok(y) && y.cat === x.cat && y.k !== x.k)));
+  if (pool.length < 3) pool = pool.concat(shuffle(K.filter(y => ok(y) && y.cat !== x.cat)));
+  const out = []; for (const y of shuffle(pool.slice(0, Math.max(3, pool.length)))) { if (!out.some(o => o.a === y.a)) out.push(y); if (out.length === 3) break; }
+  return out;
+}
+const kPrompt = x => `<span class="kcat">${esc(KCATS[x.cat] || '')}</span><div class="ktext">${esc(x.q)}</div>`;
+const kBack = x => `<div class="kans">${esc(x.a)}</div>` + (x.r ? `<div class="kr">${esc(x.r)}</div>` : '') + (x.note ? `<div class="knote">${esc(x.note)}</div>` : '');
 function pickFaceOpts(p) {
   const g = pgroup(p);
   let pool = P.filter(x => x.id !== p.id && pgroup(x) === g);
@@ -337,7 +413,9 @@ function pickFaceOpts(p) {
 }
 function load() {
   const t = S.today[G.type];
+  if (D && dailyLeft(G.type)) return dailyNext();
   if (t.pos >= t.q.length) return finish();
+  { const e = $('dlyP'); e.hidden = !D; if (D) e.textContent = dailyLabel(); }
   const raw = curKey(), again = raw[0] === '!', key = raw.replace(/^!/, ''), c = S.cards[key];
   G.answered = false; G.left = null;
   const tag = $('tag');
@@ -361,6 +439,14 @@ function load() {
     onTap($('spk'), () => { wake(); speakWord(); });
     list = shuffle([{ t: w.jp, ok: true }, ...pickWordOpts(w).map(x => ({ t: x.jp }))]);
     if (S.settings.auto) setTimeout(speakWord, 120);
+  } else if (G.type === 'k') {
+    const x = kById[key.slice(2)];
+    if (!x) { t.pos++; return load(); } // 問題データから消えた問い
+    G.ans = x;
+    $('qText').textContent = /^(what|meaning|abbr)$/.test(x.k) ? 'これはなに？' : '答えはどれ？';
+    prompt.className = 'prompt pk';
+    prompt.innerHTML = kPrompt(x);
+    list = shuffle([{ t: x.a, ok: true }, ...pickKOpts(x).map(y => ({ t: y.a }))]);
   } else {
     const p = pById[key.slice(2)];
     G.ans = p;
@@ -393,6 +479,12 @@ function loadCard(t, key) {
     $('spk').onclick = e => { e.preventDefault(); e.stopPropagation(); wake(); speakWord(); };
     fb.innerHTML = `<div class="en">${esc(w.en)}</div><div class="mean">${esc(w.jp)}</div>`;
     if (S.settings.auto) setTimeout(speakWord, 120);
+  } else if (G.type === 'k') {
+    const x = kById[key.slice(2)]; G.ans = x;
+    if (!x) { t.pos++; return load(); }
+    $('qText').textContent = '答え、言える？';
+    fa.innerHTML = kPrompt(x);
+    fb.innerHTML = kBack(x);
   } else {
     const p = pById[key.slice(2)]; G.ans = p;
     $('qText').textContent = 'この人、だれ？';
@@ -458,7 +550,7 @@ function result(ok, reason, el) {
   if (!again) { G.n++; if (ok) G.ok++; }
   if (!ok && !again) { t.q = t.q.slice(); t.q.splice(Math.min(t.pos + 8, t.q.length), 0, '!' + key); }
   t.pos++;
-  if (doneCount(t) >= t.base) log[G.type === 'w' ? 'goalW' : 'goalP'] = true;
+  if (doneCount(t) >= t.base) log[{ w: 'goalW', p: 'goalP', k: 'goalK' }[G.type]] = true;
   const m0 = MULT(G.combo);
   G.combo = ok ? G.combo + 1 : 0; G.maxCombo = Math.max(G.maxCombo, G.combo);
   const m = MULT(G.combo);
@@ -502,6 +594,7 @@ function showSheet(ok, reason, pts, fast) {
   $('shT').textContent = ok ? PRAISE[Math.random() * PRAISE.length | 0] : reason === 'time' ? '時間切れ！' : reason === 'skip' ? '正解はこちら' : 'おしい！';
   $('shPts').innerHTML = ok ? `${ICON('bolt')}+${pts}` : '';
   if (G.type === 'w') $('shB').innerHTML = ok ? `<span class="ans">${esc(a.en)}</span>　${esc(a.jp)}` : `<div class="lb">正解：</div><div class="ans">${esc(a.jp)}</div><div>${esc(a.en)}</div>`;
+  else if (G.type === 'k') $('shB').innerHTML = (ok ? '' : '<div class="lb">正解：</div>') + `<div class="ans">${esc(a.a)}</div>` + (a.r ? `<div class="kr">${esc(a.r)}</div>` : '') + (a.note ? `<div class="knote">${esc(a.note)}</div>` : '');
   else $('shB').innerHTML = profHTML(a);
   setTx($('bNext'), ok ? 'つぎへ' : 'わかった');
   requestAnimationFrame(() => sh.classList.add('on'));
@@ -553,16 +646,21 @@ function stopTimer() {
 
 function finish() {
   stopTimer();
+  if (D) return dailyNext();
   const type = G.type, t = S.today[type];
   const acc = G.n ? Math.round(G.ok / G.n * 100) : 100, xp = G.score;
   S.best = S.best || {}; const rec = xp > (S.best[type] || 0) && xp > 0; if (rec) { S.best[type] = xp; save(); }
+  const c = counts(type);
+  showDone({ type, title: `${doneCount(t)}${TY[type].u} クリア！`, sub: `定着 ${c.learned} ／ 明日の復習 ${c.dueTomorrow}`, xp, acc, combo: G.maxCombo, rec, more: true });
+}
+function showDone({ type, title, sub, xp, acc, combo, rec, more }) {
   show('sDone');
   const d = $('sDone');
-  d.style.setProperty('--c', type === 'w' ? 'var(--owl)' : 'var(--bet)'); d.style.setProperty('--cd', type === 'w' ? 'var(--owl-d)' : 'var(--bet-d)');
+  const col = { w: ['var(--owl)', 'var(--owl-d)'], p: ['var(--bet)', 'var(--bet-d)'], k: ['var(--fox)', 'var(--fox-d)'] }[type];
+  d.style.setProperty('--c', col[0]); d.style.setProperty('--cd', col[1]);
   const m = d.querySelector('.mascot'); m.classList.add('joy'); m.classList.remove('jump'); void m.offsetWidth; m.classList.add('jump');
-  $('dTitle').textContent = type === 'w' ? `${doneCount(t)}語 クリア！` : `${doneCount(t)}人 クリア！`;
-  const c = counts(type);
-  $('dSub').textContent = `定着 ${c.learned} ／ 明日の復習 ${c.dueTomorrow}`;
+  $('dTitle').textContent = title;
+  $('dSub').textContent = sub;
   d.querySelectorAll('.dstat').forEach(e => e.classList.remove('on'));
   $('dXp').textContent = 0; $('dAcc').textContent = '0%'; $('dCombo').textContent = 0;
   $('dRec').classList.remove('on'); if (rec) setTimeout(() => { $('dRec').classList.add('on'); Sound.multUp(4); Haptic.up(); }, 1250);
@@ -570,13 +668,13 @@ function finish() {
   lc.innerHTML = lvHTML(Math.max(0, xpNow - xp)); setTimeout(() => { lc.innerHTML = lvHTML(xpNow); }, 1100);
   const st = streak(), sp = $('dStreak'); sp.classList.remove('on'); sp.innerHTML = `${ICON('fire')}${st}日連続！`;
   Sound.fanfare(); Haptic.big(); FX.confetti();
-  [[$('dXp'), xp, v => v], [$('dAcc'), acc, v => v + '%'], [$('dCombo'), G.maxCombo, v => v]].forEach(([el, v, f], i) =>
+  [[$('dXp'), xp, v => v], [$('dAcc'), acc, v => v + '%'], [$('dCombo'), combo, v => v]].forEach(([el, v, f], i) =>
     setTimeout(() => { d.querySelectorAll('.dstat')[i].classList.add('on'); Sound.tap(); countUp(el, v, f); }, 500 + i * 260));
   setTimeout(() => { if (st > 0) sp.classList.add('on'); }, 1400);
-  setTx($('dMore'), `＋${type === 'w' ? S.settings.wordExtra + '語' : S.settings.faceExtra + '人'}`);
-  $('dMore')._type = type;
+  setTx($('dMore'), `＋${extraN(type)}${TY[type].u}`);
+  $('dMore')._type = type; $('dMore')._daily = !more; $('dMore').style.display = more ? '' : 'none';
 }
-function closePlay() { stopTimer(); const type = G ? G.type : (tab === 'sFaces' ? 'p' : 'w'); clearTimeout(autoT); G = null; try { speechSynthesis.cancel(); } catch {} if (Sync.dirty && Date.now() - Sync.last > SYNC_EVERY) Sync.push(); show(type === 'w' ? 'sWords' : 'sFaces'); }
+function closePlay() { stopTimer(); const daily = !!D; D = null; const type = G ? G.type : (tab === 'sFaces' ? 'p' : tab === 'sQuiz' ? 'k' : 'w'); clearTimeout(autoT); G = null; try { speechSynthesis.cancel(); } catch {} if (Sync.dirty && Date.now() - Sync.last > SYNC_EVERY) Sync.push(); show(daily || ($('sDone').classList.contains('on') && $('dMore')._daily) ? 'sWords' : TY[type].scr); }
 
 // =========================================================
 // 記録
@@ -774,6 +872,9 @@ function renderSettings() {
   };
   bind('WordGoal', 'wordGoal', x => x + '語');
   bind('FaceGoal', 'faceGoal', x => x + '人');
+  bind('KGoal', 'kGoal', x => x + '問');
+  const bindD = (id, key, u) => { const el = $('st' + id), v = $('v' + id); el.value = s.daily[key]; v.textContent = s.daily[key] + u; el.oninput = () => { s.daily = Object.assign({}, s.daily, { [key]: +el.value }); v.textContent = s.daily[key] + u; save(); }; };
+  bindD('DW', 'w', '語'); bindD('DP', 'p', '人'); bindD('DK', 'k', '問');
   bind('Ratio', 'ratio', x => x + '%');
   bind('Timer', 'timer', x => x ? x + '秒' : 'なし');
   bind('Week', 'weekGoal', x => x + '分');
@@ -858,6 +959,9 @@ document.querySelectorAll('nav label').forEach(b => onTap(b, () => { wake(); if 
 const wMode = () => (S.settings.mode && S.settings.mode.w) || 'quiz';
 onTap($('wStart'), () => wMode() === 'fast' ? fastStart() : start('w'));
 onTap($('pStart'), () => start('p'));
+onTap($('kStart'), () => start('k'));
+onTap($('kMore'), () => { addExtra('k'); start('k'); });
+onTap($('dlyGo'), () => dailyStart());
 onTap($('wMore'), () => { addExtra('w'); wMode() === 'fast' ? fastStart() : start('w'); });
 onTap($('pMore'), () => { addExtra('p'); start('p'); });
 onTap($('dMore'), () => { const type = $('dMore')._type || 'w'; addExtra(type); start(type); });
@@ -873,7 +977,7 @@ onTap($('bNg'), () => cardGrade(false));
 document.querySelectorAll('.seg label').forEach(l => onTap(l, () => {
   wake(); Sound.tap();
   const type = l.closest('.seg').dataset.type;
-  S.settings.mode = Object.assign({ w: 'quiz', p: 'quiz' }, S.settings.mode, { [type]: l.dataset.m }); save(); renderHome(type);
+  S.settings.mode = Object.assign({ w: 'quiz', p: 'quiz', k: 'quiz' }, S.settings.mode, { [type]: l.dataset.m }); save(); renderHome(type);
 }));
 $('xClose').onclick = () => closePlay();
 $('cPrev').onclick = () => { cal.m--; if (cal.m < 0) { cal.m = 11; cal.y--; } renderLog(); };
@@ -908,7 +1012,7 @@ function fastStart() {
   wake(); clearTimeout(autoT);
   { const lg = dayLog(); lg.ss = (lg.ss || 0) + 1; lastAct = Date.now(); }
   const t = getToday('w'); if (t.pos >= t.q.length) addExtra('w');
-  F = { t: getToday('w'), n: 0, ok: 0, ms: [], phase: '', tid: 0, nid: 0, prev: null };
+  F = { t: getToday('w'), n: 0, ok: 0, ms: [], phase: '', tid: 0, nid: 0, prev: null, score: 0 };
   show('fast'); $('fdone').hidden = true;
   fastPrevUI();
   fastLoad();
@@ -918,6 +1022,7 @@ function fastStats() {
   $('fpbar').style.width = (done / Math.max(1, t.goal) * 100) + '%';
   $('fcnt').textContent = `${done}/${t.goal}`;
   $('fsec').textContent = `制限 ${fastSec().toFixed(1)}秒` + (S.settings.flash ? '' : '（AI）');
+  { const e = $('dlyF'); e.hidden = !D; if (D) e.textContent = dailyLabel(); }
   const avg = F.ms.length ? F.ms.reduce((a, b) => a + b, 0) / F.ms.length / 1000 : 0;
   $('facc').textContent = F.n ? `正答 ${Math.round(F.ok / F.n * 100)}%` + (F.ms.length ? `・平均 ${avg.toFixed(2)}秒` : '') : '';
 }
@@ -928,7 +1033,8 @@ function fastLoad() {
   if (!F) return;
   clearTimeout(F.tid); clearTimeout(F.nid);
   const t = F.t;
-  if (t.pos >= t.q.length) return fastDone();
+  if (D && dailyLeft('w')) return dailyNext();
+  if (t.pos >= t.q.length) return D ? dailyNext() : fastDone();
   const raw = t.q[t.pos], key = raw.replace(/^!/, ''), w = wByEn[key.slice(2)];
   if (!w) { t.pos++; return fastLoad(); }
   Object.assign(F, { raw, key, again: raw[0] === '!', w, phase: 'ask', flipMs: null, flipAt: 0 });
@@ -969,7 +1075,7 @@ function fastAnswer(ok, ms, ms2) {
   const ev = S.ev[S.ev.length - 1];
   if (!again) { F.n++; if (ok) { F.ok++; if (ms != null) F.ms.push(ms); } }
   const pts = ok ? (again ? 5 : 10) + (ms != null && ms < 1000 ? 5 : 0) : 0;
-  if (pts) { S.xp = (S.xp || 0) + pts; const lg = dayLog(); lg.xp = (lg.xp || 0) + pts; }
+  if (pts) { S.xp = (S.xp || 0) + pts; F.score += pts; const lg = dayLog(); lg.xp = (lg.xp || 0) + pts; }
   if (!ok && !again) { t.q = t.q.slice(); t.q.splice(Math.min(t.pos + 6, t.q.length), 0, '!' + key); }
   t.pos++;
   if (doneCount(t) >= t.base) dayLog().goalW = true;
@@ -993,6 +1099,7 @@ function fastUndo() {
   const u = F && F.prev; if (!u || u.done) return;
   u.done = true;
   regrade(u);
+  if (u.pts) F.score = Math.max(0, (F.score || 0) - u.pts);
   if (!u.again) {
     F.ok = Math.max(0, F.ok - 1); const i = F.ms.lastIndexOf(u.ms); if (i >= 0) F.ms.splice(i, 1);
     const t = F.t; t.q = t.q.slice();
@@ -1017,7 +1124,7 @@ function fastDone() {
 }
 function fastClose() {
   if (F) { clearTimeout(F.tid); clearTimeout(F.nid); }
-  F = null; flush(); if (Sync.dirty) Sync.push();
+  F = null; D = null; flush(); if (Sync.dirty) Sync.push();
   show('sWords');
 }
 // 押した瞬間に反応する（指を離すのを待たない）
@@ -1041,7 +1148,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 boot().then(() => { if ('speechSynthesis' in window) { Sound.loadVoices(); speechSynthesis.onvoiceschanged = () => Sound.loadVoices(); } });
 if (/debug/.test(location.search)) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99;background:#000;color:#0f0;font:11px monospace;padding:4px;pointer-events:none;white-space:pre-wrap';
   document.body.appendChild(d); setInterval(() => { const pools = Object.values(SFX.pool); d.textContent = `iOS:${isIOS} rendered:${Object.keys(SFX.buf).length} pools:${pools.length} unlocked:${pools.filter(a => a._u).length}/${pools.length} last:${SFX.last || '-'} ctx:${SFX.ctx ? SFX.ctx.state : '-'}`; }, 300); }
-window.__app = { get S() { return S; }, get G() { return G; }, get F() { return F; }, fastStart, fastUndo, P, Plan, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
+window.__app = { get S() { return S; }, get G() { return G; }, get F() { return F; }, get D() { return D; }, dailyProg, dailyStart, K, fastStart, fastUndo, P, Plan, SFX, start, flipCard, cardGrade, finish: () => finish(), choose, next, doneCount, dayStr, show, levelUp };
 </script>
 </body>
 </html>
